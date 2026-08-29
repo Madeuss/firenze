@@ -1,0 +1,53 @@
+name: mansao
+
+services:
+  db:
+    # pgvector já compilado sobre o Postgres 16 — mesma versão do DBaaS (ADR-0002)
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-mansao}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mansao}
+      POSTGRES_DB: ${POSTGRES_DB:-mansao}
+    ports:
+      # 5433 no host: 5432 costuma estar ocupada por um Postgres instalado na máquina
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mansao} -d ${POSTGRES_DB:-mansao}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: ../../apps/api
+    environment:
+      MANSAO_AMBIENTE: dev
+      MANSAO_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-mansao}:${POSTGRES_PASSWORD:-mansao}@db:5432/${POSTGRES_DB:-mansao}
+      MANSAO_REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    volumes:
+      # bind mount para reload; o venv da imagem não é sobrescrito porque o
+      # pacote é instalado em modo editável a partir de /app/src
+      - ../../apps/api/src:/app/src:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  pgdata:

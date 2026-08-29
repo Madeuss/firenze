@@ -1,0 +1,20 @@
+name: setup-python-env
+description: Instala o uv e sincroniza apps/api a partir do uv.lock.
+
+runs:
+  using: composite
+  steps:
+    # Instalador oficial em vez de uma action de terceiro: uma dependência a
+    # menos para auditar no caminho que instala o que roda no CI.
+    - name: instala o uv
+      shell: bash
+      run: |
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+    - name: sincroniza o ambiente
+      shell: bash
+      working-directory: apps/api
+      # --frozen: falha se o uv.lock estiver dessincronizado do pyproject.toml,
+      # em vez de resolver de novo e mascarar o esquecimento.
+      run: uv sync --extra dev --frozen

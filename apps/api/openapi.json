@@ -1,0 +1,67 @@
+{
+  "components": {
+    "schemas": {
+      "Saude": {
+        "description": "Resposta do liveness probe.",
+        "properties": {
+          "ambiente": {
+            "enum": [
+              "dev",
+              "staging",
+              "prod"
+            ],
+            "title": "Ambiente",
+            "type": "string"
+          },
+          "status": {
+            "const": "ok",
+            "default": "ok",
+            "title": "Status",
+            "type": "string"
+          },
+          "versao": {
+            "title": "Versao",
+            "type": "string"
+          }
+        },
+        "required": [
+          "versao",
+          "ambiente"
+        ],
+        "title": "Saude",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "Dono de todo o domínio determinístico e de toda chamada a LLM (ADR-0003). O front nunca fala com o provedor de modelo nem com o banco.",
+    "summary": "Core de IA e domínio do jogo de mistério.",
+    "title": "Mansão API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/health": {
+      "get": {
+        "description": "Diz se o processo está de pé. Não toca no banco de propósito:\nreadiness com dependências chega junto com o schema (fase 1).",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Saude"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Liveness",
+        "tags": [
+          "infra"
+        ]
+      }
+    }
+  }
+}
