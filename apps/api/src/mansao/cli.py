@@ -1,89 +1,99 @@
-"""CLI do gerador de casos.
+"""Case generator CLI.
 
-`mansao gerar --semente 42` imprime o caso como o jogador o receberia. A solução
-só aparece com `--revelar`, e isso não é firula: se o padrão fosse imprimir o
-culpado, o hábito de rodar o comando durante o desenvolvimento estragaria todo
-caso que você fosse jogar.
+`mansao generate --seed 42` prints the case as a player would receive it. The
+solution only shows with `--reveal`, and that is not decoration: if printing the
+culprit were the default, running the command while developing would spoil every
+case you meant to play.
+
+`--locale` switches the catalog. The case itself does not change — same seed,
+same structure, same culprit — only the prose does. That is the whole point of
+ADR-0005, and running the two side by side is the cheapest way to see it.
 """
 
 import argparse
 import sys
 from collections.abc import Sequence
 
-from mansao.dominio import CasoCompleto, Papel, TipoFato
-from mansao.geracao import CasoInsoluvel, gerar, resolver
+from mansao.domain import CaseWithSolution, FactKind, Role
+from mansao.generation import UnsolvableCase, generate, solve
+from mansao.i18n import DEFAULT_LOCALE, Catalog, UnknownLocale, available_locales, load
 
 
-def _briefing(completo: CasoCompleto, revelar: bool) -> str:
-    caso = completo.caso
-    linhas = [
-        f"Caso {caso.semente} (gerador v{caso.versao_gerador})",
+def _briefing(full: CaseWithSolution, catalog: Catalog, reveal: bool) -> str:
+    case = full.case
+    label = catalog.label
+    lines = [
+        f"{label('case')} {case.seed} ({label('generator')} v{case.generator_version}, "
+        f"{catalog.locale})",
         "",
-        "ELENCO",
+        label("cast"),
     ]
-    for p in caso.elenco:
-        marca = " (vítima)" if p.papel is Papel.vitima else ""
-        linhas.append(f"  {p.id:8} {p.nome}{marca}")
+    for character in case.cast:
+        mark = f" ({label('victim')})" if character.role is Role.victim else ""
+        lines.append(f"  {character.id:8} {character.name}{mark}")
 
-    linhas += ["", "O QUE SE SABE"]
-    linhas += [f"  {f.id}  {f.descricao}" for f in caso.fatos if f.escopo.publico]
+    lines += ["", label("known")]
+    lines += [f"  {f.id}  {catalog.fact(case, f)}" for f in case.facts if f.scope.public]
 
-    linhas += ["", "DOSSIÊS (o que cada suspeito sabe)"]
-    for s in caso.suspeitos:
-        dossie = caso.dossie(s.id)
-        linhas.append(f"  {s.id} — {s.nome}: {len(dossie)} fatos")
+    lines += ["", label("dossiers")]
+    for suspect in case.suspects:
+        lines.append(
+            f"  {suspect.id} — {suspect.name}: "
+            f"{len(case.dossier(suspect.id))} {label('facts_count')}"
+        )
 
-    if not revelar:
-        linhas += ["", "Solução omitida. Use --revelar para vê-la."]
-        return "\n".join(linhas)
+    if not reveal:
+        return "\n".join([*lines, "", label("hidden")])
 
-    resultado = resolver(caso)
-    linhas += [
+    result = solve(case)
+    lines += [
         "",
-        "SOLUÇÃO",
-        f"  culpado: {completo.solucao.culpado}",
-        f"  meio:    {completo.solucao.meio}",
-        f"  motivo:  {completo.solucao.motivo}",
+        label("solution"),
+        f"  {label('culprit')}: {case.name_of(full.solution.culprit)}",
+        f"  {label('means')}: {catalog.means(full.solution.means_key)}",
+        f"  {label('motive')}: {catalog.motive(full.solution.motive_key)}",
         "",
-        "SOLVER",
-        f"  dedutível: {resultado.deduzivel}",
-        f"  deduziu:   {resultado.culpado_deduzido}",
-        f"  cadeia:    {', '.join(resultado.cadeia)}",
+        label("solver"),
+        f"  {label('deducible')}: {result.deducible}",
+        f"  {label('deduced')}: {result.deduced_culprit}",
+        f"  {label('chain')}: {', '.join(result.chain)}",
         "",
-        "SEGREDOS (por que os inocentes mentem)",
+        label("secrets"),
     ]
-    linhas += [
-        f"  {f.expoe_segredo_de}: {f.descricao}" for f in caso.fatos if f.tipo is TipoFato.segredo
+    lines += [
+        f"  {f.character}: {catalog.fact(case, f)}" for f in case.facts if f.kind is FactKind.secret
     ]
-    return "\n".join(linhas)
+    return "\n".join(lines)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="mansao", description="Gerador de casos do Mansão.")
-    sub = parser.add_subparsers(dest="comando", required=True)
+    parser = argparse.ArgumentParser(prog="mansao", description="Mansão case generator.")
+    sub = parser.add_subparsers(dest="command", required=True)
 
-    g = sub.add_parser("gerar", help="gera um caso a partir de uma semente")
-    g.add_argument("--semente", type=int, required=True)
-    g.add_argument("--suspeitos", type=int, default=6)
-    g.add_argument("--revelar", action="store_true", help="mostra solução e cadeia do solver")
-    g.add_argument("--json", action="store_true", help="imprime o caso como JSON, sem a solução")
+    gen = sub.add_parser("generate", help="generate a case from a seed")
+    gen.add_argument("--seed", type=int, required=True)
+    gen.add_argument("--suspects", type=int, default=6)
+    gen.add_argument("--locale", default=DEFAULT_LOCALE, help=f"one of {available_locales()}")
+    gen.add_argument("--reveal", action="store_true", help="show solution and solver chain")
+    gen.add_argument("--json", action="store_true", help="print the case as JSON, no solution")
 
     args = parser.parse_args(argv)
 
-    # O console do Windows abre em cp1252 e come os acentos do briefing.
+    # The Windows console opens in cp1252 and eats the accents in the briefing.
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
     try:
-        completo = gerar(semente=args.semente, suspeitos=args.suspeitos)
-    except (CasoInsoluvel, ValueError) as erro:
-        print(f"erro: {erro}", file=sys.stderr)
+        catalog = load(args.locale)
+        full = generate(seed=args.seed, suspects=args.suspects)
+    except (UnsolvableCase, UnknownLocale, ValueError) as failure:
+        print(f"error: {failure}", file=sys.stderr)
         return 1
 
     if args.json:
-        print(completo.caso.model_dump_json(indent=2))
+        print(full.case.model_dump_json(indent=2))
     else:
-        print(_briefing(completo, revelar=args.revelar))
+        print(_briefing(full, catalog, reveal=args.reveal))
     return 0
 
 

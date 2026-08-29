@@ -173,6 +173,12 @@ ADR escrita para convencer, não para decidir.
   Python/FastAPI no core de IA, Next.js como BFF
 - [`0004`](adr/0004-geracao-deterministica-com-verniz-de-llm.md) — estrutura do
   caso gerada por código, verniz gerado por LLM
+- [`0005`](adr/0005-locale-is-a-property-of-the-match.md) — domínio guarda
+  estrutura, não frase; idioma é propriedade da partida
+- [`0006`](adr/0006-english-in-code-portuguese-in-the-product.md) — código em
+  inglês, produto em português
+
+As ADRs passam a ser escritas em inglês a partir da 0005 (ADR-0006).
 
 **Na fila:** LangGraph vs orquestração própria · streaming SSE vs WebSocket ·
 API externa vs LLM self-hosted na Magalu · isolamento de contexto como fronteira
