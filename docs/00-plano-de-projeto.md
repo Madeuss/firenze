@@ -459,9 +459,9 @@ Escrever **antes** de precisar:
 - [x] `docs/01-dominio.md` com o glossário — 30 min, muda tudo
 - [x] `docs/02-regras-de-negocio.md` com RN-001 a RN-042
 - [x] ADR-0001, ADR-0002 e ADR-0003 escritos
-- [ ] `docker-compose.yml` com Postgres 16 + pgvector rodando local — *escrito
-      em `infra/compose/`; falta rodar (Docker não instalado na máquina)*
-- [ ] `CREATE EXTENSION vector` validado — *bloqueado pelo item acima*
+- [x] `docker-compose.yml` com Postgres 16 + pgvector rodando local
+- [x] `CREATE EXTENSION vector` validado — vector 0.8.6, com HNSW e busca por
+      cosseno exercitados
 - [x] Esqueleto FastAPI com `/health` e OpenAPI publicado
 - [ ] GitHub Project com os épicos E1-E6 como issues
 - [ ] Conta Magalu configurada, CLI `mgc` autenticado, VM de teste criada e

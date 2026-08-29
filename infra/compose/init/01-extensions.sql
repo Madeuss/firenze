@@ -3,6 +3,9 @@
 -- pgaudit fica de fora aqui de propósito: exige shared_preload_libraries e não
 -- vem na imagem pgvector. É extensão do DBaaS da Magalu (ADR-0002), habilitada
 -- via terraform em infra/terraform.
+--
+-- Drift de versão: a imagem traz pgvector 0.8.6, o DBaaS da Magalu está em
+-- 0.8.2. Antes de usar recurso novo de índice, confirme que existe lá.
 
 CREATE EXTENSION IF NOT EXISTS vector;     -- memória dos NPCs (ADR-0002)
 CREATE EXTENSION IF NOT EXISTS pg_trgm;    -- busca híbrida: nomes próprios e horários
