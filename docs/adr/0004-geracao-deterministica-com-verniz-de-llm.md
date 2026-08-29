@@ -33,7 +33,7 @@ Três restrições pesam na escolha de quem gera a estrutura:
 ## Decisão
 
 A estrutura é montada por um gerador determinístico com semente, em
-`mansao.geracao.gerador`. O solver, em `mansao.geracao.solver`, recebe `Caso`
+`mansao.generation.generator`. O solver, em `mansao.generation.solver`, recebe `Caso`
 (nunca `CasoCompleto`) e tem poder de veto: caso não dedutível é descartado e
 regerado com semente derivada.
 
@@ -42,7 +42,7 @@ personalidade, descrição de cena, fala. Ele não pode criar, remover ou
 reatribuir fato, escopo, posição na linha do tempo ou culpado.
 
 Mesma semente e mesma versão do gerador produzem exatamente o mesmo caso.
-`Caso.versao_gerador` acompanha o dado porque mudar o gerador muda o
+`Case.generator_version` acompanha o dado porque mudar o gerador muda o
 significado da semente.
 
 ## Consequências

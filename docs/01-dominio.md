@@ -10,28 +10,28 @@ Regras que operam sobre estas entidades: [`02-regras-de-negocio.md`](02-regras-d
 
 ## 1. Glossário
 
-| Termo | Definição |
-|---|---|
-| **Semente** | Valor determinístico de entrada da geração. A mesma semente e a mesma versão do gerador produzem o mesmo `Caso`. |
-| **Caso** | Instância de mistério gerada a partir de uma semente. Contém elenco, linha do tempo e solução canônica. É imutável depois de publicado. |
-| **Personagem** | Suspeito, vítima ou figurante do caso. Suspeito é o personagem interrogável — todo suspeito tem um NPC por trás. |
-| **Fato** | Unidade atômica de verdade sobre o caso, com escopo de visibilidade. É o único tipo de coisa que pode entrar na memória de um NPC. |
-| **Escopo** | Conjunto de agentes autorizados a conhecer um fato. `publico` = todos; caso contrário, lista explícita de personagens. |
-| **Solução** | Culpado, meio, motivo e a cadeia de dedução que leva até eles. Entidade separada do `Caso` justamente para nunca ser projetada em dossiê. |
-| **Dossiê** | Projeção dos fatos visíveis para um NPC específico. Nunca contém a `Solução`. É o que o backend monta a cada turno para compor o contexto. |
-| **Partida** | Instância jogável de um caso por um jogador. Guarda orçamento, turnos, provas e postura de cada NPC. |
-| **Turno** | Uma interação jogador → NPC → resposta. Unidade de orçamento e unidade de trace na observabilidade. |
-| **Declaração** | Afirmação que um NPC fez ao jogador, persistida e indexada. É a matéria-prima da detecção de contradição. |
-| **Contradição** | Par de declarações do mesmo NPC logicamente incompatíveis. Detectada por código, não pelo LLM. |
-| **Prova** | Fato descoberto pelo jogador, utilizável em confronto. Um fato só vira prova depois de descoberto. |
-| **Confronto** | Ação de apresentar uma prova a um NPC, alterando sua postura. Custa mais que uma pergunta. |
-| **Postura** | Estado emocional/estratégico do NPC (`cooperativo`, `evasivo`, `hostil`, `quebrado`). Transita por máquina de estados determinística. |
-| **Quebra de álibi** | Evento de jogo em que um confronto invalida declaração anterior do NPC. É progresso, não bug. |
-| **Acusação** | Escolha final do jogador: um culpado e as provas de apoio. Uma por partida, irreversível. |
-| **Veredito** | Resultado calculado por código comparando a `Acusação` com a `Solução`. O LLM só narra o desfecho já decidido. |
-| **Canary** | Token único inserido em dado secreto, usado para detectar vazamento. Presença na saída é falha crítica. |
-| **Solver** | Verificador automático que prova que o caso é dedutível a partir dos fatos públicos. Portão de publicação do caso. |
-| **Agent card** | Ficha versionada de um NPC em `docs/agents/<id>.md`: personalidade, objetivo oculto, fatos conhecidos, condição de quebra. |
+| Termo | No código | Definição |
+|---|---|---|
+| **Semente** | `seed` | Valor determinístico de entrada da geração. A mesma semente e a mesma versão do gerador produzem o mesmo `Caso`. |
+| **Caso** | `Case` | Instância de mistério gerada a partir de uma semente. Contém elenco, linha do tempo e solução canônica. É imutável depois de publicado. |
+| **Personagem** | `Character` | Suspeito, vítima ou figurante do caso. Suspeito é o personagem interrogável — todo suspeito tem um NPC por trás. |
+| **Fato** | `Fact` | Unidade atômica de verdade sobre o caso, com escopo de visibilidade. É o único tipo de coisa que pode entrar na memória de um NPC. |
+| **Escopo** | `Scope` | Conjunto de agentes autorizados a conhecer um fato. `publico` = todos; caso contrário, lista explícita de personagens. |
+| **Solução** | `Solution` | Culpado, meio, motivo e a cadeia de dedução que leva até eles. Entidade separada do `Caso` justamente para nunca ser projetada em dossiê. |
+| **Dossiê** | `Case.dossier()` | Projeção dos fatos visíveis para um NPC específico. Nunca contém a `Solução`. É o que o backend monta a cada turno para compor o contexto. |
+| **Partida** | `Match` | Instância jogável de um caso por um jogador. Guarda orçamento, turnos, provas e postura de cada NPC. |
+| **Turno** | `Turn` | Uma interação jogador → NPC → resposta. Unidade de orçamento e unidade de trace na observabilidade. |
+| **Declaração** | `Statement` | Afirmação que um NPC fez ao jogador, persistida e indexada. É a matéria-prima da detecção de contradição. |
+| **Contradição** | `Contradiction` | Par de declarações do mesmo NPC logicamente incompatíveis. Detectada por código, não pelo LLM. |
+| **Prova** | `Evidence` | Fato descoberto pelo jogador, utilizável em confronto. Um fato só vira prova depois de descoberto. |
+| **Confronto** | `Confrontation` | Ação de apresentar uma prova a um NPC, alterando sua postura. Custa mais que uma pergunta. |
+| **Postura** | `stance` | Estado emocional/estratégico do NPC (`cooperativo`, `evasivo`, `hostil`, `quebrado`). Transita por máquina de estados determinística. |
+| **Quebra de álibi** | `alibi_broken` | Evento de jogo em que um confronto invalida declaração anterior do NPC. É progresso, não bug. |
+| **Acusação** | `Accusation` | Escolha final do jogador: um culpado e as provas de apoio. Uma por partida, irreversível. |
+| **Veredito** | `Verdict` | Resultado calculado por código comparando a `Acusação` com a `Solução`. O LLM só narra o desfecho já decidido. |
+| **Canary** | `canary` | Token único inserido em dado secreto, usado para detectar vazamento. Presença na saída é falha crítica. |
+| **Solver** | `solve()` | Verificador automático que prova que o caso é dedutível a partir dos fatos públicos. Portão de publicação do caso. |
+| **Agent card** | — | Ficha versionada de um NPC em `docs/agents/<id>.md`: personalidade, objetivo oculto, fatos conhecidos, condição de quebra. |
 
 ### Termos que evitamos
 
@@ -60,9 +60,14 @@ Fatos e provas são numerados por caso, não globalmente. `RN-`, `T-`, `US-` e
 `ADR-` são globais e nunca reaproveitados: regra revogada fica no documento com
 status `revogada` e o motivo.
 
-Nomes de entidade, campo e valor de enum ficam em **português** no código
-(`caso`, `fato`, `dossie`, `postura='evasivo'`). Traduzir pela metade produz
-`FactRepository.buscar_por_escopo` — o pior dos dois mundos.
+No código, os nomes ficam em **inglês** (ADR-0006): `Case`, `Fact`,
+`dossier()`, `stance="evasive"`. Este documento continua em português e é a
+ponte entre os dois vocabulários — a coluna "No código" abaixo é normativa.
+Traduzir pela metade produz `FactRepository.buscar_por_escopo`, que é o pior dos
+dois mundos.
+
+Conteúdo do jogo continua em português onde é ambientação: nomes de personagem,
+a mansão, o catálogo `pt-BR` (ADR-0005).
 
 ---
 

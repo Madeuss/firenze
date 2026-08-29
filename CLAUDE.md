@@ -20,6 +20,8 @@ Next.js (front) + FastAPI/LangGraph (core de IA) + Postgres com pgvector.
 - Toda saída de LLM é validada por schema Pydantic versionado.
   Mudou o schema, roda os evals antes de commitar.
 - Prompts vivem em `prompts/`, versionados, nunca em string literal.
+- Código em inglês, docs em português, conteúdo do jogo em português.
+  Domínio guarda estrutura; frase pronta só no catálogo. (ADR-0005/0006)
 - Conventional Commits. Nada direto na main.
 
 ## Comandos
@@ -27,6 +29,7 @@ Next.js (front) + FastAPI/LangGraph (core de IA) + Postgres com pgvector.
 - `make install` cria `.venv` e instala `apps/api` em modo editável
 - `make dev` sobe o compose local (API, Postgres+pgvector, Redis)
 - `make api` roda só a API com reload, sem container
+- `make case SEED=42 [LOCALE=en] [REVEAL=1]` gera e imprime um caso
 - `make check` roda o que o CI cobra (lint, typecheck, test)
 - `make openapi` regenera `apps/api/openapi.json` — commitar junto
 - `make evals` roda a suíte de avaliação
