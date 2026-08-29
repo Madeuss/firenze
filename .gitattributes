@@ -1,0 +1,8 @@
+# Normaliza para LF no repositório. Sem isso, o checkout no Windows grava CRLF e
+# script shell copiado para uma imagem Linux falha com "\r: command not found".
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.pdf binary
+*.excalidraw text eol=lf

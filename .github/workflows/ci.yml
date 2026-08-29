@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Sem filtro `paths:` enquanto estes jobs forem checks obrigatórios: check que
+# não roda fica pending para sempre e trava o merge.
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: apps/api
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - run: ruff check .
+      - run: ruff format --check .
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - run: mypy src
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - run: pytest
+      - name: contrato commitado está atualizado
+        run: |
+          python scripts/dump_openapi.py
+          git diff --exit-code openapi.json \
+            || { echo "::error::openapi.json desatualizado — rode 'make openapi' e commite"; exit 1; }
+
+  pr-title:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: título no formato conventional
+        env:
+          TITULO: ${{ github.event.pull_request.title }}
+        run: |
+          padrao='^(feat|fix|docs|chore|refactor|test|perf|build|ci|revert)(\([a-z0-9 -]+\))?!?: .+'
+          if ! printf '%s' "$TITULO" | grep -qE "$padrao"; then
+            echo "::error::título do PR fora do padrão: $TITULO"
+            echo "O merge é squash: este título vira a mensagem na main e alimenta o CHANGELOG."
+            exit 1
+          fi
