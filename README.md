@@ -9,7 +9,8 @@ que ele não deveria saber.
 
 ## Rodar local
 
-Requisitos: Docker, Python 3.13, `make`.
+Requisitos: Docker, [uv](https://docs.astral.sh/uv/) e `make`. O uv cuida do
+Python — não precisa instalar a 3.13 na mão.
 
 ```bash
 cp .env.example .env
@@ -24,7 +25,7 @@ máquina.
 Sem Docker, dá para rodar só a API contra serviços seus:
 
 ```bash
-make install    # cria .venv e instala apps/api em modo editável
+make install    # uv sync a partir do uv.lock
 make api        # uvicorn com reload
 ```
 

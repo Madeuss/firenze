@@ -1,9 +1,5 @@
 COMPOSE := docker compose -f infra/compose/docker-compose.yml
-VENV    := .venv
-PY      := $(VENV)/bin/python
-ifeq ($(OS),Windows_NT)
-PY      := $(VENV)/Scripts/python.exe
-endif
+API     := apps/api
 
 .DEFAULT_GOAL := help
 .PHONY: help dev down logs psql install api openapi lint fmt typecheck test check migrate evals
@@ -24,30 +20,28 @@ logs: ## segue os logs do compose
 psql: ## abre psql no banco local
 	$(COMPOSE) exec db psql -U mansao -d mansao
 
-install: ## cria o venv e instala apps/api em modo editável
-	python -m venv $(VENV)
-	$(PY) -m pip install --upgrade pip
-	$(PY) -m pip install -e "apps/api[dev]"
+install: ## sincroniza o venv de apps/api a partir do uv.lock
+	cd $(API) && uv sync --extra dev
 
 api: ## roda a API local com reload (sem container)
-	$(PY) -m uvicorn mansao.main:app --reload --port 8000
+	cd $(API) && uv run uvicorn mansao.main:app --reload --port 8000
 
 openapi: ## regenera apps/api/openapi.json
-	$(PY) apps/api/scripts/dump_openapi.py
+	cd $(API) && uv run python scripts/dump_openapi.py
 
 lint: ## ruff check + format check
-	$(PY) -m ruff check apps/api
-	$(PY) -m ruff format --check apps/api
+	cd $(API) && uv run ruff check .
+	cd $(API) && uv run ruff format --check .
 
 fmt: ## formata e aplica correções automáticas
-	$(PY) -m ruff check --fix apps/api
-	$(PY) -m ruff format apps/api
+	cd $(API) && uv run ruff check --fix .
+	cd $(API) && uv run ruff format .
 
 typecheck: ## mypy
-	$(PY) -m mypy apps/api/src
+	cd $(API) && uv run mypy src
 
 test: ## pytest
-	$(PY) -m pytest apps/api
+	cd $(API) && uv run pytest
 
 check: lint typecheck test ## tudo que o CI cobra
 

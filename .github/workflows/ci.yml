@@ -22,13 +22,9 @@ jobs:
         working-directory: apps/api
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-          cache: pip
-      - run: pip install -e ".[dev]"
-      - run: ruff check .
-      - run: ruff format --check .
+      - uses: ./.github/actions/setup-python-env
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
 
   typecheck:
     runs-on: ubuntu-latest
@@ -37,12 +33,8 @@ jobs:
         working-directory: apps/api
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-          cache: pip
-      - run: pip install -e ".[dev]"
-      - run: mypy src
+      - uses: ./.github/actions/setup-python-env
+      - run: uv run mypy src
 
   test:
     runs-on: ubuntu-latest
@@ -51,15 +43,11 @@ jobs:
         working-directory: apps/api
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-          cache: pip
-      - run: pip install -e ".[dev]"
-      - run: pytest
+      - uses: ./.github/actions/setup-python-env
+      - run: uv run pytest
       - name: contrato commitado está atualizado
         run: |
-          python scripts/dump_openapi.py
+          uv run python scripts/dump_openapi.py
           git diff --exit-code openapi.json \
             || { echo "::error::openapi.json desatualizado — rode 'make openapi' e commite"; exit 1; }
 
