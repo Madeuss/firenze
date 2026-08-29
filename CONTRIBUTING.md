@@ -9,15 +9,15 @@ Nada vai direto para a `main` — a branch é protegida por ruleset (PR
 obrigatório, histórico linear, sem force push, sem deleção).
 
 ```bash
-git switch -c feat/gerador-de-casos
+git switch -c feat/case-generator
 # trabalha
 gh pr create --fill
 # CI verde
 gh pr merge --squash --delete-branch
 ```
 
-Branch curta: 1–2 dias. Se uma fase do roadmap virou uma branch de duas semanas,
-ela era três PRs.
+Branch curta: 1–2 dias, com nome **em inglês** — como o commit e o PR. Se uma
+fase do roadmap virou uma branch de duas semanas, ela era três PRs.
 
 **Prefixos de branch:** `feat/`, `fix/`, `docs/`, `chore/`, `refactor/`,
 `test/`, `ci/`.
