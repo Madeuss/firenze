@@ -2,7 +2,7 @@ COMPOSE := docker compose -f infra/compose/docker-compose.yml
 API     := apps/api
 
 .DEFAULT_GOAL := help
-.PHONY: help dev down logs psql install api openapi lint fmt typecheck test check migrate evals
+.PHONY: help dev down logs psql install api caso openapi lint fmt typecheck test check migrate evals
 
 help: ## lista os alvos
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t/' | expand -t 14
@@ -25,6 +25,9 @@ install: ## sincroniza o venv de apps/api a partir do uv.lock
 
 api: ## roda a API local com reload (sem container)
 	cd $(API) && uv run uvicorn mansao.main:app --reload --port 8000
+
+caso: ## gera um caso (make caso SEMENTE=42 [REVELAR=1])
+	cd $(API) && uv run mansao gerar --semente $(or $(SEMENTE),1) $(if $(REVELAR),--revelar,)
 
 openapi: ## regenera apps/api/openapi.json
 	cd $(API) && uv run python scripts/dump_openapi.py

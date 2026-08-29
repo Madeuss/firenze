@@ -171,10 +171,13 @@ ADR escrita para convencer, não para decidir.
   pgvector em vez de banco vetorial dedicado
 - [`0003`](adr/0003-python-fastapi-no-core-de-ia-e-next-como-bff.md) —
   Python/FastAPI no core de IA, Next.js como BFF
+- [`0004`](adr/0004-geracao-deterministica-com-verniz-de-llm.md) — estrutura do
+  caso gerada por código, verniz gerado por LLM
 
-**Na fila:** `0004` LangGraph vs orquestração própria · `0005` streaming SSE vs
-WebSocket · `0006` API externa vs LLM self-hosted na Magalu · `0007` isolamento
-de contexto como fronteira de segurança · `0008` VM+compose antes de Kubernetes
+**Na fila:** LangGraph vs orquestração própria · streaming SSE vs WebSocket ·
+API externa vs LLM self-hosted na Magalu · isolamento de contexto como fronteira
+de segurança · VM+compose antes de Kubernetes. Numeração sai na ordem em que a
+decisão é tomada, não na ordem desta lista.
 
 ### 4.2 C4 (`docs/04-arquitetura.md`)
 
