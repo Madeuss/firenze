@@ -26,7 +26,10 @@ from mansao.veneer.models import CaseVeneer, VeneerDraft
 from mansao.veneer.validation import check
 
 PROMPT_VERSION = "v1"
-DEFAULT_MODEL = "claude-opus-5"
+# Haiku: the veneer is short, structured, and its failure modes are caught by
+# validation rather than by model quality. ~US$ 0.0025 per case against a
+# R$ 0,50 per-match budget that phase 2 will spend on six NPCs and a turn each.
+DEFAULT_MODEL = "claude-haiku-4-5"
 MAX_TOKENS = 4000
 
 

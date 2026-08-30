@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     environment: Environment = "dev"
     database_url: str = "postgresql+psycopg://mansao:mansao@localhost:5433/mansao"
     redis_url: str = "redis://localhost:6379/0"
-    veneer_model: str = "claude-opus-5"
+    veneer_model: str = "claude-haiku-4-5"
     """Which model writes the veneer. Env-switchable because it is the one
     knob that moves cost per case."""
 
