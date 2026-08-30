@@ -459,7 +459,7 @@ Escrever **antes** de precisar:
 | **5 — Front** (semanas 8-9) | Next.js, streaming, caderno, telas do MVP | Deploy em staging |
 | **6 — Observabilidade e evals** (semana 10) | Langfuse, métricas, suíte completa, dashboard de custo | Gates verdes no CI |
 | **7 — Produção** (semana 11) | Terraform, MKE, CI/CD completo, runbook | URL pública |
-| **8 — Extras** | Fofoca entre NPCs, comparação LLM local vs API em GPU L40S, multiplayer | ADRs adicionais |
+| **8 — Extras** | Cenários além da mansão (outros países e épocas), fofoca entre NPCs, comparação LLM local vs API em GPU L40S, multiplayer | ADRs adicionais |
 
 ---
 

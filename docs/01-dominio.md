@@ -13,6 +13,7 @@ Regras que operam sobre estas entidades: [`02-regras-de-negocio.md`](02-regras-d
 | Termo | No código | Definição |
 |---|---|---|
 | **Semente** | `seed` | Valor determinístico de entrada da geração. A mesma semente e a mesma versão do gerador produzem o mesmo `Caso`. |
+| **Cenário** | `setting` | O mundo de onde o caso sai: quais cômodos existem, que nomes o elenco usa, que segredos cabem. Hoje só existe `manor`. Faz parte da identidade do caso junto com semente e versão do gerador. |
 | **Caso** | `Case` | Instância de mistério gerada a partir de uma semente. Contém elenco, linha do tempo e solução canônica. É imutável depois de publicado. |
 | **Personagem** | `Character` | Suspeito, vítima ou figurante do caso. Suspeito é o personagem interrogável — todo suspeito tem um NPC por trás. |
 | **Fato** | `Fact` | Unidade atômica de verdade sobre o caso, com escopo de visibilidade. É o único tipo de coisa que pode entrar na memória de um NPC. |

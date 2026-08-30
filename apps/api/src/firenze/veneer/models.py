@@ -23,8 +23,8 @@ class CharacterVeneer(BaseModel):
 class CaseVeneer(BaseModel):
     """Prose for one case, in one locale.
 
-    Keyed by seed, generator version, prompt version and locale: the four things
-    that decide what the text should be. A cached veneer whose key still matches
+    Keyed by seed, generator version, setting, prompt version and locale: the
+    five things that decide what the text should be. A cached veneer whose key still matches
     is still correct; when any of them moves, the text is regenerated.
     """
 
@@ -32,6 +32,7 @@ class CaseVeneer(BaseModel):
 
     seed: int
     generator_version: str
+    setting: str
     prompt_version: str
     locale: str
     model: str
