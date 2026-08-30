@@ -127,6 +127,7 @@ def write(
     return CaseVeneer(
         seed=case.seed,
         generator_version=case.generator_version,
+        setting=case.setting,
         prompt_version=PROMPT_VERSION,
         locale=catalog.locale,
         model=model,

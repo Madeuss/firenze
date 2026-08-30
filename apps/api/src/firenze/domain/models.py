@@ -87,6 +87,15 @@ class Case(BaseModel):
 
     seed: int
     generator_version: str
+    setting: str
+    """Which world the generator built from.
+
+    A seed identifies a case only together with the generator version and the
+    setting. The moment a second setting exists, seed 42 means two different
+    mysteries — and reproducibility, which is the whole premise of ADR-0004,
+    quietly stops holding. Recorded now because adding it after cases are
+    persisted is a migration.
+    """
     rooms: tuple[str, ...]
     night_start_minutes: int
     """Minutes since midnight for interval 0. The edge formats it."""

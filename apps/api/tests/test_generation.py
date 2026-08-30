@@ -150,3 +150,16 @@ def test_casts_of_different_sizes(suspects: int) -> None:
     validate(full)
     assert len(full.case.suspects) == suspects
     assert solve(full.case).deduced_culprit == full.solution.culprit
+
+
+def test_a_case_records_the_setting_it_came_from(cases: list[CaseWithSolution]) -> None:
+    """Seed alone does not identify a case; seed, generator version and setting do.
+
+    There is one setting today, so this asserts a habit rather than catching a
+    bug. The bug it prevents arrives with the second setting, when seed 42 starts
+    meaning two different mysteries and every eval baseline silently compares
+    cases that are not the same case.
+    """
+    for full in cases:
+        assert full.case.setting == "manor"
+        assert full.case.generator_version

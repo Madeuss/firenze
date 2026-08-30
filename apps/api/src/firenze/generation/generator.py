@@ -28,6 +28,13 @@ from firenze.generation.validation import validate
 
 GENERATOR_VERSION = "2"
 
+# The only world the generator knows how to build. Rooms, cast, means and
+# secrets below are this setting's; grouping them into a `Setting` object is
+# what phase 8 does when a second one arrives. Nothing in the solver, the
+# validator or the rules would change — they reason over ids, never over
+# what a room is.
+SETTING = "manor"
+
 ROOMS = (
     "library",
     "parlour",
@@ -138,6 +145,7 @@ def _assemble(seed: int, effective_seed: int, suspects: int) -> CaseWithSolution
     case = Case(
         seed=seed,
         generator_version=GENERATOR_VERSION,
+        setting=SETTING,
         rooms=ROOMS,
         night_start_minutes=NIGHT_START_MINUTES,
         interval_minutes=INTERVAL_MINUTES,

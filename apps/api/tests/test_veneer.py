@@ -100,6 +100,9 @@ def test_a_good_draft_becomes_a_veneer(case: Case) -> None:
     assert veneer.seed == case.seed
     assert veneer.locale == "pt-BR"
     assert veneer.prompt_version == "v1"
+    # Prose is written for one setting. Carrying it keeps a cached veneer from
+    # being reused for a different world that happened to share a seed.
+    assert veneer.setting == case.setting
     assert {c.id for c in veneer.characters} == {s.id for s in case.suspects}
     assert veneer.for_character("sus-1").role_title == "mordomo"
 
