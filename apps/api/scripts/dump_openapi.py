@@ -8,7 +8,7 @@ contrato desatualizado é contrato quebrado esperando a hora.
 import json
 from pathlib import Path
 
-from mansao.main import app
+from firenze.main import app
 
 DESTINO = Path(__file__).resolve().parents[1] / "openapi.json"
 

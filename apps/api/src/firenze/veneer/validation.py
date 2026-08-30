@@ -11,8 +11,8 @@ prose is any good — is not pretended to be checked.
 
 import re
 
-from mansao.domain import Case
-from mansao.veneer.models import VeneerDraft
+from firenze.domain import Case
+from firenze.veneer.models import VeneerDraft
 
 
 class VeneerRejected(ValueError):

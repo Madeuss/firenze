@@ -5,7 +5,7 @@ over the intent of whoever produced it — that is what keeps the tests worth
 something when the generator changes, or when a case arrives from elsewhere.
 """
 
-from mansao.domain import CaseWithSolution, FactKind, Role
+from firenze.domain import CaseWithSolution, FactKind, Role
 
 
 class InvalidCase(ValueError):

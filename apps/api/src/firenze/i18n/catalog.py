@@ -20,7 +20,7 @@ from functools import cache
 from pathlib import Path
 from typing import Any
 
-from mansao.domain import Case, Fact
+from firenze.domain import Case, Fact
 
 MESSAGES_DIR = Path(__file__).parent / "messages"
 DEFAULT_LOCALE = "pt-BR"

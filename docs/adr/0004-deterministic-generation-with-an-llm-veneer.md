@@ -33,7 +33,7 @@ Three constraints bear on who generates the structure:
 ## Decision
 
 The structure is assembled by a seeded deterministic generator in
-`mansao.generation.generator`. The solver, in `mansao.generation.solver`, takes
+`firenze.generation.generator`. The solver, in `firenze.generation.solver`, takes
 `Case` (never `CaseWithSolution`) and holds a veto: a case that is not deducible
 is discarded and regenerated from a derived seed.
 

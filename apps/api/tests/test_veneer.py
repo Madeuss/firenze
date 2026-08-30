@@ -11,10 +11,10 @@ from typing import Any
 
 import pytest
 
-from mansao.domain import Case
-from mansao.generation import generate
-from mansao.i18n import load
-from mansao.veneer import (
+from firenze.domain import Case
+from firenze.generation import generate
+from firenze.i18n import load
+from firenze.veneer import (
     CharacterVeneer,
     VeneerDraft,
     VeneerRejected,
@@ -23,7 +23,7 @@ from mansao.veneer import (
     load_prompt,
     write,
 )
-from mansao.veneer.writer import _render_prompt
+from firenze.veneer.writer import _render_prompt
 
 
 class StubMessages:

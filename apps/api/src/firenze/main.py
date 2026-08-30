@@ -3,8 +3,8 @@ from typing import Literal
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-from mansao import __version__
-from mansao.config import Environment, settings
+from firenze import __version__
+from firenze.config import Environment, settings
 
 
 class Health(BaseModel):
@@ -17,7 +17,7 @@ class Health(BaseModel):
 
 def create_app() -> FastAPI:
     app = FastAPI(
-        title="Mansão API",
+        title="Firenze API",
         version=__version__,
         summary="AI core and domain of the mystery game.",
         description=(

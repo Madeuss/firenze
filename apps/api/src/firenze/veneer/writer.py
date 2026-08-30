@@ -20,10 +20,10 @@ import re
 from pathlib import Path
 from typing import Any, Protocol, cast
 
-from mansao.domain import Case
-from mansao.i18n import Catalog
-from mansao.veneer.models import CaseVeneer, VeneerDraft
-from mansao.veneer.validation import check
+from firenze.domain import Case
+from firenze.i18n import Catalog
+from firenze.veneer.models import CaseVeneer, VeneerDraft
+from firenze.veneer.validation import check
 
 PROMPT_VERSION = "v1"
 # Haiku: the veneer is short, structured, and its failure modes are caught by
@@ -49,8 +49,8 @@ class _Client(Protocol):
 
 
 def prompts_dir() -> Path:
-    """Repository `prompts/`, or wherever `MANSAO_PROMPTS_DIR` points."""
-    override = os.environ.get("MANSAO_PROMPTS_DIR")
+    """Repository `prompts/`, or wherever `FIRENZE_PROMPTS_DIR` points."""
+    override = os.environ.get("FIRENZE_PROMPTS_DIR")
     if override:
         return Path(override)
     return Path(__file__).resolve().parents[5] / "prompts"

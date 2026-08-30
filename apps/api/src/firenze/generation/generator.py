@@ -13,7 +13,7 @@ import hashlib
 import random
 from itertools import count
 
-from mansao.domain import (
+from firenze.domain import (
     Case,
     CaseWithSolution,
     Character,
@@ -23,8 +23,8 @@ from mansao.domain import (
     Scope,
     Solution,
 )
-from mansao.generation.solver import solve
-from mansao.generation.validation import validate
+from firenze.generation.solver import solve
+from firenze.generation.validation import validate
 
 GENERATOR_VERSION = "2"
 

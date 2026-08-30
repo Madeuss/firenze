@@ -1,4 +1,4 @@
--- Roda uma vez, na criação do volume. Para reexecutar: make down && docker volume rm mansao_pgdata
+-- Roda uma vez, na criação do volume. Para reexecutar: make down && docker volume rm firenze_pgdata
 --
 -- pgaudit fica de fora aqui de propósito: exige shared_preload_libraries e não
 -- vem na imagem pgvector. É extensão do DBaaS da Magalu (ADR-0002), habilitada

@@ -6,10 +6,10 @@ that seed, not about the generator.
 
 import pytest
 
-from mansao.domain import CaseWithSolution, FactKind, Role
-from mansao.generation import InvalidCase, generate, solve, validate
-from mansao.generation.solver import reachable_facts
-from mansao.generation.validation import rn_004_no_overlap
+from firenze.domain import CaseWithSolution, FactKind, Role
+from firenze.generation import InvalidCase, generate, solve, validate
+from firenze.generation.solver import reachable_facts
+from firenze.generation.validation import rn_004_no_overlap
 
 SEEDS = range(1, 41)
 

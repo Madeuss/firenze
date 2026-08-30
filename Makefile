@@ -18,16 +18,16 @@ logs: ## segue os logs do compose
 	$(COMPOSE) logs -f
 
 psql: ## abre psql no banco local
-	$(COMPOSE) exec db psql -U mansao -d mansao
+	$(COMPOSE) exec db psql -U firenze -d firenze
 
 install: ## sincroniza o venv de apps/api a partir do uv.lock
 	cd $(API) && uv sync --extra dev
 
 api: ## roda a API local com reload (sem container)
-	cd $(API) && uv run uvicorn mansao.main:app --reload --port 8000
+	cd $(API) && uv run uvicorn firenze.main:app --reload --port 8000
 
 case: ## gera um caso (make case SEED=42 [LOCALE=en] [REVEAL=1] [VENEER=1])
-	cd $(API) && uv run mansao generate --seed $(or $(SEED),1) --locale $(or $(LOCALE),pt-BR) $(if $(REVEAL),--reveal,) $(if $(VENEER),--veneer,)
+	cd $(API) && uv run firenze generate --seed $(or $(SEED),1) --locale $(or $(LOCALE),pt-BR) $(if $(REVEAL),--reveal,) $(if $(VENEER),--veneer,)
 
 openapi: ## regenera apps/api/openapi.json
 	cd $(API) && uv run python scripts/dump_openapi.py

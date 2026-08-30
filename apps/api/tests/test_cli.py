@@ -1,6 +1,6 @@
 import pytest
 
-from mansao.cli import main
+from firenze.cli import main
 
 Capture = pytest.CaptureFixture[str]
 

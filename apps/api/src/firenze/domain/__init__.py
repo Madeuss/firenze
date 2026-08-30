@@ -1,6 +1,6 @@
 """Domain model. Vocabulary in docs/01-dominio.md."""
 
-from mansao.domain.models import (
+from firenze.domain.models import (
     Case,
     CaseWithSolution,
     Character,
