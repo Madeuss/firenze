@@ -2,17 +2,20 @@ from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-Ambiente = Literal["dev", "staging", "prod"]
+Environment = Literal["dev", "staging", "prod"]
 
 
-class Configuracao(BaseSettings):
-    """Configuração do processo. Prefixo MANSAO_ para não colidir com nada."""
+class Settings(BaseSettings):
+    """Process configuration. MANSAO_ prefix so nothing collides."""
 
     model_config = SettingsConfigDict(env_prefix="MANSAO_", env_file=".env", extra="ignore")
 
-    ambiente: Ambiente = "dev"
+    environment: Environment = "dev"
     database_url: str = "postgresql+psycopg://mansao:mansao@localhost:5433/mansao"
     redis_url: str = "redis://localhost:6379/0"
+    veneer_model: str = "claude-haiku-4-5"
+    """Which model writes the veneer. Env-switchable because it is the one
+    knob that moves cost per case."""
 
 
-config = Configuracao()
+settings = Settings()

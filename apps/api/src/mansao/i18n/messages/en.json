@@ -1,24 +1,50 @@
 {
-  "clock": { "cycle": 12, "pattern": "{hour}:{minute} {suffix}", "am": "am", "pm": "pm" },
-
-  "rooms": {
-    "library": { "name": "the library", "preposition": "in" },
-    "parlour": { "name": "the parlour", "preposition": "in" },
-    "dining_room": { "name": "the dining room", "preposition": "in" },
-    "kitchen": { "name": "the kitchen", "preposition": "in" },
-    "cellar": { "name": "the wine cellar", "preposition": "in" },
-    "study": { "name": "the study", "preposition": "in" },
-    "conservatory": { "name": "the conservatory", "preposition": "in" },
-    "basement": { "name": "the basement", "preposition": "in" }
+  "clock": {
+    "cycle": 12,
+    "pattern": "{hour}:{minute} {suffix}",
+    "am": "am",
+    "pm": "pm"
   },
-
+  "rooms": {
+    "library": {
+      "name": "the library",
+      "preposition": "in"
+    },
+    "parlour": {
+      "name": "the parlour",
+      "preposition": "in"
+    },
+    "dining_room": {
+      "name": "the dining room",
+      "preposition": "in"
+    },
+    "kitchen": {
+      "name": "the kitchen",
+      "preposition": "in"
+    },
+    "cellar": {
+      "name": "the wine cellar",
+      "preposition": "in"
+    },
+    "study": {
+      "name": "the study",
+      "preposition": "in"
+    },
+    "conservatory": {
+      "name": "the conservatory",
+      "preposition": "in"
+    },
+    "basement": {
+      "name": "the basement",
+      "preposition": "in"
+    }
+  },
   "facts": {
     "body": "{victim}'s body was found {room}, around {time}.",
     "presence": "{character} was {room} at {time}, with {witness} present.",
     "secret": "{character} {secret} — and was {room} at {time}.",
     "clue": "{witness} saw, {room}, a personal item of {character}'s that had no business being there at {time}."
   },
-
   "secrets": {
     "cellar_wine": "had been siphoning wine from the cellar to resell",
     "reads_the_mail": "had been reading the host's correspondence",
@@ -27,21 +53,18 @@
     "forged_signature": "forged a signature in the ledger",
     "hoarded_objects": "was keeping objects that did not belong to them"
   },
-
   "means": {
     "bronze_candlestick": "a bronze candlestick",
     "poisoned_decanter": "poison in the decanter",
     "letter_opener": "a letter opener",
     "curtain_cord": "a curtain cord"
   },
-
   "motives": {
     "inheritance": "an inheritance about to be redirected the next morning",
     "blackmail": "blackmail about to become a scandal",
     "dissolved_partnership": "a partnership dissolved without settling accounts",
     "old_forgery": "a letter proving an old forgery"
   },
-
   "labels": {
     "case": "Case",
     "generator": "generator",
@@ -59,6 +82,7 @@
     "deduced": "deduced",
     "chain": "chain",
     "secrets": "SECRETS (why the innocent lie)",
-    "hidden": "Solution withheld. Use --reveal to see it."
+    "hidden": "Solution withheld. Use --reveal to see it.",
+    "language_name": "English"
   }
 }

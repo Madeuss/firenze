@@ -4,35 +4,35 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 from mansao import __version__
-from mansao.config import Ambiente, config
+from mansao.config import Environment, settings
 
 
-class Saude(BaseModel):
-    """Resposta do liveness probe."""
+class Health(BaseModel):
+    """Liveness probe response."""
 
     status: Literal["ok"] = "ok"
-    versao: str
-    ambiente: Ambiente
+    version: str
+    environment: Environment
 
 
-def criar_app() -> FastAPI:
+def create_app() -> FastAPI:
     app = FastAPI(
         title="Mansão API",
         version=__version__,
-        summary="Core de IA e domínio do jogo de mistério.",
+        summary="AI core and domain of the mystery game.",
         description=(
-            "Dono de todo o domínio determinístico e de toda chamada a LLM (ADR-0003). "
-            "O front nunca fala com o provedor de modelo nem com o banco."
+            "Owns the whole deterministic domain and every call to a model (ADR-0003). "
+            "The front end never talks to the model provider or to the database."
         ),
     )
 
     @app.get("/health", tags=["infra"], summary="Liveness")
-    def health() -> Saude:
-        """Diz se o processo está de pé. Não toca no banco de propósito:
-        readiness com dependências chega junto com o schema (fase 1)."""
-        return Saude(versao=__version__, ambiente=config.ambiente)
+    def health() -> Health:
+        """Whether the process is up. Deliberately does not touch the database:
+        readiness with dependencies arrives with the schema (phase 1)."""
+        return Health(version=__version__, environment=settings.environment)
 
     return app
 
 
-app = criar_app()
+app = create_app()

@@ -7,6 +7,7 @@ dependencies = [
     "fastapi>=0.115",
     "uvicorn[standard]>=0.34",
     "pydantic-settings>=2.7",
+    "anthropic>=1.2.0",
 ]
 
 [project.scripts]

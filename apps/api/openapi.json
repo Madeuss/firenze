@@ -1,16 +1,16 @@
 {
   "components": {
     "schemas": {
-      "Saude": {
-        "description": "Resposta do liveness probe.",
+      "Health": {
+        "description": "Liveness probe response.",
         "properties": {
-          "ambiente": {
+          "environment": {
             "enum": [
               "dev",
               "staging",
               "prod"
             ],
-            "title": "Ambiente",
+            "title": "Environment",
             "type": "string"
           },
           "status": {
@@ -19,23 +19,23 @@
             "title": "Status",
             "type": "string"
           },
-          "versao": {
-            "title": "Versao",
+          "version": {
+            "title": "Version",
             "type": "string"
           }
         },
         "required": [
-          "versao",
-          "ambiente"
+          "version",
+          "environment"
         ],
-        "title": "Saude",
+        "title": "Health",
         "type": "object"
       }
     }
   },
   "info": {
-    "description": "Dono de todo o domínio determinístico e de toda chamada a LLM (ADR-0003). O front nunca fala com o provedor de modelo nem com o banco.",
-    "summary": "Core de IA e domínio do jogo de mistério.",
+    "description": "Owns the whole deterministic domain and every call to a model (ADR-0003). The front end never talks to the model provider or to the database.",
+    "summary": "AI core and domain of the mystery game.",
     "title": "Mansão API",
     "version": "0.1.0"
   },
@@ -43,14 +43,14 @@
   "paths": {
     "/health": {
       "get": {
-        "description": "Diz se o processo está de pé. Não toca no banco de propósito:\nreadiness com dependências chega junto com o schema (fase 1).",
+        "description": "Whether the process is up. Deliberately does not touch the database:\nreadiness with dependencies arrives with the schema (phase 1).",
         "operationId": "health_health_get",
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Saude"
+                  "$ref": "#/components/schemas/Health"
                 }
               }
             },
