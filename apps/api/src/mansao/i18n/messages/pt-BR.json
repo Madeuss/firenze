@@ -1,24 +1,50 @@
 {
-  "clock": { "cycle": 24, "pattern": "{hour}h{minute}", "am": "", "pm": "" },
-
-  "rooms": {
-    "library": { "name": "biblioteca", "preposition": "na" },
-    "parlour": { "name": "salão", "preposition": "no" },
-    "dining_room": { "name": "sala de jantar", "preposition": "na" },
-    "kitchen": { "name": "cozinha", "preposition": "na" },
-    "cellar": { "name": "adega", "preposition": "na" },
-    "study": { "name": "escritório", "preposition": "no" },
-    "conservatory": { "name": "jardim de inverno", "preposition": "no" },
-    "basement": { "name": "porão", "preposition": "no" }
+  "clock": {
+    "cycle": 24,
+    "pattern": "{hour}h{minute}",
+    "am": "",
+    "pm": ""
   },
-
+  "rooms": {
+    "library": {
+      "name": "biblioteca",
+      "preposition": "na"
+    },
+    "parlour": {
+      "name": "salão",
+      "preposition": "no"
+    },
+    "dining_room": {
+      "name": "sala de jantar",
+      "preposition": "na"
+    },
+    "kitchen": {
+      "name": "cozinha",
+      "preposition": "na"
+    },
+    "cellar": {
+      "name": "adega",
+      "preposition": "na"
+    },
+    "study": {
+      "name": "escritório",
+      "preposition": "no"
+    },
+    "conservatory": {
+      "name": "jardim de inverno",
+      "preposition": "no"
+    },
+    "basement": {
+      "name": "porão",
+      "preposition": "no"
+    }
+  },
   "facts": {
     "body": "O corpo de {victim} foi encontrado {room}, por volta das {time}.",
     "presence": "{character} estava {room} às {time}, na presença de {witness}.",
     "secret": "{character} {secret} — estava {room} às {time}.",
     "clue": "{witness} viu, {room}, um objeto pessoal de {character} que não deveria estar ali às {time}."
   },
-
   "secrets": {
     "cellar_wine": "desviava vinho da adega para revender",
     "reads_the_mail": "lia a correspondência do anfitrião",
@@ -27,21 +53,18 @@
     "forged_signature": "falsificou uma assinatura no livro-caixa",
     "hoarded_objects": "guardava objetos que não lhe pertenciam"
   },
-
   "means": {
     "bronze_candlestick": "castiçal de bronze",
     "poisoned_decanter": "veneno no decanter",
     "letter_opener": "abridor de cartas",
     "curtain_cord": "corda de cortina"
   },
-
   "motives": {
     "inheritance": "herança que seria redirecionada na manhã seguinte",
     "blackmail": "chantagem prestes a virar escândalo",
     "dissolved_partnership": "sociedade desfeita sem acerto de contas",
     "old_forgery": "carta que provava uma falsificação antiga"
   },
-
   "labels": {
     "case": "Caso",
     "generator": "gerador",
@@ -59,6 +82,7 @@
     "deduced": "deduziu",
     "chain": "cadeia",
     "secrets": "SEGREDOS (por que os inocentes mentem)",
-    "hidden": "Solução omitida. Use --reveal para vê-la."
+    "hidden": "Solução omitida. Use --reveal para vê-la.",
+    "language_name": "português do Brasil"
   }
 }

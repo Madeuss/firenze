@@ -10,7 +10,7 @@ def test_health_responde_ok() -> None:
     resposta = cliente.get("/health")
 
     assert resposta.status_code == 200
-    assert resposta.json() == {"status": "ok", "versao": __version__, "ambiente": "dev"}
+    assert resposta.json() == {"status": "ok", "version": __version__, "environment": "dev"}
 
 
 def test_openapi_e_servido() -> None:

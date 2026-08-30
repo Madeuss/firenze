@@ -34,7 +34,7 @@ services:
     build:
       context: ../../apps/api
     environment:
-      MANSAO_AMBIENTE: dev
+      MANSAO_ENVIRONMENT: dev
       MANSAO_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-mansao}:${POSTGRES_PASSWORD:-mansao}@db:5432/${POSTGRES_DB:-mansao}
       MANSAO_REDIS_URL: redis://redis:6379/0
     ports:

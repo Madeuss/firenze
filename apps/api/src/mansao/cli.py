@@ -14,12 +14,19 @@ import argparse
 import sys
 from collections.abc import Sequence
 
+from mansao.config import settings
 from mansao.domain import CaseWithSolution, FactKind, Role
 from mansao.generation import UnsolvableCase, generate, solve
 from mansao.i18n import DEFAULT_LOCALE, Catalog, UnknownLocale, available_locales, load
+from mansao.veneer import CaseVeneer, VeneerRejected, VeneerUnavailable, write
 
 
-def _briefing(full: CaseWithSolution, catalog: Catalog, reveal: bool) -> str:
+def _briefing(
+    full: CaseWithSolution,
+    catalog: Catalog,
+    reveal: bool,
+    veneer: CaseVeneer | None = None,
+) -> str:
     case = full.case
     label = catalog.label
     lines = [
@@ -28,9 +35,15 @@ def _briefing(full: CaseWithSolution, catalog: Catalog, reveal: bool) -> str:
         "",
         label("cast"),
     ]
+    if veneer is not None:
+        lines = [lines[0], "", veneer.scene, "", label("cast")]
     for character in case.cast:
         mark = f" ({label('victim')})" if character.role is Role.victim else ""
         lines.append(f"  {character.id:8} {character.name}{mark}")
+        if veneer is not None and character.role is not Role.victim:
+            surface = veneer.for_character(character.id)
+            lines.append(f"           {surface.role_title}. {surface.appearance}")
+            lines.append(f"           {surface.manner}")
 
     lines += ["", label("known")]
     lines += [f"  {f.id}  {catalog.fact(case, f)}" for f in case.facts if f.scope.public]
@@ -75,6 +88,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     gen.add_argument("--suspects", type=int, default=6)
     gen.add_argument("--locale", default=DEFAULT_LOCALE, help=f"one of {available_locales()}")
     gen.add_argument("--reveal", action="store_true", help="show solution and solver chain")
+    gen.add_argument(
+        "--veneer",
+        action="store_true",
+        help="have a model write the cast and the scene; needs ANTHROPIC_API_KEY",
+    )
     gen.add_argument("--json", action="store_true", help="print the case as JSON, no solution")
 
     args = parser.parse_args(argv)
@@ -90,10 +108,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"error: {failure}", file=sys.stderr)
         return 1
 
+    veneer = None
+    if args.veneer:
+        try:
+            veneer = write(full.case, catalog, model=settings.veneer_model)
+        except (VeneerUnavailable, VeneerRejected) as failure:
+            # The case is playable without prose. Degrading beats failing.
+            print(f"veneer skipped: {failure}", file=sys.stderr)
+
     if args.json:
         print(full.case.model_dump_json(indent=2))
     else:
-        print(_briefing(full, catalog, reveal=args.reveal))
+        print(_briefing(full, catalog, reveal=args.reveal, veneer=veneer))
     return 0
 
 

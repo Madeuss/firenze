@@ -26,8 +26,8 @@ install: ## sincroniza o venv de apps/api a partir do uv.lock
 api: ## roda a API local com reload (sem container)
 	cd $(API) && uv run uvicorn mansao.main:app --reload --port 8000
 
-case: ## gera um caso (make case SEED=42 [LOCALE=en] [REVEAL=1])
-	cd $(API) && uv run mansao generate --seed $(or $(SEED),1) --locale $(or $(LOCALE),pt-BR) $(if $(REVEAL),--reveal,)
+case: ## gera um caso (make case SEED=42 [LOCALE=en] [REVEAL=1] [VENEER=1])
+	cd $(API) && uv run mansao generate --seed $(or $(SEED),1) --locale $(or $(LOCALE),pt-BR) $(if $(REVEAL),--reveal,) $(if $(VENEER),--veneer,)
 
 openapi: ## regenera apps/api/openapi.json
 	cd $(API) && uv run python scripts/dump_openapi.py
