@@ -38,6 +38,11 @@ docs: add ADR-0004 on orchestration
 Corpo do commit cita regra por número (`RN-012`), nunca transcreve o texto dela.
 Sem trailers de coautoria.
 
+PR que entrega uma épica fecha a issue com a palavra-chave **colada** na
+referência — `Closes #5`. O GitHub não reconhece `Closes E1 (#5)`: a issue não
+fecha, o PR não aparece em *Linked pull requests* no board, e a rastreabilidade
+vira arqueologia no histórico.
+
 Nunca `--no-verify`. Se o hook atrapalha, conserte o hook.
 
 ## O que o CI cobra
