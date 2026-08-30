@@ -7,10 +7,10 @@ normal way i18n rots, and it fails here instead of in front of a player.
 
 import pytest
 
-from mansao.domain import FactKind
-from mansao.generation import generate
-from mansao.generation.generator import MEANS_KEYS, MOTIVE_KEYS, ROOMS, SECRET_KEYS
-from mansao.i18n import UnknownLocale, available_locales, load
+from firenze.domain import FactKind
+from firenze.generation import generate
+from firenze.generation.generator import MEANS_KEYS, MOTIVE_KEYS, ROOMS, SECRET_KEYS
+from firenze.i18n import UnknownLocale, available_locales, load
 
 LOCALES = available_locales()
 

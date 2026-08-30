@@ -1,6 +1,6 @@
 """Case generator CLI.
 
-`mansao generate --seed 42` prints the case as a player would receive it. The
+`firenze generate --seed 42` prints the case as a player would receive it. The
 solution only shows with `--reveal`, and that is not decoration: if printing the
 culprit were the default, running the command while developing would spoil every
 case you meant to play.
@@ -14,11 +14,11 @@ import argparse
 import sys
 from collections.abc import Sequence
 
-from mansao.config import settings
-from mansao.domain import CaseWithSolution, FactKind, Role
-from mansao.generation import UnsolvableCase, generate, solve
-from mansao.i18n import DEFAULT_LOCALE, Catalog, UnknownLocale, available_locales, load
-from mansao.veneer import CaseVeneer, VeneerRejected, VeneerUnavailable, write
+from firenze.config import settings
+from firenze.domain import CaseWithSolution, FactKind, Role
+from firenze.generation import UnsolvableCase, generate, solve
+from firenze.i18n import DEFAULT_LOCALE, Catalog, UnknownLocale, available_locales, load
+from firenze.veneer import CaseVeneer, VeneerRejected, VeneerUnavailable, write
 
 
 def _briefing(
@@ -80,7 +80,7 @@ def _briefing(
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="mansao", description="Mansão case generator.")
+    parser = argparse.ArgumentParser(prog="firenze", description="Firenze case generator.")
     sub = parser.add_subparsers(dest="command", required=True)
 
     gen = sub.add_parser("generate", help="generate a case from a seed")

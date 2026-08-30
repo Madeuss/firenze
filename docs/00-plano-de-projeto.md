@@ -1,4 +1,4 @@
-# Plano de Projeto — Mansão (working title)
+# Plano de Projeto — Firenze
 
 > Jogo de mistério investigativo com NPCs agênticos.
 > Documento vivo. Commitar em `docs/00-plano-de-projeto.md` e atualizar a cada fase.
@@ -32,7 +32,7 @@ com o código que ela descreve. Diagrama que não está em Git apodrece.
 ### Estrutura (monorepo)
 
 ```
-mansao/
+firenze/
 ├── README.md                    # o que é, como rodar em 5 min
 ├── CONTRIBUTING.md              # convenções (mesmo solo — disciplina)
 ├── CHANGELOG.md                 # gerado por conventional commits
@@ -197,14 +197,14 @@ Níveis 1 e 2 bastam. Nível 3 só para o subsistema de agentes.
 
 ```mermaid
 C4Context
-    title Contexto — Mansão
+    title Contexto — Firenze
     Person(jogador, "Jogador")
-    System(mansao, "Mansão", "Jogo de mistério com NPCs agênticos")
+    System(firenze, "Firenze", "Jogo de mistério com NPCs agênticos")
     System_Ext(llm, "Provedor LLM", "Inferência dos NPCs")
     System_Ext(obs, "Langfuse", "Tracing e avaliação")
-    Rel(jogador, mansao, "Interroga, confronta, acusa")
-    Rel(mansao, llm, "Completions estruturadas")
-    Rel(mansao, obs, "Traces, custo, latência")
+    Rel(jogador, firenze, "Interroga, confronta, acusa")
+    Rel(firenze, llm, "Completions estruturadas")
+    Rel(firenze, obs, "Traces, custo, latência")
 ```
 
 ### 4.3 Diagramas de sequência

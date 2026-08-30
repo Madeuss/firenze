@@ -1,4 +1,4 @@
-# Mansão
+# Firenze
 
 Jogo de mistério investigativo com NPCs agênticos.
 Next.js (front) + FastAPI/LangGraph (core de IA) + Postgres com pgvector.

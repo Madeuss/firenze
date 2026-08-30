@@ -1,4 +1,4 @@
-# Mansão
+# Firenze
 
 An investigative mystery game where the suspects are LLM-driven NPCs. You
 question them in free text, confront them with evidence, and name a culprit.
@@ -70,7 +70,7 @@ Roughly half of the mysteries you get by sampling constraints at random are
 unsolvable, and they *look* fine until a player wastes an hour on one. So a case
 is not publishable until an automated solver proves a deduction path exists.
 
-[`generation/solver.py`](apps/api/src/mansao/generation/solver.py) takes `Case`
+[`generation/solver.py`](apps/api/src/firenze/generation/solver.py) takes `Case`
 and never `CaseWithSolution` — it cannot read the answer, and the type signature
 is what guarantees that rather than the discipline of whoever writes the next
 function. It starts from the public facts, adds everything a suspect would
@@ -83,7 +83,7 @@ regenerated.
 "Do not reveal the solution" in a system prompt is a wish. The solution is a
 separate entity from the case, so the function that assembles an NPC's context
 takes a type that has no path to the culprit
-([`domain/models.py`](apps/api/src/mansao/domain/models.py)).
+([`domain/models.py`](apps/api/src/firenze/domain/models.py)).
 
 ```mermaid
 flowchart LR
@@ -138,9 +138,9 @@ curl localhost:8000/health
 
 | Path | What lives there |
 |---|---|
-| [`apps/api/src/mansao/domain/`](apps/api/src/mansao/domain/) | Entities. Structure only — no prose, no rendered sentence |
-| [`apps/api/src/mansao/generation/`](apps/api/src/mansao/generation/) | Generator, solver, and the invariant checks |
-| [`apps/api/src/mansao/i18n/`](apps/api/src/mansao/i18n/) | Message catalogs. Grammar lives here, not in the domain |
+| [`apps/api/src/firenze/domain/`](apps/api/src/firenze/domain/) | Entities. Structure only — no prose, no rendered sentence |
+| [`apps/api/src/firenze/generation/`](apps/api/src/firenze/generation/) | Generator, solver, and the invariant checks |
+| [`apps/api/src/firenze/i18n/`](apps/api/src/firenze/i18n/) | Message catalogs. Grammar lives here, not in the domain |
 | [`docs/adr/`](docs/adr/) | Architecture decisions, with their downsides written down |
 | [`infra/compose/`](infra/compose/) | Local Postgres with pgvector, Redis, API |
 

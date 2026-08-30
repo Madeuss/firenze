@@ -34,9 +34,9 @@ German would need three different articles.
 A `Fact` carries a kind and slots — character, room id, interval index. Rooms
 are stable identifiers (`cellar`), never display names. Time is minutes on a
 clock the case defines, not a formatted string. Secrets, means and motives are
-message keys. Nothing in `mansao.domain` contains a sentence.
+message keys. Nothing in `firenze.domain` contains a sentence.
 
-Catalogs live in `mansao/i18n/messages/<locale>.json` and ship with `pt-BR` and
+Catalogs live in `firenze/i18n/messages/<locale>.json` and ship with `pt-BR` and
 `en` from day one — a second locale is the only way to know the first one is
 actually separable. **Grammar lives in the catalog**: each locale declares the
 preposition its rooms need, and its own clock format.

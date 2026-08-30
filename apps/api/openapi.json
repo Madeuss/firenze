@@ -36,7 +36,7 @@
   "info": {
     "description": "Owns the whole deterministic domain and every call to a model (ADR-0003). The front end never talks to the model provider or to the database.",
     "summary": "AI core and domain of the mystery game.",
-    "title": "Mansão API",
+    "title": "Firenze API",
     "version": "0.1.0"
   },
   "openapi": "3.1.0",

@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 
-from mansao import __version__
-from mansao.main import app
+from firenze import __version__
+from firenze.main import app
 
 cliente = TestClient(app)
 
@@ -16,5 +16,5 @@ def test_health_responde_ok() -> None:
 def test_openapi_e_servido() -> None:
     esquema = cliente.get("/openapi.json").json()
 
-    assert esquema["info"]["title"] == "Mansão API"
+    assert esquema["info"]["title"] == "Firenze API"
     assert "/health" in esquema["paths"]

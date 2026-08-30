@@ -15,7 +15,7 @@ is why the same solver works in every locale (ADR-0005).
 
 from pydantic import BaseModel, ConfigDict
 
-from mansao.domain import Case, Fact, FactKind
+from firenze.domain import Case, Fact, FactKind
 
 
 class SolverResult(BaseModel):

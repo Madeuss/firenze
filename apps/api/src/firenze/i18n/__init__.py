@@ -1,6 +1,6 @@
 """Locale catalogs: structure in, prose out."""
 
-from mansao.i18n.catalog import (
+from firenze.i18n.catalog import (
     DEFAULT_LOCALE,
     Catalog,
     MissingMessage,

@@ -1,3 +1,3 @@
 from importlib.metadata import version
 
-__version__ = version("mansao-api")
+__version__ = version("firenze-api")
