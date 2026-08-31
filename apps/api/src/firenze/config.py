@@ -13,9 +13,17 @@ class Settings(BaseSettings):
     environment: Environment = "dev"
     database_url: str = "postgresql+psycopg://firenze:firenze@localhost:5433/firenze"
     redis_url: str = "redis://localhost:6379/0"
-    veneer_model: str = "claude-haiku-4-5"
-    """Which model writes the veneer. Env-switchable because it is the one
-    knob that moves cost per case."""
+    model_provider: str = "none"
+    """Which provider backs the model port: anthropic, fake, or none.
+
+    `none` by default, deliberately. The provider is not decided yet, and a
+    default that picked one would make the decision quietly."""
+
+    model_name: str = ""
+    """Which model at that provider.
+
+    Empty by default for the same reason the provider is `none`: naming one
+    would pick a vendor. Required once a real provider is configured."""
 
 
 settings = Settings()

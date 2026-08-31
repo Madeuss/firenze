@@ -14,6 +14,7 @@ import pytest
 from firenze.domain import Case
 from firenze.generation import generate
 from firenze.i18n import load
+from firenze.model import ModelRefused, ModelUnavailable
 from firenze.veneer import (
     CharacterVeneer,
     VeneerDraft,
@@ -26,20 +27,23 @@ from firenze.veneer import (
 from firenze.veneer.writer import _render_prompt
 
 
-class StubMessages:
-    def __init__(self, draft: VeneerDraft | None, stop_reason: str = "end_turn") -> None:
-        self.draft = draft
-        self.stop_reason = stop_reason
+class ScriptedModel:
+    """A model that returns exactly what a test needs it to return."""
+
+    def __init__(self, draft: VeneerDraft | None = None, failure: Exception | None = None) -> None:
+        self._draft = draft
+        self._failure = failure
         self.calls: list[dict[str, Any]] = []
 
-    def parse(self, **kwargs: Any) -> Any:
+    @property
+    def name(self) -> str:
+        return "scripted"
+
+    def complete(self, **kwargs: Any) -> Any:
         self.calls.append(kwargs)
-        return type("Response", (), {"parsed_output": self.draft, "stop_reason": self.stop_reason})
-
-
-class StubClient:
-    def __init__(self, draft: VeneerDraft | None, stop_reason: str = "end_turn") -> None:
-        self.messages = StubMessages(draft, stop_reason)
+        if self._failure is not None:
+            raise self._failure
+        return self._draft
 
 
 @pytest.fixture(scope="module")
@@ -93,13 +97,14 @@ def test_nothing_in_the_prompt_singles_out_the_culprit(case: Case) -> None:
 
 
 def test_a_good_draft_becomes_a_veneer(case: Case) -> None:
-    client = StubClient(_good_draft(case))
+    model = ScriptedModel(_good_draft(case))
 
-    veneer = write(case, load("pt-BR"), client=client, model="stub-model")
+    veneer = write(case, load("pt-BR"), model=model)
 
     assert veneer.seed == case.seed
     assert veneer.locale == "pt-BR"
     assert veneer.prompt_version == "v1"
+    assert veneer.model == "scripted", "output records what wrote it"
     # Prose is written for one setting. Carrying it keeps a cached veneer from
     # being reused for a different world that happened to share a seed.
     assert veneer.setting == case.setting
@@ -182,21 +187,30 @@ def test_a_blank_field_is_rejected(case: Case) -> None:
 
 
 def test_a_refusal_is_not_a_crash(case: Case) -> None:
-    client = StubClient(None, stop_reason="refusal")
+    model = ScriptedModel(failure=ModelRefused("policy"))
 
     with pytest.raises(VeneerUnavailable, match="declined"):
-        write(case, load("pt-BR"), client=client)
+        write(case, load("pt-BR"), model=model)
 
 
-def test_a_transport_failure_becomes_veneer_unavailable(case: Case) -> None:
-    class Exploding:
-        def parse(self, **kwargs: Any) -> Any:
-            raise ConnectionError("no route to host")
+def test_an_unavailable_model_is_not_a_crash(case: Case) -> None:
+    model = ScriptedModel(failure=ModelUnavailable("no route to host"))
 
-    client = type("C", (), {"messages": Exploding()})()
+    with pytest.raises(VeneerUnavailable, match="no route"):
+        write(case, load("pt-BR"), model=model)
 
-    with pytest.raises(VeneerUnavailable, match="model call failed"):
-        write(case, load("pt-BR"), client=client)
+
+def test_a_fake_veneer_is_rejected_by_domain_validation(case: Case) -> None:
+    """The fake fits the schema and not the case, and that is the right outcome.
+
+    It invents a cast that belongs to no mystery, so `check` refuses it. Worth
+    asserting: it is the line between "this pipeline runs offline" and "this
+    pipeline produces something a player could be shown".
+    """
+    from firenze.model import FakeModel
+
+    with pytest.raises(VeneerRejected, match="cast"):
+        write(case, load("pt-BR"), model=FakeModel())
 
 
 def test_the_prompt_file_is_the_source_of_truth() -> None:

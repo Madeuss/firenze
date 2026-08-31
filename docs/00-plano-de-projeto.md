@@ -177,13 +177,16 @@ ADR escrita para convencer, não para decidir.
   estrutura, não frase; idioma é propriedade da partida
 - [`0006`](adr/0006-english-in-code-portuguese-in-the-product.md) — código em
   inglês, produto em português
+- [`0007`](adr/0007-one-port-for-any-model-provider.md) — uma porta para
+  qualquer fornecedor de modelo, escolha do fornecedor adiada
 
 Todas as ADRs são escritas em inglês (ADR-0006) — as quatro primeiras foram
 traduzidas depois de escritas.
 
 **Na fila:** LangGraph vs orquestração própria · streaming SSE vs WebSocket ·
-API externa vs LLM self-hosted na Magalu · isolamento de contexto como fronteira
-de segurança · VM+compose antes de Kubernetes. Numeração sai na ordem em que a
+qual fornecedor de modelo (decisão adiada pela ADR-0007, com entrada nos evals
+da fase 6) · API externa vs LLM self-hosted na Magalu · isolamento de contexto
+como fronteira de segurança · VM+compose antes de Kubernetes. Numeração sai na ordem em que a
 decisão é tomada, não na ordem desta lista.
 
 ### 4.2 C4 (`docs/04-arquitetura.md`)

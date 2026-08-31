@@ -12,40 +12,27 @@ so it never receives one, and therefore cannot leak one. The canary check on the
 output is not there to catch the model; it is there to catch us, because a canary
 in this output means context assembly upstream is broken (RN-010, RN-012).
 
-The prompt lives in `prompts/veneer/`, versioned, never as a string literal.
+The prompt lives in `prompts/veneer/`, versioned, never as a string literal,
+and the model arrives through the port in `firenze.model` — this module has
+never heard of a provider (ADR-0007).
 """
 
 import os
 import re
 from pathlib import Path
-from typing import Any, Protocol, cast
 
 from firenze.domain import Case
 from firenze.i18n import Catalog
+from firenze.model import ModelRefused, ModelUnavailable, StructuredModel
 from firenze.veneer.models import CaseVeneer, VeneerDraft
 from firenze.veneer.validation import check
 
 PROMPT_VERSION = "v1"
-# Haiku: the veneer is short, structured, and its failure modes are caught by
-# validation rather than by model quality. ~US$ 0.0025 per case against a
-# R$ 0,50 per-match budget that phase 2 will spend on six NPCs and a turn each.
-DEFAULT_MODEL = "claude-haiku-4-5"
 MAX_TOKENS = 4000
 
 
 class VeneerUnavailable(RuntimeError):
     """The veneer could not be produced. The case is still playable without it."""
-
-
-class _Parseable(Protocol):
-    """The slice of the SDK this module uses, so tests can supply their own."""
-
-    def parse(self, **kwargs: Any) -> Any: ...
-
-
-class _Client(Protocol):
-    @property
-    def messages(self) -> _Parseable: ...
 
 
 def prompts_dir() -> Path:
@@ -86,41 +73,26 @@ def _render_prompt(case: Case, catalog: Catalog) -> tuple[str, str]:
     )
 
 
-def write(
-    case: Case,
-    catalog: Catalog,
-    *,
-    client: _Client | None = None,
-    model: str = DEFAULT_MODEL,
-) -> CaseVeneer:
+def write(case: Case, catalog: Catalog, *, model: StructuredModel) -> CaseVeneer:
     """Write the veneer for an approved case, or raise `VeneerUnavailable`.
 
     A rejected draft is discarded rather than repaired: a model that broke the
     cast list once will break it differently on a patch, and a half-corrected
     veneer is harder to reason about than none.
     """
-    if client is None:
-        client = _default_client()
-
     system, user = _render_prompt(case, catalog)
 
     try:
-        response = client.messages.parse(
-            model=model,
-            max_tokens=MAX_TOKENS,
+        draft = model.complete(
             system=system,
-            messages=[{"role": "user", "content": user}],
-            output_format=VeneerDraft,
+            user=user,
+            schema=VeneerDraft,
+            max_tokens=MAX_TOKENS,
         )
-    except Exception as failure:
-        raise VeneerUnavailable(f"the model call failed: {failure}") from failure
-
-    if getattr(response, "stop_reason", None) == "refusal":
-        raise VeneerUnavailable("the model declined to write this case")
-
-    draft = response.parsed_output
-    if draft is None:
-        raise VeneerUnavailable("the model returned no parseable draft")
+    except ModelRefused as refusal:
+        raise VeneerUnavailable(f"the model declined to write this case: {refusal}") from refusal
+    except ModelUnavailable as unavailable:
+        raise VeneerUnavailable(str(unavailable)) from unavailable
 
     check(draft, case)
 
@@ -130,21 +102,7 @@ def write(
         setting=case.setting,
         prompt_version=PROMPT_VERSION,
         locale=catalog.locale,
-        model=model,
+        model=model.name,
         scene=draft.scene,
         characters=draft.characters,
     )
-
-
-def _default_client() -> _Client:
-    try:
-        import anthropic
-    except ImportError as missing:  # pragma: no cover - the dependency is declared
-        raise VeneerUnavailable("the anthropic sdk is not installed") from missing
-
-    try:
-        # The SDK's own `parse` signature is narrower than the slice we use;
-        # the cast is the one place where that difference is acknowledged.
-        return cast("_Client", anthropic.Anthropic())
-    except Exception as failure:
-        raise VeneerUnavailable(f"no usable credentials: {failure}") from failure
