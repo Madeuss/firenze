@@ -9,8 +9,9 @@ character has no way of knowing.
 
 ![CI](https://github.com/Madeuss/firenze/actions/workflows/ci.yml/badge.svg)
 
-> **Status: phase 1 of 8.** The case generator and its solver work. There are no
-> NPCs yet — the next phase gives one suspect a voice. Not playable.
+> **Status: phase 2 of 8.** Cases generate and a suspect answers questions,
+> guarded end to end. The words are still synthetic — the model provider
+> (Magalu Prosa) is in pilot. Not playable yet.
 
 ## See it work
 
@@ -126,6 +127,7 @@ the database.
 ```bash
 make install                      # sync the environment from uv.lock
 make case SEED=42 REVEAL=1        # generate a case and see the solver's chain
+FIRENZE_MODEL_PROVIDER=fake \n  make ask SEED=42 WHO=sus-1 Q="onde você estava às 22h?"   # question a suspect, offline
 make check                        # lint, typecheck, tests — what CI enforces
 
 make dev                          # Postgres 16 + pgvector, Redis, the API
@@ -140,6 +142,8 @@ curl localhost:8000/health
 |---|---|
 | [`apps/api/src/firenze/domain/`](apps/api/src/firenze/domain/) | Entities. Structure only — no prose, no rendered sentence |
 | [`apps/api/src/firenze/generation/`](apps/api/src/firenze/generation/) | Generator, solver, and the invariant checks |
+| [`apps/api/src/firenze/interrogation/`](apps/api/src/firenze/interrogation/) | The turn: dossier, prompt, guards, stance machine |
+| [`apps/api/src/firenze/model/`](apps/api/src/firenze/model/) | The model port. No other module names a provider |
 | [`apps/api/src/firenze/i18n/`](apps/api/src/firenze/i18n/) | Message catalogs. Grammar lives here, not in the domain |
 | [`docs/adr/`](docs/adr/) | Architecture decisions, with their downsides written down |
 | [`infra/compose/`](infra/compose/) | Local Postgres with pgvector, Redis, API |
@@ -166,7 +170,7 @@ transcribed — duplicated text drifts.
 | Phase | Scope | Status |
 |---|---|---|
 | 0 | Foundation — repo, docs, local stack | done |
-| 1 | Case generator and deducibility solver | in progress |
+| 1 | Case generator and deducibility solver | done |
 | 2 | A single NPC: isolated dossier, structured output, streaming | |
 | 3 | Security: canary, input classifier, output filter, CI gates | |
 | 4 | Full game: six NPCs, evidence, confrontation, verdict | |

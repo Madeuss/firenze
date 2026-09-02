@@ -2,7 +2,7 @@ COMPOSE := docker compose -f infra/compose/docker-compose.yml
 API     := apps/api
 
 .DEFAULT_GOAL := help
-.PHONY: help dev down logs psql install api case openapi lint fmt typecheck test check migrate evals
+.PHONY: help dev down logs psql install api case ask openapi lint fmt typecheck test check migrate evals
 
 help: ## lista os alvos
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t/' | expand -t 14
@@ -28,6 +28,9 @@ api: ## roda a API local com reload (sem container)
 
 case: ## gera um caso (make case SEED=42 [LOCALE=en] [REVEAL=1] [VENEER=1])
 	cd $(API) && uv run firenze generate --seed $(or $(SEED),1) --locale $(or $(LOCALE),pt-BR) $(if $(REVEAL),--reveal,) $(if $(VENEER),--veneer,)
+
+ask: ## pergunta a um suspeito (make ask SEED=42 WHO=sus-1 Q="onde voce estava?")
+	cd $(API) && uv run firenze ask --seed $(or $(SEED),1) --suspect $(or $(WHO),sus-1) --question "$(Q)" --locale $(or $(LOCALE),pt-BR)
 
 openapi: ## regenera apps/api/openapi.json
 	cd $(API) && uv run python scripts/dump_openapi.py

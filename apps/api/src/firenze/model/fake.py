@@ -11,6 +11,9 @@ Two rules keep it honest:
   produced here.
 - **It is deterministic.** Same prompt, same output. A fake that varied would
   make a failing test look flaky, which is worse than no fake at all.
+- **It omits what it may omit.** Optional fields come back empty rather than
+  invented, because a made-up id is the thing every downstream check is there
+  to catch.
 
 It is not a mock of any provider and does not imitate one. It satisfies the
 port, nothing more — and note what that means: it produces output that fits a
@@ -92,9 +95,14 @@ def _value_for(annotation: Any, *, seed: str, path: str) -> Any:
     if isinstance(annotation, type) and issubclass(annotation, BaseModel):
         return _fill(annotation, seed=seed, path=path)
 
-    if args:  # Optional[X], X | None, Literal[...]
-        for candidate in args:
-            if candidate is not type(None):
-                return _value_for(candidate, seed=seed, path=path)
+    if type(None) in args:
+        # An optional field is one the model may leave out, so the fake leaves
+        # it out. Filling it would mean inventing a value — and where those
+        # fields hold ids, an invented one is exactly what domain validation
+        # exists to reject.
+        return None
+
+    if args:  # Literal[...], unions without None
+        return _value_for(args[0], seed=seed, path=path)
 
     return f"{MARKER} {path.lstrip('.')}"

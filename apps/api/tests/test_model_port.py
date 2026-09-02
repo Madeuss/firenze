@@ -33,6 +33,7 @@ class Answer(BaseModel):
     lied: bool
     turns: int
     parts: tuple[Nested, ...]
+    cited: str | None = None
 
 
 def test_the_fake_fills_any_schema() -> None:
@@ -44,6 +45,7 @@ def test_the_fake_fills_any_schema() -> None:
     assert answer.turns == 0
     assert len(answer.parts) == 1, "collections get one element, never zero"
     assert MARKER in answer.parts[0].label
+    assert answer.cited is None, "optional fields are omitted, never invented"
 
 
 def test_the_fake_is_deterministic() -> None:

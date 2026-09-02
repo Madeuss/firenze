@@ -15,9 +15,10 @@ import sys
 from collections.abc import Sequence
 
 from firenze.config import settings
-from firenze.domain import CaseWithSolution, FactKind, Role
+from firenze.domain import CaseWithSolution, FactKind, Match, Role
 from firenze.generation import UnsolvableCase, generate, solve
 from firenze.i18n import DEFAULT_LOCALE, Catalog, UnknownLocale, available_locales, load
+from firenze.interrogation import ask
 from firenze.model import ModelUnavailable, resolve
 from firenze.veneer import CaseVeneer, VeneerRejected, VeneerUnavailable, write
 
@@ -96,11 +97,20 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     gen.add_argument("--json", action="store_true", help="print the case as JSON, no solution")
 
+    interrogate = sub.add_parser("ask", help="put a question to one suspect")
+    interrogate.add_argument("--seed", type=int, required=True)
+    interrogate.add_argument("--suspect", required=True, help="e.g. sus-1")
+    interrogate.add_argument("--question", required=True)
+    interrogate.add_argument("--locale", default=DEFAULT_LOCALE)
+
     args = parser.parse_args(argv)
 
     # The Windows console opens in cp1252 and eats the accents in the briefing.
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
+    if args.command == "ask":
+        return _ask(args)
 
     try:
         catalog = load(args.locale)
@@ -127,6 +137,44 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(full.case.model_dump_json(indent=2))
     else:
         print(_briefing(full, catalog, reveal=args.reveal, veneer=veneer))
+    return 0
+
+
+def _ask(args: argparse.Namespace) -> int:
+    """One question, one guarded answer.
+
+    Runs end to end with FIRENZE_MODEL_PROVIDER=fake: the dossier, the prompt,
+    the schema, the scope and canary checks and the stance machine are all
+    exercised. Only the words are synthetic.
+    """
+    try:
+        catalog = load(args.locale)
+        model = resolve(
+            settings.model_provider,
+            model=settings.model_name,
+            base_url=settings.model_base_url,
+            api_key=settings.model_api_key.get_secret_value(),
+        )
+        match = Match(full_case=generate(seed=args.seed), locale=args.locale)
+        result = ask(match, args.suspect, args.question, catalog=catalog, model=model)
+    except (UnsolvableCase, UnknownLocale, ModelUnavailable, KeyError, ValueError) as failure:
+        print(f"error: {failure}", file=sys.stderr)
+        return 1
+
+    name = match.case.name_of(args.suspect)
+    if result.statement is None:
+        print(f"{name} não respondeu. Motivo: {result.rejection}", file=sys.stderr)
+        print(f"Turnos restantes: {result.match.turns_left}")
+        return 1
+
+    print(f"{name} ({result.statement.stance.value})")
+    print(f"  {result.statement.line}")
+    print()
+    print(f"  mentiu: {result.statement.lied}")
+    print(f"  fato citado: {result.statement.fact_referenced or '—'}")
+    if result.stance_overruled:
+        print("  postura sugerida foi recusada pela máquina de estados")
+    print(f"  turnos restantes: {result.match.turns_left}")
     return 0
 
 

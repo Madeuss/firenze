@@ -17,13 +17,12 @@ and the model arrives through the port in `firenze.model` — this module has
 never heard of a provider (ADR-0007).
 """
 
-import os
 import re
-from pathlib import Path
 
 from firenze.domain import Case
 from firenze.i18n import Catalog
 from firenze.model import ModelRefused, ModelUnavailable, StructuredModel
+from firenze.prompts import prompts_dir
 from firenze.veneer.models import CaseVeneer, VeneerDraft
 from firenze.veneer.validation import check
 
@@ -33,14 +32,6 @@ MAX_TOKENS = 4000
 
 class VeneerUnavailable(RuntimeError):
     """The veneer could not be produced. The case is still playable without it."""
-
-
-def prompts_dir() -> Path:
-    """Repository `prompts/`, or wherever `FIRENZE_PROMPTS_DIR` points."""
-    override = os.environ.get("FIRENZE_PROMPTS_DIR")
-    if override:
-        return Path(override)
-    return Path(__file__).resolve().parents[5] / "prompts"
 
 
 def load_prompt(version: str = PROMPT_VERSION) -> tuple[str, str]:
