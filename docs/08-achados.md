@@ -128,6 +128,18 @@ barato — contra uma VM que consome créditos dormindo.
 
 ---
 
+### 2026-08-31 — Isolamento também se perde no SQL
+
+A solução ficou em tabela própria, não em coluna de `cases`. Como coluna, o
+culpado viajaria em todo `SELECT *`, e a garantia duraria só até alguém escrever
+a query conveniente ([#21](https://github.com/Madeuss/firenze/pull/21)).
+
+**Por que importa:** o mesmo argumento que separou `Case` de `Solution` no
+domínio vale uma camada abaixo. Fronteira que existe só em um nível vaza no
+outro.
+
+---
+
 ## Idioma
 
 ### 2026-08-29 — Gramática portuguesa vazou para dentro do modelo de domínio
