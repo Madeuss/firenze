@@ -20,6 +20,8 @@ Next.js (front) + FastAPI/LangGraph (core de IA) + Postgres com pgvector.
 - Toda saída de LLM é validada por schema Pydantic versionado.
   Mudou o schema, roda os evals antes de commitar.
 - Prompts vivem em `prompts/`, versionados, nunca em string literal.
+- Modelo só se chama pela porta em `firenze.model`. Nenhum outro módulo
+  importa SDK de fornecedor. (ADR-0007)
 - Código em inglês, docs em português, conteúdo do jogo em português.
   Domínio guarda estrutura; frase pronta só no catálogo. (ADR-0005/0006)
 - Conventional Commits. Nada direto na main.

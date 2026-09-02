@@ -18,6 +18,7 @@ from firenze.config import settings
 from firenze.domain import CaseWithSolution, FactKind, Role
 from firenze.generation import UnsolvableCase, generate, solve
 from firenze.i18n import DEFAULT_LOCALE, Catalog, UnknownLocale, available_locales, load
+from firenze.model import ModelUnavailable, resolve
 from firenze.veneer import CaseVeneer, VeneerRejected, VeneerUnavailable, write
 
 
@@ -111,8 +112,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     veneer = None
     if args.veneer:
         try:
-            veneer = write(full.case, catalog, model=settings.veneer_model)
-        except (VeneerUnavailable, VeneerRejected) as failure:
+            model = resolve(
+                settings.model_provider,
+                model=settings.model_name,
+                base_url=settings.model_base_url,
+                api_key=settings.model_api_key.get_secret_value(),
+            )
+            veneer = write(full.case, catalog, model=model)
+        except (VeneerUnavailable, VeneerRejected, ModelUnavailable) as failure:
             # The case is playable without prose. Degrading beats failing.
             print(f"veneer skipped: {failure}", file=sys.stderr)
 
