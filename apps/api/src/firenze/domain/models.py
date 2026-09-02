@@ -34,6 +34,21 @@ class FactKind(StrEnum):
     """A suspect's private secret. A reason to lie without being the culprit."""
 
 
+class Stance(StrEnum):
+    """How a suspect is holding up. Transitions are code, never the model's call.
+
+    The model may suggest one; the backend validates it against the machine in
+    `firenze.interrogation.stance` and keeps the current stance if the
+    suggestion is not a legal move (RN-023). `broken` is absorbing and is only
+    reachable by confrontation, which arrives in phase 4.
+    """
+
+    cooperative = "cooperative"
+    evasive = "evasive"
+    hostile = "hostile"
+    broken = "broken"
+
+
 class Character(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -149,3 +164,47 @@ class CaseWithSolution(BaseModel):
 
     case: Case
     solution: Solution
+
+
+class Statement(BaseModel):
+    """Something a suspect said, kept because contradiction is found in the record.
+
+    Persisted per turn and per character rather than per match: RN-021 compares a
+    suspect against themselves, and nobody contradicts anybody else.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    turn: int
+    character: str
+    question: str
+    line: str
+    stance: Stance
+    lied: bool
+    fact_referenced: str | None = None
+
+
+class Match(BaseModel):
+    """One playthrough. Holds the solution, because the server has to know it.
+
+    The boundary is not here — it is the dossier. `Match` is what the verdict
+    will be computed from (RN-032); `Dossier` is what a model is allowed to see.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    full_case: CaseWithSolution
+    locale: str
+    turns_left: int = 30
+    stances: dict[str, Stance] = Field(default_factory=dict)
+    statements: tuple[Statement, ...] = ()
+
+    @property
+    def case(self) -> Case:
+        return self.full_case.case
+
+    def stance_of(self, character: str) -> Stance:
+        return self.stances.get(character, Stance.cooperative)
+
+    def said_by(self, character: str) -> tuple[Statement, ...]:
+        return tuple(s for s in self.statements if s.character == character)

@@ -6,9 +6,12 @@ from firenze.domain.models import (
     Character,
     Fact,
     FactKind,
+    Match,
     Role,
     Scope,
     Solution,
+    Stance,
+    Statement,
 )
 
 __all__ = [
@@ -17,7 +20,10 @@ __all__ = [
     "Character",
     "Fact",
     "FactKind",
+    "Match",
     "Role",
     "Scope",
     "Solution",
+    "Stance",
+    "Statement",
 ]

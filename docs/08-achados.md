@@ -39,6 +39,28 @@ problema depois de uma hora perdida.
 **Por que importa:** é a diferença entre "gerei conteúdo com IA" e "gerei
 conteúdo verificável". O verificador é mais interessante que o gerador.
 
+### 2026-08-31 — O culpado não sabia que era culpado
+
+O `Case` não carrega a solução, e a presença do culpado na cena nunca virou fato
+— ninguém o viu, então não houve testemunha para gerar o fato. Resultado: o
+dossiê dele não tinha nada de incriminador, e ele se comportaria exatamente como
+um inocente sem álibi ([#20](https://github.com/Madeuss/firenze/pull/20)).
+
+A RN-011 já previa: *"o culpado sabe apenas da própria culpa"*. A saída foi o
+`Dossier` virar a fronteira — ele é o único lugar que lê a solução, e o que
+atravessa é **um bit sobre si mesmo**, nada mais.
+
+**Por que importa:** a regra estava certa e o código não a exercia. Só apareceu
+quando o NPC precisou de fato responder — invariante que nunca foi exercitada é
+invariante que ninguém verificou.
+
+### 2026-08-31 — Falso deve omitir opcional, não inventar
+
+O `FakeModel` preenchia `fact_referenced` com um id sintético, e o guard de
+escopo rejeitava a resposta — corretamente, porque o id não existia no dossiê.
+Campo opcional é campo que o modelo pode deixar de fora; inventar valor ali é
+justamente o que a validação existe para pegar.
+
 ### 2026-08-31 — Semente sozinha não identifica um caso
 
 `seed` só identifica junto com versão do gerador **e cenário**. Enquanto existe
