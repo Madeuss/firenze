@@ -149,6 +149,9 @@ código (`# RN-012`) precisa de um endereço estável.
   partida e da postura.
 - **[`02-regras-de-negocio.md`](02-regras-de-negocio.md)** — RN-001 a RN-042,
   cada uma com o ponto onde é imposta e o que prova que ela vale.
+- **[`08-achados.md`](08-achados.md)** — log de descobertas: o que surpreendeu, o
+  que quebrou de um jeito que ensinou algo. Alimenta artigo e evita reaprender o
+  mesmo tropeço.
 
 Regra nova entra em `02`, nunca aqui. Este plano pode citar número, nunca
 transcrever texto de regra.
