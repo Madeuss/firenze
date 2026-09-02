@@ -41,9 +41,30 @@ jobs:
     defaults:
       run:
         working-directory: apps/api
+    # The storage tests run against the database the application actually uses.
+    # Passing on SQLite would prove the tests pass, not that the schema works.
+    services:
+      db:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: firenze
+          POSTGRES_PASSWORD: firenze
+          POSTGRES_DB: firenze
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U firenze"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      FIRENZE_TEST_DATABASE_URL: postgresql+psycopg://firenze:firenze@localhost:5432/firenze
+      FIRENZE_DATABASE_URL: postgresql+psycopg://firenze:firenze@localhost:5432/firenze
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-python-env
+      - name: migrations apply cleanly from scratch
+        run: uv run alembic upgrade head
       - run: uv run pytest
       - name: contrato commitado está atualizado
         run: |

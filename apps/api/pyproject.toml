@@ -8,6 +8,9 @@ dependencies = [
     "uvicorn[standard]>=0.34",
     "pydantic-settings>=2.7",
     "openai>=3.6.0",
+    "sqlalchemy>=2.0",
+    "psycopg[binary]>=3.2",
+    "alembic>=1.19.1",
 ]
 
 [project.scripts]
@@ -32,6 +35,9 @@ packages = ["src/firenze"]
 line-length = 100
 target-version = "py313"
 src = ["src", "tests"]
+# Alembic writes these; reformatting generated files on every autogenerate is
+# churn that hides the one line a human actually changed.
+extend-exclude = ["migrations/versions"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
@@ -40,6 +46,7 @@ select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
 python_version = "3.13"
 strict = true
 warn_unreachable = true
+exclude = ["migrations/versions"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
