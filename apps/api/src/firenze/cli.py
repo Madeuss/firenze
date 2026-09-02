@@ -112,7 +112,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     veneer = None
     if args.veneer:
         try:
-            model = resolve(settings.model_provider, settings.model_name)
+            model = resolve(
+                settings.model_provider,
+                model=settings.model_name,
+                base_url=settings.model_base_url,
+                api_key=settings.model_api_key.get_secret_value(),
+            )
             veneer = write(full.case, catalog, model=model)
         except (VeneerUnavailable, VeneerRejected, ModelUnavailable) as failure:
             # The case is playable without prose. Degrading beats failing.

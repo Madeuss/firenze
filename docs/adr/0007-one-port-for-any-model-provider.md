@@ -1,8 +1,8 @@
-# ADR-0007: One port for any model provider, and the provider chosen later
+# ADR-0007: One port for any model provider
 
 ## Status
 
-Accepted — 2026-08-31
+Accepted — 2026-08-31. The provider it deferred was chosen in ADR-0008.
 
 ## Context
 
@@ -41,8 +41,9 @@ failure would hide it exactly when it matters.
 
 Adapters live in the same package and nowhere else. Two exist:
 
-- **`AnthropicModel`** — the code that was already written, now one
-  implementation rather than the implementation. Not a commitment.
+- **`OpenAICompatibleModel`** — any endpoint speaking the OpenAI
+  chat-completions dialect, which is one base URL away from being a different
+  provider. ADR-0008 points it at Magalu Prosa.
 - **`FakeModel`** — no network, no key, no money. Deterministic, and it names
   itself `fake` so anything it wrote is traceable to it.
 
@@ -72,7 +73,8 @@ draw the line this tightly.
 − The port cannot express per-provider tuning — cache breakpoints, effort
   levels — so cost optimisation that depends on them is invisible from outside
   the adapter.
-− Two adapters to keep working, one of which nothing in production will use.
+− The port ships tested against fakes only. Its first contact with a real
+  endpoint will find something the design did not anticipate.
 − A fake that satisfies schemas will still fail domain validation, because it
   invents content that belongs to no case. That is correct, and it means the
   fake proves pipelines, never output quality.
@@ -90,7 +92,9 @@ draw the line this tightly.
   project has already narrowed to a single call. Worth revisiting if the port
   ever needs streaming, tool calling and caching at once — at which point
   reimplementing it would be the mistake.
-- **Decide the provider now.** The honest blocker is that the decision has
-  inputs nobody has yet: cost per match against real usage, and injection
-  resistance per language measured on the eval suite from phase 6. Deciding
-  before those exist would mean deciding on vibes and then defending it.
+- **Decide the provider now.** Argued at the time that the decision needed
+  inputs nobody had: cost against real usage, injection resistance per language
+  from the phase-6 evals. It was then made anyway, days later and on entirely
+  different grounds — credits, a Brazilian cloud, a hard budget ceiling
+  (ADR-0008). The port is what made that safe: deciding early costs one file to
+  undo, so waiting bought less than it delayed.

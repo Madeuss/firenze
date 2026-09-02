@@ -1,5 +1,6 @@
 from typing import Literal
 
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 Environment = Literal["dev", "staging", "prod"]
@@ -14,16 +15,20 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+psycopg://firenze:firenze@localhost:5433/firenze"
     redis_url: str = "redis://localhost:6379/0"
     model_provider: str = "none"
-    """Which provider backs the model port: anthropic, fake, or none.
+    """Which provider backs the model port: prosa, fake, or none.
 
-    `none` by default, deliberately. The provider is not decided yet, and a
-    default that picked one would make the decision quietly."""
+    `none` by default even though Prosa is the decision (ADR-0008): the product
+    is still in pilot, and a default that tried to reach an endpoint nobody has
+    credentials for would turn a missing key into a confusing failure."""
 
     model_name: str = ""
-    """Which model at that provider.
+    """Which model at that provider, from its catalog."""
 
-    Empty by default for the same reason the provider is `none`: naming one
-    would pick a vendor. Required once a real provider is configured."""
+    model_base_url: str = ""
+    """Endpoint of the OpenAI-compatible API. Prosa shows it beside the API key."""
+
+    model_api_key: SecretStr = SecretStr("")
+    """Secret so it does not land in a log by accident."""
 
 
 settings = Settings()
