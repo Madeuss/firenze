@@ -106,5 +106,6 @@ class Catalog:
             "room": self.room_phrase(fact.room) if fact.room else "",
             "time": self.time(case.minutes_at(fact.interval)) if fact.interval is not None else "",
             "secret": self.secret(fact.secret_key) if fact.secret_key else "",
+            "motive": self.motive(fact.motive_key) if fact.motive_key else "",
         }
         return template.format(**slots)

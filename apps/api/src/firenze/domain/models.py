@@ -32,6 +32,8 @@ class FactKind(StrEnum):
     """A physical object placing someone at a place and time."""
     secret = "secret"
     """A suspect's private secret. A reason to lie without being the culprit."""
+    motive = "motive"
+    """Why the culprit did it. Held by whoever overheard, never by the house."""
 
 
 class Intent(StrEnum):
@@ -99,6 +101,13 @@ class Fact(BaseModel):
     """Who can attest the fact besides the character it is about."""
     secret_key: str | None = None
     """Message key of the secret's text, for `kind == secret`."""
+    motive_key: str | None = None
+    """Message key of the motive, for `kind == motive`.
+
+    The motive used to live only in `Solution`, which made it undiscoverable:
+    the player could be told it at the end and had no way to work it out. As a
+    fact it has a scope, somebody who can reveal it, and a solver that checks it
+    is reachable."""
     exposes_secret_of: str | None = None
     """When set, that suspect lies about this fact. (RN-020)"""
     incriminates: str | None = None

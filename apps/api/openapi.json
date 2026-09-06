@@ -258,6 +258,18 @@
             },
             "title": "Evidence",
             "type": "array"
+          },
+          "motive_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Why they did it. Optional — unclaimed is not wrong.",
+            "title": "Motive Key"
           }
         },
         "required": [
@@ -350,6 +362,14 @@
             "title": "Motive",
             "type": "string"
           },
+          "motive_correct": {
+            "title": "Motive Correct",
+            "type": "boolean"
+          },
+          "motive_points": {
+            "title": "Motive Points",
+            "type": "integer"
+          },
           "score": {
             "title": "Score",
             "type": "integer"
@@ -365,12 +385,14 @@
         },
         "required": [
           "correct",
+          "motive_correct",
           "accused",
           "culprit",
           "means",
           "motive",
           "score",
           "culprit_points",
+          "motive_points",
           "evidence_points",
           "speed_points",
           "evidence_expected",

@@ -141,6 +141,39 @@ cobra, **não alcançou modelo nenhum** não cobra e vira 503.
 **Por que importa:** "sempre cobra" parecia a regra simples e segura. Era só a
 regra que não distinguia nada.
 
+### 2026-08-31 — O motivo era revelado e nunca podia ser descoberto
+
+O gerador sorteava `motive_key` e não plantava em fato nenhum. O jogador lia o
+motivo no desfecho sem ter tido como chegar nele
+([#38](https://github.com/Madeuss/firenze/pull/38)).
+
+Só apareceu quando alguém perguntou "e se eu acertar a pessoa mas não o motivo?"
+— e a resposta era que não dava para errar, porque não se perguntava.
+
+**Por que importa:** conteúdo decorativo passa despercebido enquanto ninguém
+tenta pontuá-lo. Cobrar o que não é alcançável seria loteria com narrativa em
+cima, e a regra nova (RN-034) põe o solver como portão, igual ao culpado.
+
+### 2026-08-31 — Mudei o gerador e esqueci de subir a versão dele
+
+Os testes de storage quebraram com diferença de conteúdo. Causa: `save_case` é
+idempotente por `(semente, versão, cenário)`, então o caso antigo voltou do
+banco enquanto o gerador já produzia outro.
+
+**Por que importa:** é exatamente a falha que o campo `generator_version` existe
+para tornar impossível — e ele só funciona se alguém lembrar de mexer nele. Vale
+pensar em derivar a versão de um hash do gerador em vez de manter à mão.
+
+### 2026-08-31 — Isolamento nunca foi propriedade do blob
+
+Um teste afirmava que a serialização do `Case` não contém o motivo. Ao plantar o
+motivo, ele quebrou — e a asserção é que estava errada: o `Case` **sempre**
+carregou o id do culpado dentro da pista que o incrimina.
+
+O isolamento é imposto por **escopo**, na hora de montar o dossiê. O blob nunca
+foi ilegível, e um teste que fingia isso guardava uma propriedade que o desenho
+não tinha.
+
 ### 2026-08-31 — Validar prosa com regex rejeitou a frase certa
 
 A narração do desfecho ganhou uma checagem de "personagem inventado": sinalizar

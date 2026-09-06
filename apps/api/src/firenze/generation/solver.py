@@ -7,7 +7,12 @@ The deduction model: start from the public facts and add everything some
 suspect would reveal if asked — a suspect tells the truth about anything that
 neither incriminates them nor exposes their secret (RN-020). Over that
 reachable set, a case is deducible when exactly one suspect is left without a
-confirmed alibi and a physical clue points at them.
+confirmed alibi, a physical clue points at them, and their motive is findable.
+
+That last one is not decoration. The motive used to be drawn at random and never
+planted, so a player could be told *why* at the end with no way to have worked it
+out. Anything the game scores has to be reachable, or it is a lottery with a
+narrative attached.
 
 It reasons over structure, never over prose: no sentence is parsed here, which
 is why the same solver works in every locale (ADR-0005).
@@ -25,6 +30,8 @@ class SolverResult(BaseModel):
     deduced_culprit: str | None
     candidates: tuple[str, ...]
     chain: tuple[str, ...]
+    deduced_motive: str | None = None
+    """The motive a player could arrive at, which must equal the real one."""
     failure_reason: str | None = None
 
 
@@ -102,10 +109,23 @@ def solve(case: Case) -> SolverResult:
             failure_reason="no reachable physical clue points at the only candidate",
         )
 
+    motives = tuple(
+        f for f in reachable if f.kind is FactKind.motive and f.incriminates == candidate
+    )
+    if not motives:
+        return SolverResult(
+            deducible=False,
+            deduced_culprit=None,
+            candidates=candidates,
+            chain=(),
+            failure_reason="no reachable motive for the only candidate",
+        )
+
     body = tuple(f.id for f in reachable if f.kind is FactKind.body)
     return SolverResult(
         deducible=True,
         deduced_culprit=candidate,
         candidates=candidates,
-        chain=body + tuple(sorted(alibis.values())) + evidence,
+        chain=body + tuple(sorted(alibis.values())) + evidence + tuple(f.id for f in motives),
+        deduced_motive=motives[0].motive_key,
     )

@@ -26,7 +26,11 @@ from firenze.domain import (
 from firenze.generation.solver import solve
 from firenze.generation.validation import validate
 
-GENERATOR_VERSION = "2"
+# Bumped when the structure a seed produces changes. It moved to 3 when the
+# motive became a planted fact: without that, `save_case` matched the stored
+# case by (seed, version, setting) and handed back the old one, which is the
+# exact failure this field exists to make impossible.
+GENERATOR_VERSION = "3"
 
 # The only world the generator knows how to build. Rooms, cast, means and
 # secrets below are this setting's; grouping them into a `Setting` object is
@@ -105,7 +109,11 @@ def generate(seed: int, suspects: int = 6, attempts: int = 20) -> CaseWithSoluti
         derived = seed if attempt == 0 else seed * 1000 + attempt
         candidate = _assemble(seed=seed, effective_seed=derived, suspects=suspects)
         validate(candidate)
-        if solve(candidate.case).deduced_culprit == candidate.solution.culprit:
+        found = solve(candidate.case)
+        if (
+            found.deduced_culprit == candidate.solution.culprit
+            and found.deduced_motive == candidate.solution.motive_key
+        ):
             return candidate
 
     raise UnsolvableCase(f"no deducible case in {attempts} attempts from seed {seed}")
@@ -155,11 +163,18 @@ def _assemble(seed: int, effective_seed: int, suspects: int) -> CaseWithSolution
         crime_room=crime_room,
         crime_interval=crime_interval,
     )
+    motive = next(f for f in facts if f.kind is FactKind.motive)
     solution = Solution(
         culprit=culprit,
         means_key=rng.choice(MEANS_KEYS),
-        motive_key=rng.choice(MOTIVE_KEYS),
-        chain=tuple(f.id for f in facts if f.kind is FactKind.clue and f.incriminates == culprit),
+        # Taken from the planted fact rather than drawn again: the answer and
+        # what the player can find have to be the same thing.
+        motive_key=str(motive.motive_key),
+        chain=tuple(
+            f.id
+            for f in facts
+            if f.incriminates == culprit and f.kind in (FactKind.clue, FactKind.motive)
+        ),
     )
     return CaseWithSolution(case=case, solution=solution)
 
@@ -313,6 +328,26 @@ def _facts(
                 canary=_canary(seed, fact_id),
             )
         )
+
+    # The motive. Somebody in the house overheard the quarrel; the culprit will
+    # not talk about it, and the person who heard it has no reason not to. Same
+    # shape as the clue, and for the same reason: a fact nobody could reach is a
+    # fact the player cannot deduce, and scoring it would be a lottery.
+    overheard = rng.choice(innocents)
+    motive_key = rng.choice(MOTIVE_KEYS)
+    fact_id = new_id()
+    facts.append(
+        Fact(
+            id=fact_id,
+            kind=FactKind.motive,
+            scope=_scope(overheard),
+            character=culprit,
+            witness=overheard,
+            motive_key=motive_key,
+            incriminates=culprit,
+            canary=_canary(seed, fact_id),
+        )
+    )
 
     # The clue. Whoever found it has no reason to hide it, so it is reachable
     # by questioning — the step that closes the deduction. The fact is about
