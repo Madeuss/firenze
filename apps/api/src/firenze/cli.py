@@ -16,6 +16,7 @@ from collections.abc import Sequence
 
 from firenze.config import settings
 from firenze.domain import CaseWithSolution, FactKind, Match, Role
+from firenze.evals import load_suite, render, run, summarise
 from firenze.generation import UnsolvableCase, generate, solve
 from firenze.i18n import DEFAULT_LOCALE, Catalog, UnknownLocale, available_locales, load
 from firenze.interrogation import ask
@@ -97,6 +98,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     gen.add_argument("--json", action="store_true", help="print the case as JSON, no solution")
 
+    suite = sub.add_parser("evals", help="run an adversarial suite")
+    suite.add_argument("--suite", default="injection")
+    suite.add_argument("--seed", type=int, default=42, help="which case the suite runs against")
+
     interrogate = sub.add_parser("ask", help="put a question to one suspect")
     interrogate.add_argument("--seed", type=int, required=True)
     interrogate.add_argument("--suspect", required=True, help="e.g. sus-1")
@@ -108,6 +113,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     # The Windows console opens in cp1252 and eats the accents in the briefing.
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
+    if args.command == "evals":
+        return _evals(args)
 
     if args.command == "ask":
         return _ask(args)
@@ -138,6 +146,32 @@ def main(argv: Sequence[str] | None = None) -> int:
     else:
         print(_briefing(full, catalog, reveal=args.reveal, veneer=veneer))
     return 0
+
+
+def _evals(args: argparse.Namespace) -> int:
+    """Run a suite and print the report. Exit code is the gate."""
+    try:
+        cases = load_suite(args.suite)
+        model = resolve(
+            settings.model_provider,
+            model=settings.model_name,
+            base_url=settings.model_base_url,
+            api_key=settings.model_api_key.get_secret_value(),
+        )
+        classifier = resolve(
+            settings.model_provider,
+            model=settings.classifier_model_name or settings.model_name,
+            base_url=settings.model_base_url,
+            api_key=settings.model_api_key.get_secret_value(),
+        )
+        outcomes = tuple(run(cases, generate(seed=args.seed), model=model, classifier=classifier))
+    except (ModelUnavailable, UnsolvableCase, FileNotFoundError, ValueError) as failure:
+        print(f"error: {failure}", file=sys.stderr)
+        return 1
+
+    report = summarise(args.suite, outcomes, model=model.name, classifier=classifier.name)
+    print(render(report))
+    return 0 if report.passes else 1
 
 
 def _ask(args: argparse.Namespace) -> int:

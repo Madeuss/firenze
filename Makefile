@@ -57,5 +57,5 @@ migrate: ## aplica as migrations (alembic)
 migration: ## cria migration a partir do schema (make migration M="add x")
 	cd $(API) && uv run alembic revision --autogenerate -m "$(M)"
 
-evals: ## roda a suíte de avaliação — fase 3
-	@echo "Suíte de evals chega na fase 3. Ver docs/06-plano-de-evals.md." && exit 1
+evals: ## roda a suíte adversarial (make evals [SUITE=injection])
+	cd $(API) && uv run firenze evals --suite $(or $(SUITE),injection)

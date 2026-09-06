@@ -51,6 +51,13 @@ class TurnResult(BaseModel):
     match: Match
     statement: Statement | None
     rejection: str | None = None
+    rejected_by: str | None = None
+    """Which check discarded the reply, as a name rather than a sentence.
+
+    The evals need to count how often a model *produced* a canary, not how
+    often a player saw one — the filter means the second is always zero, and
+    measuring it would report a system that works even while a model leaks
+    every time (RN-012)."""
     stance_overruled: bool = False
     """True when the model suggested a move the machine would not allow."""
     intent: Intent = Intent.question
@@ -139,7 +146,13 @@ def ask(
         check(reply, dossier)
     except ReplyRejected as rejected:
         # Discarded, not repaired. The turn is still spent.
-        return TurnResult(match=spent, statement=None, rejection=str(rejected), intent=intent)
+        return TurnResult(
+            match=spent,
+            statement=None,
+            rejection=str(rejected),
+            rejected_by=rejected.check,
+            intent=intent,
+        )
 
     settled = stance_machine.settle(dossier.stance, reply.stance)
     statement = Statement(
