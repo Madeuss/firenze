@@ -141,6 +141,25 @@ cobra, **não alcançou modelo nenhum** não cobra e vira 503.
 **Por que importa:** "sempre cobra" parecia a regra simples e segura. Era só a
 regra que não distinguia nada.
 
+### 2026-08-31 — A mesma contradição é bug ou mecânica, dependendo da causa
+
+Contradição espontânea é falha e a resposta é descartada. Contradição **causada
+por uma prova** é `alibi_broken` — o jogo funcionando
+([#32](https://github.com/Madeuss/firenze/pull/32)).
+
+O evento é idêntico; o que muda é o que o provocou. Por isso quem decide se a
+prova pegou é código, não o modelo: se o modelo decidisse, ele poderia escolher
+não ter sido pego.
+
+**Por que importa:** a regra parecia dizer duas coisas contraditórias sobre o
+mesmo evento. Dizia uma só — sobre causa, não sobre sintoma.
+
+### 2026-08-31 — Prova é derivada, não guardada
+
+O que o jogador possui sai das declarações: fatos públicos mais o que alguém
+entregou. Não existe segunda lista para desandar em relação à primeira, e o
+jogador não consegue apresentar o que nunca ouviu.
+
 ### 2026-08-31 — Detectar contradição exigiu o NPC declarar em estrutura
 
 A RN-021 diz que um suspeito não pode se contradizer. Só que declaração

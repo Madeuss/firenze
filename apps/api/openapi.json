@@ -4,6 +4,12 @@
       "Answer": {
         "description": "What came back, and what it cost.\n\n`answered` is false when a reply was produced and then discarded — by the\noutput filters, or by the provider declining. The turn is spent, because the\nplayer had their go.\n\nAn unreachable model is not this shape: it is a 503 and costs nothing.\n\n`reason` stays coarse on purpose. The detail can quote the canary token the\nreply was discarded for, which is precisely the thing that must not travel.",
         "properties": {
+          "alibi_broken": {
+            "default": false,
+            "description": "The evidence caught them out. A game event, not a fault (RN-021).",
+            "title": "Alibi Broken",
+            "type": "boolean"
+          },
           "answered": {
             "title": "Answered",
             "type": "boolean"
@@ -92,6 +98,26 @@
         "title": "CastMember",
         "type": "object"
       },
+      "Confrontation": {
+        "properties": {
+          "evidence": {
+            "description": "Fact id the player holds, e.g. F-014.",
+            "title": "Evidence",
+            "type": "string"
+          },
+          "suspect": {
+            "description": "Character id, e.g. sus-1.",
+            "title": "Suspect",
+            "type": "string"
+          }
+        },
+        "required": [
+          "suspect",
+          "evidence"
+        ],
+        "title": "Confrontation",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -161,6 +187,15 @@
               "$ref": "#/components/schemas/CastMember"
             },
             "title": "Cast",
+            "type": "array"
+          },
+          "evidence": {
+            "default": [],
+            "description": "Fact ids the player holds and may present.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Evidence",
             "type": "array"
           },
           "id": {
@@ -450,6 +485,60 @@
           }
         },
         "summary": "The notebook",
+        "tags": [
+          "match"
+        ]
+      }
+    },
+    "/matches/{match_id}/confrontations": {
+      "post": {
+        "description": "Costs two turns, and only the evidence the player already holds.",
+        "operationId": "take_confrontation_matches__match_id__confrontations_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "match_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Match Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Confrontation"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Answer"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Show a suspect a piece of evidence",
         "tags": [
           "match"
         ]
