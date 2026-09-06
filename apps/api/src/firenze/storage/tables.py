@@ -84,6 +84,7 @@ statements = Table(
     Column("line", Text, nullable=False),
     Column("stance", String(16), nullable=False),
     Column("lied", Boolean, nullable=False),
+    Column("intent", String(16), nullable=False, server_default="question"),
     Column("fact_referenced", String(16), nullable=True),
     Column("created_at", DateTime(timezone=True), server_default=func.now(), nullable=False),
     # Contradiction detection reads one character's statements within one match,

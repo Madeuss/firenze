@@ -80,6 +80,16 @@ class Catalog:
     def label(self, key: str) -> str:
         return str(self._section("labels", key))
 
+    def deflection(self, pick: int) -> str:
+        """A canned in-character line, for input that never reaches a model.
+
+        Chosen by index rather than at random so the same attempt in the same
+        turn always gets the same answer — a probe that produced varying replies
+        would itself be a signal worth reading.
+        """
+        options: list[str] = self._data["deflections"]
+        return options[pick % len(options)]
+
     def time(self, minutes: int) -> str:
         hour, minute = divmod(minutes, 60)
         suffix = self._data["clock"].get("am" if hour < 12 else "pm", "")

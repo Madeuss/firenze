@@ -9,9 +9,9 @@ character has no way of knowing.
 
 ![CI](https://github.com/Madeuss/firenze/actions/workflows/ci.yml/badge.svg)
 
-> **Status: phase 2 of 8.** Cases generate, a suspect answers over HTTP, and
-> matches persist. The words are still synthetic — the model provider (Magalu
-> Prosa) is in pilot. Not playable yet.
+> **Status: phase 3 of 8.** Cases generate, a suspect answers over HTTP, matches
+> persist, and player input is classified before any character hears it. The
+> words are still synthetic — the model provider (Magalu Prosa) is in pilot.
 
 ## See it work
 
@@ -102,6 +102,12 @@ Every secret fact also carries a canary token. A canary appearing in model
 output is a critical failure: the response is discarded and the incident logged.
 The CI gate for leakage is 0% and it blocks merges.
 
+Player input is classified before any character hears it, and a message labelled
+an injection never reaches the NPC model at all
+([ADR-0010](docs/adr/0010-classify-before-the-character-hears-it.md)). The
+classifier is shown one sentence and nothing else — it is a deliberately poor
+target, because a model with no secrets cannot be talked out of any.
+
 ### The model narrates; it never decides
 
 Verdict, score and contradiction detection are deterministic code comparing
@@ -188,7 +194,7 @@ transcribed — duplicated text drifts.
 | 0 | Foundation — repo, docs, local stack | done |
 | 1 | Case generator and deducibility solver | done |
 | 2 | A single NPC: isolated dossier, structured output, streaming | |
-| 3 | Security: canary, input classifier, output filter, CI gates | |
+| 3 | Security: canary, input classifier, output filter, CI gates | in progress |
 | 4 | Full game: six NPCs, evidence, confrontation, verdict | |
 | 5–7 | Front end, observability, production | |
 

@@ -48,16 +48,11 @@ def connection() -> Iterator[Connection]:
         yield open_connection
 
 
-def model_port() -> StructuredModel:
-    """The configured model, as a dependency so a test can supply its own.
-
-    No provider configured is a deployment problem, not a spent turn, so it
-    fails before the handler charges anything.
-    """
+def _resolve(name: str) -> StructuredModel:
     try:
         return resolve(
             settings.model_provider,
-            model=settings.model_name,
+            model=name,
             base_url=settings.model_base_url,
             api_key=settings.model_api_key.get_secret_value(),
         )
@@ -65,10 +60,25 @@ def model_port() -> StructuredModel:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(unavailable)) from unavailable
 
 
+def model_port() -> StructuredModel:
+    """The model a suspect answers with.
+
+    No provider configured is a deployment problem, not a spent turn, so it
+    fails before the handler charges anything.
+    """
+    return _resolve(settings.model_name)
+
+
+def classifier_port() -> StructuredModel:
+    """The model that labels player input. The cheapest one that can (RN-040)."""
+    return _resolve(settings.classifier_model_name or settings.model_name)
+
+
 # Annotated dependencies rather than defaults: the modern FastAPI form, and the
 # one that does not need a lint suppression to say what it means.
 Db = Annotated[Connection, Depends(connection)]
 Model = Annotated[StructuredModel, Depends(model_port)]
+Classifier = Annotated[StructuredModel, Depends(classifier_port)]
 
 
 def _state(match_id: uuid.UUID, match: Match) -> MatchState:
@@ -130,7 +140,9 @@ def read(match_id: uuid.UUID, db: Db) -> MatchState:
 
 
 @router.post("/{match_id}/turns", summary="Question a suspect")
-def take_turn(match_id: uuid.UUID, body: Question, db: Db, model: Model) -> Answer:
+def take_turn(
+    match_id: uuid.UUID, body: Question, db: Db, model: Model, classifier: Classifier
+) -> Answer:
     try:
         match = load_match(db, match_id)
     except NotFound as missing:
@@ -142,9 +154,22 @@ def take_turn(match_id: uuid.UUID, body: Question, db: Db, model: Model) -> Answ
         )
 
     try:
-        result = ask(match, body.suspect, body.question, catalog=load(match.locale), model=model)
+        result = ask(
+            match,
+            body.suspect,
+            body.question,
+            catalog=load(match.locale),
+            model=model,
+            classifier=classifier,
+        )
     except NoTurnsLeft as spent:
         raise HTTPException(status.HTTP_409_CONFLICT, str(spent)) from spent
+    except ModelUnavailable as unreachable:
+        # Nothing was asked of anybody, so nothing happened and nothing is charged.
+        log.warning("turn abandoned on match %s: %s", match_id, unreachable)
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE, "the model is unreachable"
+        ) from unreachable
 
     record_turn(db, match_id, result.match, result.statement)
 
@@ -154,7 +179,7 @@ def take_turn(match_id: uuid.UUID, body: Question, db: Db, model: Model) -> Answ
         return Answer(
             answered=False,
             character=body.suspect,
-            reason="model_unavailable" if "model" in (result.rejection or "") else "rejected",
+            reason="rejected",
             turns_left=result.match.turns_left,
         )
 

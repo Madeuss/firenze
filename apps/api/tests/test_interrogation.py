@@ -9,17 +9,24 @@ from typing import Any
 
 import pytest
 
-from firenze.domain import Match, Stance
+from firenze.domain import Intent, Match, Stance
 from firenze.generation import generate
 from firenze.i18n import load
 from firenze.interrogation import Dossier, NpcReply, ReplyRejected, ask, build
 from firenze.interrogation import stance as stance_machine
 from firenze.interrogation.guard import check
 from firenze.interrogation.turn import NoTurnsLeft, render
-from firenze.model import FakeModel, ModelUnavailable
+from firenze.model import FakeModel, ModelRefused
+from firenze.safety import Classification
 
 
 class Scripted:
+    """Answers whichever schema it is handed: a label first, then a reply.
+
+    Every turn now classifies before it asks anybody anything (RN-040), so a
+    stand-in model has to play both parts.
+    """
+
     def __init__(self, reply: NpcReply | None = None, failure: Exception | None = None) -> None:
         self._reply = reply
         self._failure = failure
@@ -30,6 +37,8 @@ class Scripted:
         return "scripted"
 
     def complete(self, **kwargs: Any) -> Any:
+        if kwargs["schema"] is Classification:
+            return Classification(intent=Intent.question, reason="a question")
         self.prompts.append(kwargs)
         if self._failure is not None:
             raise self._failure
@@ -215,8 +224,9 @@ def test_a_rejected_reply_still_costs_the_turn(match: Match) -> None:
     assert result.match.statements == ()
 
 
-def test_an_unavailable_model_costs_the_turn_too(match: Match) -> None:
-    model = Scripted(failure=ModelUnavailable("no route to host"))
+def test_a_refusal_costs_the_turn(match: Match) -> None:
+    """The provider decided something. That is an outcome, and it is charged."""
+    model = Scripted(failure=ModelRefused("policy"))
 
     result = ask(match, "sus-1", "e então?", catalog=load("pt-BR"), model=model)
 

@@ -34,6 +34,19 @@ class FactKind(StrEnum):
     """A suspect's private secret. A reason to lie without being the culprit."""
 
 
+class Intent(StrEnum):
+    """What a player was doing when they typed. (RN-040)
+
+    Classified before any suspect sees the message, and `injection` never
+    reaches one (RN-041).
+    """
+
+    question = "question"
+    confrontation = "confrontation"
+    meta = "meta"
+    injection = "injection"
+
+
 class Stance(StrEnum):
     """How a suspect is holding up. Transitions are code, never the model's call.
 
@@ -182,6 +195,9 @@ class Statement(BaseModel):
     stance: Stance
     lied: bool
     fact_referenced: str | None = None
+    intent: Intent = Intent.question
+    """How the question was labelled. An `injection` statement is a canned
+    deflection: no model was asked, and the record says so."""
 
 
 class Match(BaseModel):

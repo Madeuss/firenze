@@ -21,7 +21,15 @@ import uuid
 from sqlalchemy import insert, select, update
 from sqlalchemy.engine import Connection
 
-from firenze.domain import Case, CaseWithSolution, Match, Solution, Stance, Statement
+from firenze.domain import (
+    Case,
+    CaseWithSolution,
+    Intent,
+    Match,
+    Solution,
+    Stance,
+    Statement,
+)
 from firenze.storage.tables import cases, matches, solutions, statements
 
 
@@ -116,6 +124,7 @@ def load_match(connection: Connection, match_id: uuid.UUID) -> Match:
             statements.c.stance,
             statements.c.lied,
             statements.c.fact_referenced,
+            statements.c.intent,
         )
         .where(statements.c.match_id == match_id)
         .order_by(statements.c.turn)
@@ -135,6 +144,7 @@ def load_match(connection: Connection, match_id: uuid.UUID) -> Match:
                 stance=Stance(s[4]),
                 lied=s[5],
                 fact_referenced=s[6],
+                intent=Intent(s[7]),
             )
             for s in said
         ),
@@ -175,5 +185,6 @@ def record_turn(
             stance=statement.stance.value,
             lied=statement.lied,
             fact_referenced=statement.fact_referenced,
+            intent=statement.intent.value,
         )
     )

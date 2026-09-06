@@ -128,6 +128,29 @@ barato — contra uma VM que consome créditos dormindo.
 
 ---
 
+### 2026-08-31 — Indisponibilidade estava cobrando o turno do jogador
+
+O código cobrava o turno em qualquer falha, misturando três situações
+diferentes. Sob essa regra, uma queda de rede comia o orçamento do jogador — a
+falha de um componente que ele não sabe que existe, cobrada dele
+([#23](https://github.com/Madeuss/firenze/pull/23)).
+
+Agora: **produziu e foi descartado** cobra, **foi classificado como ataque**
+cobra, **não alcançou modelo nenhum** não cobra e vira 503.
+
+**Por que importa:** "sempre cobra" parecia a regra simples e segura. Era só a
+regra que não distinguia nada.
+
+### 2026-08-31 — O classificador é um alvo pobre de propósito
+
+Ele vê uma frase e nada mais — nunca o caso, nunca um dossiê, nunca um prompt
+que valha extrair. Quem o comprometer inteiro ganha o direito de ser rotulado
+`question`, que é como seria rotulado de qualquer jeito.
+
+**Por que importa:** inverte a intuição de que todo componente com LLM amplia a
+superfície de ataque. Um componente sem segredo não pode ser convencido a
+entregar nenhum.
+
 ### 2026-08-31 — A mensagem de rejeição é ela própria sensível
 
 O motivo pelo qual uma resposta foi descartada pode conter o canary que a
