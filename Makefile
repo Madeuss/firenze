@@ -2,7 +2,7 @@ COMPOSE := docker compose -f infra/compose/docker-compose.yml
 API     := apps/api
 
 .DEFAULT_GOAL := help
-.PHONY: help dev down logs psql install api case ask openapi lint fmt typecheck test check migrate evals
+.PHONY: help dev down logs psql install api case ask openapi lint fmt typecheck test check migrate migration evals
 
 help: ## lista os alvos
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t/' | expand -t 14
@@ -51,8 +51,11 @@ test: ## pytest
 
 check: lint typecheck test ## tudo que o CI cobra
 
-migrate: ## aplica as migrations (alembic) — fase 1
-	@echo "Ainda não existe schema. Chega junto com o gerador de casos (fase 1)." && exit 1
+migrate: ## aplica as migrations (alembic)
+	cd $(API) && uv run alembic upgrade head
+
+migration: ## cria migration a partir do schema (make migration M="add x")
+	cd $(API) && uv run alembic revision --autogenerate -m "$(M)"
 
 evals: ## roda a suíte de avaliação — fase 3
 	@echo "Suíte de evals chega na fase 3. Ver docs/06-plano-de-evals.md." && exit 1

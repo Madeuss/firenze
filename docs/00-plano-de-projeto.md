@@ -184,6 +184,8 @@ ADR escrita para convencer, não para decidir.
   qualquer fornecedor de modelo
 - [`0008`](adr/0008-magalu-prosa-as-the-model-provider.md) — Magalu Prosa como
   fornecedor, com adaptador OpenAI-compatible
+- [`0009`](adr/0009-a-case-is-a-document-a-match-is-rows.md) — caso é documento,
+  partida é linhas; solução em tabela própria
 
 Todas as ADRs são escritas em inglês (ADR-0006) — as quatro primeiras foram
 traduzidas depois de escritas.
