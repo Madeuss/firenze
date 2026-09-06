@@ -104,6 +104,11 @@ class Outcome(BaseModel):
     evidence_expected: tuple[str, ...]
     evidence_hit: tuple[str, ...]
     turns_left: int
+    epilogue: str | None = Field(
+        default=None,
+        description="How it ended, in prose. Absent when no model could write it — "
+        "the verdict above does not depend on it (RN-032).",
+    )
 
 
 class Answer(BaseModel):

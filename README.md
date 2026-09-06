@@ -9,10 +9,10 @@ character has no way of knowing.
 
 ![CI](https://github.com/Madeuss/firenze/actions/workflows/ci.yml/badge.svg)
 
-> **Status: phase 4 of 8.** Cases generate, suspects answer over HTTP, matches
-> persist, input is classified before any character hears it, and evidence can
-> break an alibi. The words are still synthetic — the model provider (Magalu
-> Prosa) is in pilot.
+> **Status: a match runs end to end.** Generate a case, question six suspects,
+> break an alibi with evidence, accuse once, and read a verdict computed by
+> code. The words are still synthetic — the model provider (Magalu Prosa) is in
+> pilot — so the mechanics are playable and the prose is not yet worth reading.
 
 ## See it work
 
@@ -112,8 +112,12 @@ target, because a model with no secrets cannot be talked out of any.
 ### The model narrates; it never decides
 
 Verdict, score and contradiction detection are deterministic code comparing
-structured fields. The model receives a finished outcome and writes it up. A
-test with a mocked model proves the result does not depend on the model at all.
+structured fields. The model receives a finished outcome and writes it up.
+
+The strongest form of that guarantee is not a test that no function calls a
+model — it is that [`verdict.py`](apps/api/src/firenze/verdict.py) **cannot
+import one**, and a test reads the source to confirm it. An invariant kept by
+convention is an invariant broken by convenience.
 
 A side effect worth naming: because nothing in the deduction path parses prose,
 the whole thing is language-independent for free
@@ -197,8 +201,9 @@ transcribed — duplicated text drifts.
 | 1 | Case generator and deducibility solver | done |
 | 2 | A single NPC: isolated dossier, structured output, streaming | |
 | 3 | Security: canary, input classifier, output filter, CI gates | done |
-| 4 | Full game: six NPCs, evidence, confrontation, verdict | in progress |
+| 4 | Full game: six NPCs, evidence, confrontation, verdict | done |
 | 5–7 | Front end, observability, production | |
+
 
 Built with Python and FastAPI, on Postgres with pgvector for both game state
 and NPC memory. LangGraph and Next.js arrive with the phases that need them —

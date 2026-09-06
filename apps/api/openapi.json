@@ -312,6 +312,18 @@
             "title": "Culprit Points",
             "type": "integer"
           },
+          "epilogue": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "How it ended, in prose. Absent when no model could write it — the verdict above does not depend on it (RN-032).",
+            "title": "Epilogue"
+          },
           "evidence_expected": {
             "items": {
               "type": "string"
