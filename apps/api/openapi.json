@@ -1,6 +1,110 @@
 {
   "components": {
     "schemas": {
+      "Answer": {
+        "description": "What came back, and what it cost.\n\n`answered` is false when the reply was discarded or the model was\nunreachable. The turn is spent either way (RN-030), and the reason stays\ncoarse on purpose — the detail can quote a canary token, which is precisely\nthe thing that must not travel.",
+        "properties": {
+          "answered": {
+            "title": "Answered",
+            "type": "boolean"
+          },
+          "character": {
+            "title": "Character",
+            "type": "string"
+          },
+          "line": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Line"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "`rejected` or `model_unavailable`, when unanswered.",
+            "title": "Reason"
+          },
+          "stance": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Stance"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "turns_left": {
+            "title": "Turns Left",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "answered",
+          "character",
+          "turns_left"
+        ],
+        "title": "Answer",
+        "type": "object"
+      },
+      "CastMember": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "stance": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Stance"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "How they are holding up. Absent until they have been asked."
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "role"
+        ],
+        "title": "CastMember",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
       "Health": {
         "description": "Liveness probe response.",
         "properties": {
@@ -29,6 +133,210 @@
           "environment"
         ],
         "title": "Health",
+        "type": "object"
+      },
+      "KnownFact": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "text"
+        ],
+        "title": "KnownFact",
+        "type": "object"
+      },
+      "MatchState": {
+        "description": "Everything a player may see. No solution, no bookkeeping.",
+        "properties": {
+          "cast": {
+            "items": {
+              "$ref": "#/components/schemas/CastMember"
+            },
+            "title": "Cast",
+            "type": "array"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "known": {
+            "items": {
+              "$ref": "#/components/schemas/KnownFact"
+            },
+            "title": "Known",
+            "type": "array"
+          },
+          "locale": {
+            "title": "Locale",
+            "type": "string"
+          },
+          "notebook": {
+            "items": {
+              "$ref": "#/components/schemas/Said"
+            },
+            "title": "Notebook",
+            "type": "array"
+          },
+          "seed": {
+            "title": "Seed",
+            "type": "integer"
+          },
+          "turns_left": {
+            "title": "Turns Left",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "seed",
+          "locale",
+          "turns_left",
+          "cast",
+          "known",
+          "notebook"
+        ],
+        "title": "MatchState",
+        "type": "object"
+      },
+      "NewMatch": {
+        "properties": {
+          "locale": {
+            "default": "pt-BR",
+            "description": "Fixed for the match (ADR-0005).",
+            "title": "Locale",
+            "type": "string"
+          },
+          "seed": {
+            "description": "Same seed, same mystery.",
+            "title": "Seed",
+            "type": "integer"
+          },
+          "suspects": {
+            "default": 6,
+            "maximum": 8.0,
+            "minimum": 3.0,
+            "title": "Suspects",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "seed"
+        ],
+        "title": "NewMatch",
+        "type": "object"
+      },
+      "Question": {
+        "properties": {
+          "question": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Question",
+            "type": "string"
+          },
+          "suspect": {
+            "description": "Character id, e.g. sus-1.",
+            "title": "Suspect",
+            "type": "string"
+          }
+        },
+        "required": [
+          "suspect",
+          "question"
+        ],
+        "title": "Question",
+        "type": "object"
+      },
+      "Said": {
+        "description": "One line in the notebook, as the player recorded it.",
+        "properties": {
+          "character": {
+            "title": "Character",
+            "type": "string"
+          },
+          "line": {
+            "title": "Line",
+            "type": "string"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          },
+          "stance": {
+            "$ref": "#/components/schemas/Stance"
+          },
+          "turn": {
+            "title": "Turn",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "turn",
+          "character",
+          "question",
+          "line",
+          "stance"
+        ],
+        "title": "Said",
+        "type": "object"
+      },
+      "Stance": {
+        "description": "How a suspect is holding up. Transitions are code, never the model's call.\n\nThe model may suggest one; the backend validates it against the machine in\n`firenze.interrogation.stance` and keeps the current stance if the\nsuggestion is not a legal move (RN-023). `broken` is absorbing and is only\nreachable by confrontation, which arrives in phase 4.",
+        "enum": [
+          "cooperative",
+          "evasive",
+          "hostile",
+          "broken"
+        ],
+        "title": "Stance",
+        "type": "string"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
         "type": "object"
       }
     }
@@ -60,6 +368,143 @@
         "summary": "Liveness",
         "tags": [
           "infra"
+        ]
+      }
+    },
+    "/matches": {
+      "post": {
+        "operationId": "create_matches_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewMatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatchState"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start a match",
+        "tags": [
+          "match"
+        ]
+      }
+    },
+    "/matches/{match_id}": {
+      "get": {
+        "operationId": "read_matches__match_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "match_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Match Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatchState"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "The notebook",
+        "tags": [
+          "match"
+        ]
+      }
+    },
+    "/matches/{match_id}/turns": {
+      "post": {
+        "operationId": "take_turn_matches__match_id__turns_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "match_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Match Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Question"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Answer"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Question a suspect",
+        "tags": [
+          "match"
         ]
       }
     }
