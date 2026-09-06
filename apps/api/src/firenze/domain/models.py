@@ -195,6 +195,9 @@ class Statement(BaseModel):
     stance: Stance
     lied: bool
     fact_referenced: str | None = None
+    claimed_room: str | None = None
+    """Where they said they were, when the answer said anything about it."""
+    claimed_interval: int | None = None
     intent: Intent = Intent.question
     """How the question was labelled. An `injection` statement is a canned
     deflection: no model was asked, and the record says so."""

@@ -25,9 +25,10 @@ import re
 
 from pydantic import BaseModel, ConfigDict
 
-from firenze.domain import Intent, Match, Stance, Statement
+from firenze.domain import Case, Intent, Match, Stance, Statement
 from firenze.i18n import Catalog
 from firenze.interrogation import stance as stance_machine
+from firenze.interrogation.contradictions import contradicts
 from firenze.interrogation.dossier import Dossier, build
 from firenze.interrogation.guard import ReplyRejected, check
 from firenze.interrogation.models import NpcReply
@@ -52,6 +53,8 @@ class TurnResult(BaseModel):
     statement: Statement | None
     rejection: str | None = None
     rejected_by: str | None = None
+    contradiction: str | None = None
+    """Set when the reply contradicted something the suspect already said."""
     """Which check discarded the reply, as a name rather than a sentence.
 
     The evals need to count how often a model *produced* a canary, not how
@@ -84,7 +87,7 @@ def render(dossier: Dossier, catalog: Catalog, match: Match, question: str) -> t
 
     facts = "\n".join(f"- [{fact.id}] {catalog.fact(case, fact)}" for fact in dossier.facts)
     history = (
-        "\n".join(f'- Você disse: "{said.line}"' for said in dossier.said_before)
+        "\n".join(_recall(said, catalog, case) for said in dossier.said_before)
         or "- Nada ainda. Esta é a primeira pergunta que lhe fazem."
     )
     guilt = (
@@ -105,6 +108,21 @@ def render(dossier: Dossier, catalog: Catalog, match: Match, question: str) -> t
         ),
         user.format(question=question),
     )
+
+
+def _recall(said: Statement, catalog: Catalog, case: Case) -> str:
+    """One line of what a character already said, with the claim spelled out.
+
+    The prose alone is not enough to stay consistent with: a model asked to
+    avoid contradicting itself needs to see the commitment it made, not the
+    sentence it wrapped it in (RN-021).
+    """
+    line = f'- Você disse: "{said.line}"'
+    if said.claimed_room is not None and said.claimed_interval is not None:
+        where = catalog.room_phrase(said.claimed_room)
+        when = catalog.time(case.minutes_at(said.claimed_interval))
+        line += f"\n  (afirmou estar {where} às {when} — não se contradiga)"
+    return line
 
 
 def ask(
@@ -142,8 +160,22 @@ def ask(
         # Produced: the provider decided. Charged, and worth counting.
         return TurnResult(match=spent, statement=None, rejection=str(refusal), intent=intent)
 
+    conflict = contradicts(reply.claimed_room, reply.claimed_interval, dossier.said_before)
+    if conflict is not None:
+        # RN-021: a suspect does not contradict themselves unprompted. Once
+        # confrontation exists, a contradiction *caused* by evidence becomes a
+        # game event instead — this is the unprompted case, and it is a fault.
+        return TurnResult(
+            match=spent,
+            statement=None,
+            rejection=str(conflict),
+            rejected_by="contradiction",
+            contradiction=str(conflict),
+            intent=intent,
+        )
+
     try:
-        check(reply, dossier)
+        check(reply, dossier, match.case)
     except ReplyRejected as rejected:
         # Discarded, not repaired. The turn is still spent.
         return TurnResult(
@@ -163,6 +195,8 @@ def ask(
         stance=settled,
         lied=reply.lied,
         fact_referenced=reply.fact_referenced,
+        claimed_room=reply.claimed_room,
+        claimed_interval=reply.claimed_interval,
         intent=intent,
     )
 

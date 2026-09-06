@@ -141,6 +141,20 @@ cobra, **não alcançou modelo nenhum** não cobra e vira 503.
 **Por que importa:** "sempre cobra" parecia a regra simples e segura. Era só a
 regra que não distinguia nada.
 
+### 2026-08-31 — Detectar contradição exigiu o NPC declarar em estrutura
+
+A RN-021 diz que um suspeito não pode se contradizer. Só que declaração
+guardava prosa, e comparar prosa em dois idiomas para uma regra que precisa
+valer exatamente não é detecção, é adivinhação
+([#27](https://github.com/Madeuss/firenze/pull/27)).
+
+A resposta passou a carregar `claimed_room` e `claimed_interval`. Contradição
+virou comparação: mesmo suspeito, mesmo intervalo, cômodos diferentes.
+
+**Por que importa:** é a terceira vez que tirar prosa do dado paga uma conta que
+não era a dela. Foi feito por reprodutibilidade de eval, rendeu i18n, e agora
+rendeu uma regra que só é aplicável porque o dado é estrutura.
+
 ### 2026-08-31 — O gate de vazamento estava medindo o lugar errado
 
 A primeira versão da suíte procurava canary na fala final. Só que o filtro de
