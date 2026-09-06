@@ -94,12 +94,21 @@ def test_rn_010_dossier_respects_scope(cases: list[CaseWithSolution]) -> None:
                 assert fact.scope.includes(suspect.id)
 
 
-def test_rn_011_the_case_does_not_carry_the_solution(cases: list[CaseWithSolution]) -> None:
+def test_rn_011_the_case_carries_no_solution_object(cases: list[CaseWithSolution]) -> None:
+    """`Case` has no Solution on it, and no field that answers the mystery.
+
+    It does contain the motive, inside the scoped fact that makes it findable
+    (RN-034), and it has always contained the culprit's id inside the clue that
+    incriminates them. That is not a leak: isolation is enforced by scope when a
+    dossier is built, never by the case blob being unreadable. A test that
+    asserted otherwise would be guarding a property the design never had.
+    """
     for full in cases:
         serialised = full.case.model_dump_json()
 
         assert "culprit" not in serialised
-        assert full.solution.motive_key not in serialised
+        assert full.solution.means_key not in serialised
+        assert not hasattr(full.case, "solution")
 
 
 def test_rn_012_restricted_facts_carry_a_canary(cases: list[CaseWithSolution]) -> None:

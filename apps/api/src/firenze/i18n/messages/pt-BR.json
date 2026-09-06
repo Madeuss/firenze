@@ -43,7 +43,8 @@
     "body": "O corpo de {victim} foi encontrado {room}, por volta das {time}.",
     "presence": "{character} estava {room} às {time}, na presença de {witness}.",
     "secret": "{character} {secret} — estava {room} às {time}.",
-    "clue": "{witness} viu, {room}, um objeto pessoal de {character} que não deveria estar ali às {time}."
+    "clue": "{witness} viu, {room}, um objeto pessoal de {character} que não deveria estar ali às {time}.",
+    "motive": "{witness} ouviu {character} discutir com {victim} sobre {motive}, dias antes."
   },
   "secrets": {
     "cellar_wine": "desviava vinho da adega para revender",

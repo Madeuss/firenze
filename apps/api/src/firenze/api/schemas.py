@@ -78,6 +78,9 @@ class NewAccusation(BaseModel):
     """One per match, irreversible (RN-031). Choose carefully."""
 
     culprit: str = Field(description="Character id you are naming.")
+    motive_key: str | None = Field(
+        default=None, description="Why they did it. Optional — unclaimed is not wrong."
+    )
     evidence: tuple[str, ...] = Field(
         default=(), description="Fact ids you offer in support. Only ones you hold count."
     )
@@ -93,12 +96,14 @@ class Outcome(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     correct: bool
+    motive_correct: bool
     accused: str
     culprit: str
     means: str
     motive: str
     score: int
     culprit_points: int
+    motive_points: int
     evidence_points: int
     speed_points: int
     evidence_expected: tuple[str, ...]

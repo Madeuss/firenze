@@ -110,9 +110,18 @@ acusação com `Solucao`. O LLM apenas narra o desfecho já decidido.
 *Verificação:* o narrador recebe o veredito pronto como entrada; teste com LLM
 mockado prova que o resultado não depende do modelo.
 
-**RN-033** — Pontuação = acerto do culpado (peso 60) + provas corretas
-apresentadas (30) + turnos economizados (10).
-*Verificação:* função pura, testada por tabela de casos.
+**RN-033** — Pontuação = acerto do culpado (50) + acerto do motivo (20) + provas
+corretas apresentadas (20) + turnos economizados (10). O motivo só pontua junto
+com o culpado certo: motivo de quem não fez não é meia resposta, é outra
+história.
+*Verificação:* função pura, testada por tabela de casos. O motivo só entrou na
+pontuação depois de virar fato alcançável (RN-034) — cobrar o que não dá para
+descobrir é loteria, não dedução.
+
+**RN-034** — O motivo do culpado é fato com escopo, conhecido por alguém que
+pode revelá-lo. Caso em que o motivo não é alcançável não é publicável.
+*Verificação:* o solver recusa; o gerador descarta e regera (mesmo portão de
+RN-002).
 
 ---
 

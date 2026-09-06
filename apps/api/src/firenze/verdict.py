@@ -13,24 +13,31 @@ nobody could audit. A player who lost deserves to be able to see why.
 
 | | Points | How |
 |---|---|---|
-| The culprit | 60 | All or nothing. There is one right answer. |
-| The evidence | 30 | Proportional to how much of the real chain was presented. |
+| The culprit | 50 | All or nothing. There is one right answer. |
+| The motive | 20 | All or nothing, and only offered if the player names one. |
+| The evidence | 20 | Proportional to how much of the real chain was presented. |
 | Turns saved | 10 | Proportional to the budget left when the accusation came. |
 
 The evidence award is proportional rather than all-or-nothing on purpose: a
 player who found two of three links reasoned further than one who guessed, and
 a scheme that paid them the same would teach guessing.
 
-Naming the culprit while presenting nothing still scores 60. That is deliberate
-too — the game rewards being right, and rewards *showing your work* on top.
+Naming the culprit and nothing else still scores 50. That is deliberate — the
+game rewards being right, and rewards *showing your work* on top.
+
+**The motive is worth points only because it became findable.** It used to be
+drawn at random and never planted, so scoring it would have been a lottery
+dressed as deduction. It is now a fact with a scope and a witness, and the solver
+refuses a case where nobody could reach it (ADR-0011).
 """
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from firenze.domain import Match, Role
 
-CULPRIT_POINTS = 60
-EVIDENCE_POINTS = 30
+CULPRIT_POINTS = 50
+MOTIVE_POINTS = 20
+EVIDENCE_POINTS = 20
 SPEED_POINTS = 10
 
 
@@ -40,6 +47,9 @@ class Accusation(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     culprit: str
+    motive_key: str | None = None
+    """Why they did it. Optional: naming nobody's motive is not wrong, it is
+    simply unclaimed."""
     evidence: tuple[str, ...] = ()
     """Facts offered in support. Only those the player actually holds count."""
 
@@ -55,12 +65,14 @@ class Verdict(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     correct: bool
+    motive_correct: bool
     culprit: str = Field(description="Who actually did it.")
     means_key: str
     motive_key: str
 
     score: int
     culprit_points: int
+    motive_points: int
     evidence_points: int
     speed_points: int
 
@@ -95,17 +107,23 @@ def judge(match: Match, accusation: Accusation) -> Verdict:
     offered = tuple(e for e in accusation.evidence if e in match.evidence)
     hit = tuple(e for e in expected if e in offered)
 
+    motive_correct = accusation.motive_key == solution.motive_key
     culprit_points = CULPRIT_POINTS if correct else 0
+    # Only alongside the right person: the motive of somebody who did not do it
+    # is not half an answer, it is a different story.
+    motive_points = MOTIVE_POINTS if correct and motive_correct else 0
     evidence_points = round(EVIDENCE_POINTS * len(hit) / len(expected)) if expected else 0
     speed_points = round(SPEED_POINTS * match.turns_left / _budget(match))
 
     return Verdict(
         correct=correct,
+        motive_correct=motive_correct,
         culprit=solution.culprit,
         means_key=solution.means_key,
         motive_key=solution.motive_key,
-        score=culprit_points + evidence_points + speed_points,
+        score=culprit_points + motive_points + evidence_points + speed_points,
         culprit_points=culprit_points,
+        motive_points=motive_points,
         evidence_points=evidence_points,
         speed_points=speed_points,
         evidence_expected=expected,

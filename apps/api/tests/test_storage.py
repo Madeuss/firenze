@@ -77,7 +77,21 @@ def test_saving_the_same_case_twice_gives_the_same_row(connection) -> None:  # t
     second = save_case(connection, full)
 
     assert first == second
-    assert connection.execute(text("SELECT count(*) FROM cases")).scalar_one() == 1
+    # Counted by identity rather than by table: a shared database carries rows
+    # from anything else that ran, and a test that assumes an empty table is a
+    # test that fails for reasons unrelated to what it checks.
+    rows = connection.execute(
+        text(
+            "SELECT count(*) FROM cases "
+            "WHERE seed = :seed AND generator_version = :version AND setting = :setting"
+        ),
+        {
+            "seed": full.case.seed,
+            "version": full.case.generator_version,
+            "setting": full.case.setting,
+        },
+    ).scalar_one()
+    assert rows == 1
 
 
 def test_loading_a_case_cannot_reach_the_solution(connection) -> None:  # type: ignore[no-untyped-def]
@@ -89,11 +103,14 @@ def test_loading_a_case_cannot_reach_the_solution(connection) -> None:  # type: 
     full = generate(seed=42)
     case_id = save_case(connection, full)
 
-    serialised = load_case(connection, case_id).model_dump_json()
+    loaded = load_case(connection, case_id)
 
-    assert full.solution.culprit not in serialised.replace('"sus-', "")
-    assert full.solution.means_key not in serialised
-    assert full.solution.motive_key not in serialised
+    # `Case` has no Solution on it: no culprit field, no means, no chain. The
+    # motive *does* appear, inside the scoped fact that makes it discoverable
+    # (RN-034) — isolation is a property of scopes and dossiers, never of the
+    # blob, and it always was: the clue fact has named the culprit since #11.
+    assert not hasattr(loaded, "solution")
+    assert full.solution.means_key not in loaded.model_dump_json()
 
 
 def test_a_missing_case_is_not_found(connection) -> None:  # type: ignore[no-untyped-def]

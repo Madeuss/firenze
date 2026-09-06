@@ -154,7 +154,14 @@ def accuse(match_id: uuid.UUID, body: NewAccusation, db: Db) -> Outcome:
         raise HTTPException(status.HTTP_404_NOT_FOUND, str(missing)) from missing
 
     try:
-        verdict = judge(match, Accusation(culprit=body.culprit, evidence=body.evidence))
+        verdict = judge(
+            match,
+            Accusation(
+                culprit=body.culprit,
+                motive_key=body.motive_key,
+                evidence=body.evidence,
+            ),
+        )
     except AlreadyAccused as decided:
         raise HTTPException(status.HTTP_409_CONFLICT, str(decided)) from decided
     except NotASuspect as unknown:
@@ -182,12 +189,14 @@ def accuse(match_id: uuid.UUID, body: NewAccusation, db: Db) -> Outcome:
 
     return Outcome(
         correct=verdict.correct,
+        motive_correct=verdict.motive_correct,
         accused=body.culprit,
         culprit=verdict.culprit,
         means=catalog.means(verdict.means_key),
         motive=catalog.motive(verdict.motive_key),
         score=verdict.score,
         culprit_points=verdict.culprit_points,
+        motive_points=verdict.motive_points,
         evidence_points=verdict.evidence_points,
         speed_points=verdict.speed_points,
         evidence_expected=verdict.evidence_expected,

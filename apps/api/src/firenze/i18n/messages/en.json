@@ -43,7 +43,8 @@
     "body": "{victim}'s body was found {room}, around {time}.",
     "presence": "{character} was {room} at {time}, with {witness} present.",
     "secret": "{character} {secret} — and was {room} at {time}.",
-    "clue": "{witness} saw, {room}, a personal item of {character}'s that had no business being there at {time}."
+    "clue": "{witness} saw, {room}, a personal item of {character}'s that had no business being there at {time}.",
+    "motive": "{witness} overheard {character} quarrelling with {victim} about {motive}, days before."
   },
   "secrets": {
     "cellar_wine": "had been siphoning wine from the cellar to resell",

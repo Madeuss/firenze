@@ -13,6 +13,7 @@ from firenze.generation import generate
 from firenze.verdict import (
     CULPRIT_POINTS,
     EVIDENCE_POINTS,
+    MOTIVE_POINTS,
     SPEED_POINTS,
     Accusation,
     AlreadyAccused,
@@ -46,6 +47,10 @@ def _culprit() -> str:
 
 def _chain() -> tuple[str, ...]:
     return tuple(generate(seed=42).solution.chain)
+
+
+def _motive() -> str:
+    return generate(seed=42).solution.motive_key
 
 
 # --- being right ----------------------------------------------------------
@@ -129,13 +134,40 @@ def test_turns_saved_are_worth_up_to_ten() -> None:
 
 
 def test_a_perfect_match_scores_a_hundred() -> None:
+    """Right person, right reason, every link, no turns wasted."""
     chain = _chain()
 
     verdict = judge(
-        _match(turns_left=30, holding=chain), Accusation(culprit=_culprit(), evidence=chain)
+        _match(turns_left=30, holding=chain),
+        Accusation(culprit=_culprit(), motive_key=_motive(), evidence=chain),
     )
 
     assert verdict.score == 100
+
+
+def test_the_motive_scores_only_alongside_the_right_person() -> None:
+    """The motive of somebody who did not do it is a different story, not half an answer."""
+    innocent = next(s.id for s in _match().case.suspects if s.id != _culprit())
+
+    verdict = judge(_match(turns_left=0), Accusation(culprit=innocent, motive_key=_motive()))
+
+    assert verdict.motive_correct, "they did name the real motive"
+    assert verdict.motive_points == 0
+
+
+def test_naming_no_motive_is_unclaimed_rather_than_wrong() -> None:
+    verdict = judge(_match(turns_left=0), Accusation(culprit=_culprit()))
+
+    assert not verdict.motive_correct
+    assert verdict.motive_points == 0
+    assert verdict.score == CULPRIT_POINTS
+
+
+def test_the_right_motive_with_the_right_person_scores() -> None:
+    verdict = judge(_match(turns_left=0), Accusation(culprit=_culprit(), motive_key=_motive()))
+
+    assert verdict.motive_correct
+    assert verdict.motive_points == MOTIVE_POINTS
 
 
 # --- one accusation, and then it is over ----------------------------------

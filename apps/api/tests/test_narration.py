@@ -83,7 +83,7 @@ def test_an_unreachable_model_costs_only_the_prose() -> None:
 
     assert epilogue is None
     assert verdict.correct, "the outcome did not move"
-    assert verdict.culprit_points == 60
+    assert verdict.culprit_points == 50
 
 
 def test_a_refusal_costs_only_the_prose() -> None:
