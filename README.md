@@ -159,6 +159,13 @@ What the answer does **not** carry is the point: `lied`, `fact_referenced` and
 `clue_revealed` exist, are recorded, and never cross the wire. Returning them
 would hand the player a lie detector.
 
+Accusing works two ways and commits one way. A front end can let somebody pick a
+suspect and tick evidence, or let them type *"foi a governanta, por causa da
+herança"* — `POST /accusation/draft` reads prose into a form, and `POST
+/accusation` accepts **only the form**. There is no endpoint that accuses in
+prose, so the confirmation is structural rather than a habit: an accusation is
+irreversible, and a misreading should never become one.
+
 `make` on its own lists every target.
 
 ## Layout

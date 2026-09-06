@@ -62,6 +62,10 @@ class MatchState(BaseModel):
     evidence: tuple[str, ...] = Field(
         default=(), description="Fact ids the player holds and may present."
     )
+    known_motives: tuple[str, ...] = Field(
+        default=(),
+        description="Motives the player found out about, and may therefore name.",
+    )
 
 
 class Question(BaseModel):
@@ -72,6 +76,32 @@ class Question(BaseModel):
 class Confrontation(BaseModel):
     suspect: str = Field(description="Character id, e.g. sus-1.")
     evidence: str = Field(description="Fact id the player holds, e.g. F-014.")
+
+
+class AccusationText(BaseModel):
+    """What a player typed, before it is a form."""
+
+    text: str = Field(min_length=1, max_length=1000)
+
+
+class DraftAccusation(BaseModel):
+    """The form, filled in from prose, for the player to confirm.
+
+    Nothing here has been committed. `POST /accusation` takes these fields back,
+    which is what makes the confirmation structural rather than a convention:
+    there is no way to accuse in prose.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    culprit: str | None = None
+    culprit_name: str | None = None
+    motive_key: str | None = None
+    motive: str | None = None
+    evidence: tuple[str, ...] = ()
+    evidence_text: tuple[str, ...] = ()
+    unresolved: tuple[str, ...] = ()
+    summary: str = Field(description="The sentence to show before it counts.")
 
 
 class NewAccusation(BaseModel):

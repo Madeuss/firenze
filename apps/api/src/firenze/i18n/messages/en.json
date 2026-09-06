@@ -87,7 +87,11 @@
     "language_name": "English",
     "confrontation_question": "The detective shows you a piece of evidence. What do you say?",
     "right": "right",
-    "wrong": "wrong"
+    "wrong": "wrong",
+    "nobody": "nobody",
+    "no_motive": "no stated motive",
+    "no_evidence": "no evidence presented",
+    "accusation_summary": "You are about to accuse {who}, for {why}, presenting: {what}. This cannot be undone."
   },
   "deflections": [
     "I beg your pardon, but I have no idea what you mean.",

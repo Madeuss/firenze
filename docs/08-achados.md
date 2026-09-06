@@ -141,6 +141,26 @@ cobra, **não alcançou modelo nenhum** não cobra e vira 503.
 **Por que importa:** "sempre cobra" parecia a regra simples e segura. Era só a
 regra que não distinguia nada.
 
+### 2026-08-31 — A confirmação virou estrutural em vez de convenção
+
+Acusar em texto livre exigia um modelo interpretando — e interpretação errada
+custaria a partida, porque acusação é irreversível (RN-031).
+
+A saída não foi um passo extra de confirmação. Foi **não existir endpoint que
+aceite prosa**: o parser preenche um formulário, e a acusação só aceita os
+campos ([#39](https://github.com/Madeuss/firenze/pull/39)).
+
+**Por que importa:** confirmação implementada como etapa é etapa que alguém pula.
+Implementada como tipo, não tem por onde pular.
+
+### 2026-08-31 — Mostrar os motivos possíveis seria entregar 20 pontos
+
+A tentação era listar as quatro chaves de motivo num dropdown. Isso transforma
+20 pontos num chute de 1 em 4.
+
+O que a API expõe é `known_motives` — só os motivos que o jogador **descobriu**.
+Quem nunca achou a discussão não ganha uma lista curta do que ela pode ter sido.
+
 ### 2026-08-31 — O motivo era revelado e nunca podia ser descoberto
 
 O gerador sorteava `motive_key` e não plantava em fato nenhum. O jogador lia o

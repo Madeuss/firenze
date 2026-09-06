@@ -21,10 +21,13 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.engine import Connection
 
+from firenze.accusation import known_motives, parse, summarise
 from firenze.api.schemas import (
+    AccusationText,
     Answer,
     CastMember,
     Confrontation,
+    DraftAccusation,
     KnownFact,
     MatchState,
     NewAccusation,
@@ -110,6 +113,7 @@ def _state(match_id: uuid.UUID, match: Match) -> MatchState:
             if fact.scope.public
         ),
         evidence=tuple(sorted(match.evidence)),
+        known_motives=known_motives(match),
         notebook=tuple(
             Said(
                 turn=said.turn,
@@ -143,6 +147,46 @@ def read(match_id: uuid.UUID, db: Db) -> MatchState:
         return _state(match_id, load_match(db, match_id))
     except NotFound as missing:
         raise HTTPException(status.HTTP_404_NOT_FOUND, str(missing)) from missing
+
+
+@router.post("/{match_id}/accusation/draft", summary="Read an accusation out of prose")
+def draft_accusation(
+    match_id: uuid.UUID, body: AccusationText, db: Db, model: Model
+) -> DraftAccusation:
+    """Fills the form; commits nothing.
+
+    The player confirms by posting the fields to `/accusation`. That endpoint
+    accepts no prose, so a misreading cannot become an accusation without
+    somebody seeing it first (RN-031).
+    """
+    try:
+        match = load_match(db, match_id)
+    except NotFound as missing:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(missing)) from missing
+
+    if match.is_over:
+        raise HTTPException(status.HTTP_409_CONFLICT, "this match has been decided")
+
+    catalog = load(match.locale)
+    try:
+        draft = parse(match, catalog, body.text, model=model)
+    except ModelUnavailable as unreachable:
+        log.warning("could not read the accusation on match %s: %s", match_id, unreachable)
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            "the accusation could not be read; name the suspect directly instead",
+        ) from unreachable
+
+    return DraftAccusation(
+        culprit=draft.culprit,
+        culprit_name=match.case.name_of(draft.culprit) if draft.culprit else None,
+        motive_key=draft.motive_key,
+        motive=catalog.motive(draft.motive_key) if draft.motive_key else None,
+        evidence=draft.evidence,
+        evidence_text=tuple(catalog.fact(match.case, match.case.fact(e)) for e in draft.evidence),
+        unresolved=draft.unresolved,
+        summary=summarise(draft, match.case, catalog),
+    )
 
 
 @router.post("/{match_id}/accusation", summary="Name a culprit and end the match")

@@ -1,6 +1,22 @@
 {
   "components": {
     "schemas": {
+      "AccusationText": {
+        "description": "What a player typed, before it is a form.",
+        "properties": {
+          "text": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "AccusationText",
+        "type": "object"
+      },
       "Answer": {
         "description": "What came back, and what it cost.\n\n`answered` is false when a reply was produced and then discarded — by the\noutput filters, or by the provider declining. The turn is spent, because the\nplayer had their go.\n\nAn unreachable model is not this shape: it is a 503 and costs nothing.\n\n`reason` stays coarse on purpose. The detail can quote the canary token the\nreply was discarded for, which is precisely the thing that must not travel.",
         "properties": {
@@ -118,6 +134,89 @@
         "title": "Confrontation",
         "type": "object"
       },
+      "DraftAccusation": {
+        "description": "The form, filled in from prose, for the player to confirm.\n\nNothing here has been committed. `POST /accusation` takes these fields back,\nwhich is what makes the confirmation structural rather than a convention:\nthere is no way to accuse in prose.",
+        "properties": {
+          "culprit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Culprit"
+          },
+          "culprit_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Culprit Name"
+          },
+          "evidence": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "evidence_text": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Evidence Text",
+            "type": "array"
+          },
+          "motive": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motive"
+          },
+          "motive_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motive Key"
+          },
+          "summary": {
+            "description": "The sentence to show before it counts.",
+            "title": "Summary",
+            "type": "string"
+          },
+          "unresolved": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Unresolved",
+            "type": "array"
+          }
+        },
+        "required": [
+          "summary"
+        ],
+        "title": "DraftAccusation",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -208,6 +307,15 @@
               "$ref": "#/components/schemas/KnownFact"
             },
             "title": "Known",
+            "type": "array"
+          },
+          "known_motives": {
+            "default": [],
+            "description": "Motives the player found out about, and may therefore name.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Known Motives",
             "type": "array"
           },
           "locale": {
@@ -672,6 +780,60 @@
           }
         },
         "summary": "Name a culprit and end the match",
+        "tags": [
+          "match"
+        ]
+      }
+    },
+    "/matches/{match_id}/accusation/draft": {
+      "post": {
+        "description": "Fills the form; commits nothing.\n\nThe player confirms by posting the fields to `/accusation`. That endpoint\naccepts no prose, so a misreading cannot become an accusation without\nsomebody seeing it first (RN-031).",
+        "operationId": "draft_accusation_matches__match_id__accusation_draft_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "match_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Match Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccusationText"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftAccusation"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read an accusation out of prose",
         "tags": [
           "match"
         ]
