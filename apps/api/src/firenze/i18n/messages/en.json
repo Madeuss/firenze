@@ -84,7 +84,9 @@
     "secrets": "SECRETS (why the innocent lie)",
     "hidden": "Solution withheld. Use --reveal to see it.",
     "language_name": "English",
-    "confrontation_question": "The detective shows you a piece of evidence. What do you say?"
+    "confrontation_question": "The detective shows you a piece of evidence. What do you say?",
+    "right": "right",
+    "wrong": "wrong"
   },
   "deflections": [
     "I beg your pardon, but I have no idea what you mean.",

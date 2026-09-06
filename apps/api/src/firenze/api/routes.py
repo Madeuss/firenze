@@ -40,6 +40,7 @@ from firenze.i18n import UnknownLocale, load
 from firenze.interrogation import ask, confront
 from firenze.interrogation.turn import MatchIsOver, NoTurnsLeft, UnknownEvidence
 from firenze.model import ModelUnavailable, StructuredModel, resolve
+from firenze.narration import write as narrate
 from firenze.storage import NotFound, load_match, record_turn, start_match, transaction
 from firenze.verdict import Accusation, AlreadyAccused, NotASuspect, judge
 
@@ -165,6 +166,20 @@ def accuse(match_id: uuid.UUID, body: NewAccusation, db: Db) -> Outcome:
     record_turn(db, match_id, decided_match, None)
 
     catalog = load(match.locale)
+    # The ending is written after the outcome is decided, and its absence
+    # changes nothing above this line (RN-032).
+    epilogue: str | None = None
+    try:
+        epilogue = narrate(
+            verdict,
+            body.culprit,
+            match.case,
+            catalog,
+            model=_resolve(settings.model_name),
+        )
+    except HTTPException:
+        log.info("no model configured; the match ends without an epilogue")
+
     return Outcome(
         correct=verdict.correct,
         accused=body.culprit,
@@ -178,6 +193,7 @@ def accuse(match_id: uuid.UUID, body: NewAccusation, db: Db) -> Outcome:
         evidence_expected=verdict.evidence_expected,
         evidence_hit=verdict.evidence_hit,
         turns_left=match.turns_left,
+        epilogue=epilogue,
     )
 
 

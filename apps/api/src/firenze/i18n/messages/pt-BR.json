@@ -84,7 +84,9 @@
     "secrets": "SEGREDOS (por que os inocentes mentem)",
     "hidden": "Solução omitida. Use --reveal para vê-la.",
     "language_name": "português do Brasil",
-    "confrontation_question": "O detetive lhe mostra uma prova. O que você diz?"
+    "confrontation_question": "O detetive lhe mostra uma prova. O que você diz?",
+    "right": "certo",
+    "wrong": "errado"
   },
   "deflections": [
     "Perdão, senhor, mas não faço ideia do que está falando.",

@@ -141,6 +141,20 @@ cobra, **não alcançou modelo nenhum** não cobra e vira 503.
 **Por que importa:** "sempre cobra" parecia a regra simples e segura. Era só a
 regra que não distinguia nada.
 
+### 2026-08-31 — Validar prosa com regex rejeitou a frase certa
+
+A narração do desfecho ganhou uma checagem de "personagem inventado": sinalizar
+pares de palavras capitalizadas fora do elenco. Na primeira execução ela
+rejeitou **"Foi Vitória Belmiro que…"** — verbo no início de frase lê como
+primeiro nome ([#34](https://github.com/Madeuss/firenze/pull/34)).
+
+A regra foi removida, não afinada.
+
+**Por que importa:** é o mesmo modo de falha que o prompt do classificador gasta
+a maior parte das palavras evitando. Recusar entrada boa é pior que aceitar
+entrada imperfeita — desde que a imperfeita não possa vazar nada. E aqui não
+podia: canary, tamanho e vazio continuam checados; o resto era zelo.
+
 ### 2026-08-31 — A forma mais forte de "o LLM não decide" é não dar como chegar
 
 O veredito virou um módulo que **não importa nada de `firenze.model`**, e existe
