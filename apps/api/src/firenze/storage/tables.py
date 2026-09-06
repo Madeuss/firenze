@@ -70,6 +70,8 @@ matches = Table(
     Column("locale", String(16), nullable=False),
     Column("turns_left", Integer, nullable=False),
     Column("stances", JSON_DOC, nullable=False, default=dict),
+    Column("accused_culprit", String(32), nullable=True),
+    Column("accused_evidence", JSON_DOC, nullable=True),
     Column("created_at", DateTime(timezone=True), server_default=func.now(), nullable=False),
 )
 

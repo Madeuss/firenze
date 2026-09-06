@@ -141,6 +141,26 @@ cobra, **não alcançou modelo nenhum** não cobra e vira 503.
 **Por que importa:** "sempre cobra" parecia a regra simples e segura. Era só a
 regra que não distinguia nada.
 
+### 2026-08-31 — A forma mais forte de "o LLM não decide" é não dar como chegar
+
+O veredito virou um módulo que **não importa nada de `firenze.model`**, e existe
+um teste que verifica isso lendo o próprio arquivo
+([#33](https://github.com/Madeuss/firenze/pull/33)).
+
+Antes a garantia era "nenhuma função aqui chama modelo" — verdadeira e frágil,
+porque depende de quem escrever a próxima função. Agora é propriedade do
+módulo.
+
+**Por que importa:** invariante checada por convenção vira invariante quebrada
+por conveniência. Quando dá para transformar em estrutura verificável, vale o
+teste feio que lê código-fonte.
+
+### 2026-08-31 — Prova que o jogador não tem não pontua
+
+Citar o id certo sem nunca ter ouvido o fato seria adivinhar o formato da
+resposta, não deduzir. A pontuação filtra por `match.evidence`, então o jogador
+só é premiado pelo que descobriu.
+
 ### 2026-08-31 — A mesma contradição é bug ou mecânica, dependendo da causa
 
 Contradição espontânea é falha e a resposta é descartada. Contradição **causada

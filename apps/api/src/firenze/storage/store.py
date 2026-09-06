@@ -108,9 +108,14 @@ def start_match(connection: Connection, full: CaseWithSolution, locale: str) -> 
 
 def load_match(connection: Connection, match_id: uuid.UUID) -> Match:
     row = connection.execute(
-        select(matches.c.case_id, matches.c.locale, matches.c.turns_left, matches.c.stances).where(
-            matches.c.id == match_id
-        )
+        select(
+            matches.c.case_id,
+            matches.c.locale,
+            matches.c.turns_left,
+            matches.c.stances,
+            matches.c.accused_culprit,
+            matches.c.accused_evidence,
+        ).where(matches.c.id == match_id)
     ).first()
     if row is None:
         raise NotFound(f"no match {match_id}")
@@ -138,6 +143,8 @@ def load_match(connection: Connection, match_id: uuid.UUID) -> Match:
         locale=row[1],
         turns_left=row[2],
         stances={who: Stance(value) for who, value in (row[3] or {}).items()},
+        accused_culprit=row[4],
+        accused_evidence=tuple(row[5] or ()),
         statements=tuple(
             Statement(
                 turn=s[0],
@@ -175,6 +182,8 @@ def record_turn(
         .values(
             turns_left=match.turns_left,
             stances={who: stance.value for who, stance in match.stances.items()},
+            accused_culprit=match.accused_culprit,
+            accused_evidence=list(match.accused_evidence),
         )
     )
     if statement is None:

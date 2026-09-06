@@ -242,6 +242,30 @@
         "title": "MatchState",
         "type": "object"
       },
+      "NewAccusation": {
+        "description": "One per match, irreversible (RN-031). Choose carefully.",
+        "properties": {
+          "culprit": {
+            "description": "Character id you are naming.",
+            "title": "Culprit",
+            "type": "string"
+          },
+          "evidence": {
+            "default": [],
+            "description": "Fact ids you offer in support. Only ones you hold count.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Evidence",
+            "type": "array"
+          }
+        },
+        "required": [
+          "culprit"
+        ],
+        "title": "NewAccusation",
+        "type": "object"
+      },
       "NewMatch": {
         "properties": {
           "locale": {
@@ -267,6 +291,81 @@
           "seed"
         ],
         "title": "NewMatch",
+        "type": "object"
+      },
+      "Outcome": {
+        "description": "The verdict, and the only moment the solution may cross the wire.\n\nRN-011 governs a match in progress. This is its ending: the player has\nspent their one accusation and is owed the answer, right or wrong.",
+        "properties": {
+          "accused": {
+            "title": "Accused",
+            "type": "string"
+          },
+          "correct": {
+            "title": "Correct",
+            "type": "boolean"
+          },
+          "culprit": {
+            "title": "Culprit",
+            "type": "string"
+          },
+          "culprit_points": {
+            "title": "Culprit Points",
+            "type": "integer"
+          },
+          "evidence_expected": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Evidence Expected",
+            "type": "array"
+          },
+          "evidence_hit": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Evidence Hit",
+            "type": "array"
+          },
+          "evidence_points": {
+            "title": "Evidence Points",
+            "type": "integer"
+          },
+          "means": {
+            "title": "Means",
+            "type": "string"
+          },
+          "motive": {
+            "title": "Motive",
+            "type": "string"
+          },
+          "score": {
+            "title": "Score",
+            "type": "integer"
+          },
+          "speed_points": {
+            "title": "Speed Points",
+            "type": "integer"
+          },
+          "turns_left": {
+            "title": "Turns Left",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "correct",
+          "accused",
+          "culprit",
+          "means",
+          "motive",
+          "score",
+          "culprit_points",
+          "evidence_points",
+          "speed_points",
+          "evidence_expected",
+          "evidence_hit",
+          "turns_left"
+        ],
+        "title": "Outcome",
         "type": "object"
       },
       "Question": {
@@ -485,6 +584,60 @@
           }
         },
         "summary": "The notebook",
+        "tags": [
+          "match"
+        ]
+      }
+    },
+    "/matches/{match_id}/accusation": {
+      "post": {
+        "description": "No model is involved. The outcome is arithmetic (RN-032).",
+        "operationId": "accuse_matches__match_id__accusation_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "match_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Match Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewAccusation"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Outcome"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Name a culprit and end the match",
         "tags": [
           "match"
         ]

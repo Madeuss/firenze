@@ -219,6 +219,16 @@ class Match(BaseModel):
     turns_left: int = 30
     stances: dict[str, Stance] = Field(default_factory=dict)
     statements: tuple[Statement, ...] = ()
+    accused_culprit: str | None = None
+    """Set once, never unset. RN-031 makes an accusation irreversible, and the
+    cheapest way to keep a rule like that is to have nowhere to put a second
+    one."""
+    accused_evidence: tuple[str, ...] = ()
+
+    @property
+    def is_over(self) -> bool:
+        """No more questions after an accusation. The match had its ending."""
+        return self.accused_culprit is not None
 
     @property
     def case(self) -> Case:

@@ -27,7 +27,9 @@ from firenze.api.schemas import (
     Confrontation,
     KnownFact,
     MatchState,
+    NewAccusation,
     NewMatch,
+    Outcome,
     Question,
     Said,
 )
@@ -36,9 +38,10 @@ from firenze.domain import Match, Role
 from firenze.generation import UnsolvableCase, generate
 from firenze.i18n import UnknownLocale, load
 from firenze.interrogation import ask, confront
-from firenze.interrogation.turn import NoTurnsLeft, UnknownEvidence
+from firenze.interrogation.turn import MatchIsOver, NoTurnsLeft, UnknownEvidence
 from firenze.model import ModelUnavailable, StructuredModel, resolve
 from firenze.storage import NotFound, load_match, record_turn, start_match, transaction
+from firenze.verdict import Accusation, AlreadyAccused, NotASuspect, judge
 
 log = logging.getLogger(__name__)
 router = APIRouter(prefix="/matches", tags=["match"])
@@ -141,6 +144,43 @@ def read(match_id: uuid.UUID, db: Db) -> MatchState:
         raise HTTPException(status.HTTP_404_NOT_FOUND, str(missing)) from missing
 
 
+@router.post("/{match_id}/accusation", summary="Name a culprit and end the match")
+def accuse(match_id: uuid.UUID, body: NewAccusation, db: Db) -> Outcome:
+    """No model is involved. The outcome is arithmetic (RN-032)."""
+    try:
+        match = load_match(db, match_id)
+    except NotFound as missing:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(missing)) from missing
+
+    try:
+        verdict = judge(match, Accusation(culprit=body.culprit, evidence=body.evidence))
+    except AlreadyAccused as decided:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(decided)) from decided
+    except NotASuspect as unknown:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(unknown)) from unknown
+
+    decided_match = match.model_copy(
+        update={"accused_culprit": body.culprit, "accused_evidence": tuple(body.evidence)}
+    )
+    record_turn(db, match_id, decided_match, None)
+
+    catalog = load(match.locale)
+    return Outcome(
+        correct=verdict.correct,
+        accused=body.culprit,
+        culprit=verdict.culprit,
+        means=catalog.means(verdict.means_key),
+        motive=catalog.motive(verdict.motive_key),
+        score=verdict.score,
+        culprit_points=verdict.culprit_points,
+        evidence_points=verdict.evidence_points,
+        speed_points=verdict.speed_points,
+        evidence_expected=verdict.evidence_expected,
+        evidence_hit=verdict.evidence_hit,
+        turns_left=match.turns_left,
+    )
+
+
 @router.post("/{match_id}/confrontations", summary="Show a suspect a piece of evidence")
 def take_confrontation(match_id: uuid.UUID, body: Confrontation, db: Db, model: Model) -> Answer:
     """Costs two turns, and only the evidence the player already holds."""
@@ -161,8 +201,8 @@ def take_confrontation(match_id: uuid.UUID, body: Confrontation, db: Db, model: 
         )
     except UnknownEvidence as unheld:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(unheld)) from unheld
-    except NoTurnsLeft as spent:
-        raise HTTPException(status.HTTP_409_CONFLICT, str(spent)) from spent
+    except (NoTurnsLeft, MatchIsOver) as over:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(over)) from over
     except ModelUnavailable as unreachable:
         log.warning("confrontation abandoned on match %s: %s", match_id, unreachable)
         raise HTTPException(
@@ -213,8 +253,8 @@ def take_turn(
             model=model,
             classifier=classifier,
         )
-    except NoTurnsLeft as spent:
-        raise HTTPException(status.HTTP_409_CONFLICT, str(spent)) from spent
+    except (NoTurnsLeft, MatchIsOver) as over:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(over)) from over
     except ModelUnavailable as unreachable:
         # Nothing was asked of anybody, so nothing happened and nothing is charged.
         log.warning("turn abandoned on match %s: %s", match_id, unreachable)

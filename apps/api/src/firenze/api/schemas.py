@@ -74,6 +74,38 @@ class Confrontation(BaseModel):
     evidence: str = Field(description="Fact id the player holds, e.g. F-014.")
 
 
+class NewAccusation(BaseModel):
+    """One per match, irreversible (RN-031). Choose carefully."""
+
+    culprit: str = Field(description="Character id you are naming.")
+    evidence: tuple[str, ...] = Field(
+        default=(), description="Fact ids you offer in support. Only ones you hold count."
+    )
+
+
+class Outcome(BaseModel):
+    """The verdict, and the only moment the solution may cross the wire.
+
+    RN-011 governs a match in progress. This is its ending: the player has
+    spent their one accusation and is owed the answer, right or wrong.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    correct: bool
+    accused: str
+    culprit: str
+    means: str
+    motive: str
+    score: int
+    culprit_points: int
+    evidence_points: int
+    speed_points: int
+    evidence_expected: tuple[str, ...]
+    evidence_hit: tuple[str, ...]
+    turns_left: int
+
+
 class Answer(BaseModel):
     """What came back, and what it cost.
 
