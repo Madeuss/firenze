@@ -9,9 +9,9 @@ character has no way of knowing.
 
 ![CI](https://github.com/Madeuss/firenze/actions/workflows/ci.yml/badge.svg)
 
-> **Status: phase 2 of 8.** Cases generate and a suspect answers questions,
-> guarded end to end. The words are still synthetic — the model provider
-> (Magalu Prosa) is in pilot. Not playable yet.
+> **Status: phase 2 of 8.** Cases generate, a suspect answers over HTTP, and
+> matches persist. The words are still synthetic — the model provider (Magalu
+> Prosa) is in pilot. Not playable yet.
 
 ## See it work
 
@@ -134,6 +134,20 @@ make dev                          # Postgres 16 + pgvector, Redis, the API
 curl localhost:8000/health
 ```
 
+Or over HTTP, with the stack up:
+
+```console
+$ curl -X POST localhost:8000/matches -d '{"seed":42,"locale":"pt-BR"}'
+{"id":"1ae8856a-...","turns_left":30,"cast":[...],"known":[...],"notebook":[]}
+
+$ curl -X POST localhost:8000/matches/$ID/turns     -d '{"suspect":"sus-1","question":"onde estava as 22h?"}'
+{"answered":true,"character":"sus-1","line":"...","stance":"cooperative","turns_left":29}
+```
+
+What the answer does **not** carry is the point: `lied`, `fact_referenced` and
+`clue_revealed` exist, are recorded, and never cross the wire. Returning them
+would hand the player a lie detector.
+
 `make` on its own lists every target.
 
 ## Layout
@@ -143,6 +157,8 @@ curl localhost:8000/health
 | [`apps/api/src/firenze/domain/`](apps/api/src/firenze/domain/) | Entities. Structure only — no prose, no rendered sentence |
 | [`apps/api/src/firenze/generation/`](apps/api/src/firenze/generation/) | Generator, solver, and the invariant checks |
 | [`apps/api/src/firenze/interrogation/`](apps/api/src/firenze/interrogation/) | The turn: dossier, prompt, guards, stance machine |
+| [`apps/api/src/firenze/api/`](apps/api/src/firenze/api/) | HTTP. Player-facing shapes, never the domain objects |
+| [`apps/api/src/firenze/storage/`](apps/api/src/firenze/storage/) | The only package that writes SQL |
 | [`apps/api/src/firenze/model/`](apps/api/src/firenze/model/) | The model port. No other module names a provider |
 | [`apps/api/src/firenze/i18n/`](apps/api/src/firenze/i18n/) | Message catalogs. Grammar lives here, not in the domain |
 | [`docs/adr/`](docs/adr/) | Architecture decisions, with their downsides written down |

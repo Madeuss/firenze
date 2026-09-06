@@ -128,6 +128,28 @@ barato — contra uma VM que consome créditos dormindo.
 
 ---
 
+### 2026-08-31 — A mensagem de rejeição é ela própria sensível
+
+O motivo pelo qual uma resposta foi descartada pode conter o canary que a
+descartou. Devolver `rejection` ao cliente vazaria exatamente o token que o
+filtro existe para proteger ([#22](https://github.com/Madeuss/firenze/pull/22)).
+
+A API devolve `reason` grosso — `rejected` ou `model_unavailable` — e o detalhe
+vai para o log.
+
+**Por que importa:** o caminho de erro escapa da modelagem de segurança com
+frequência. Ninguém pensa no texto da exceção como superfície de dados.
+
+### 2026-08-31 — O que o turno produz não é o que a API devolve
+
+`lied`, `fact_referenced` e `pista_vazada` são contabilidade (RN-022) — o
+próprio prompt diz ao personagem que não são mostrados ao detetive. Devolvê-los
+entregaria um detector de mentiras ao jogador e acabaria com o jogo no primeiro
+turno.
+
+A API tem schemas próprios, então o que o jogador pode saber é decidido por
+quais campos existem, não por lembrar de não serializar os outros.
+
 ### 2026-08-31 — Isolamento também se perde no SQL
 
 A solução ficou em tabela própria, não em coluna de `cases`. Como coluna, o

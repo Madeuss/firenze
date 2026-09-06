@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 from firenze import __version__
+from firenze.api import router
 from firenze.config import Environment, settings
 
 
@@ -25,6 +26,8 @@ def create_app() -> FastAPI:
             "The front end never talks to the model provider or to the database."
         ),
     )
+
+    app.include_router(router)
 
     @app.get("/health", tags=["infra"], summary="Liveness")
     def health() -> Health:

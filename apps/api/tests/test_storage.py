@@ -35,8 +35,10 @@ URL = os.environ.get(
 
 
 def _reachable() -> bool:
+    """A short timeout on purpose: without one, a missing database costs four
+    minutes of retries before the suite decides to skip."""
     try:
-        create_engine(URL).connect().close()
+        create_engine(URL, connect_args={"connect_timeout": 2}).connect().close()
     except OperationalError:
         return False
     return True
