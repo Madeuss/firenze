@@ -124,6 +124,8 @@ def load_match(connection: Connection, match_id: uuid.UUID) -> Match:
             statements.c.stance,
             statements.c.lied,
             statements.c.fact_referenced,
+            statements.c.claimed_room,
+            statements.c.claimed_interval,
             statements.c.intent,
         )
         .where(statements.c.match_id == match_id)
@@ -144,7 +146,9 @@ def load_match(connection: Connection, match_id: uuid.UUID) -> Match:
                 stance=Stance(s[4]),
                 lied=s[5],
                 fact_referenced=s[6],
-                intent=Intent(s[7]),
+                claimed_room=s[7],
+                claimed_interval=s[8],
+                intent=Intent(s[9]),
             )
             for s in said
         ),
@@ -185,6 +189,8 @@ def record_turn(
             stance=statement.stance.value,
             lied=statement.lied,
             fact_referenced=statement.fact_referenced,
+            claimed_room=statement.claimed_room,
+            claimed_interval=statement.claimed_interval,
             intent=statement.intent.value,
         )
     )
