@@ -149,6 +149,8 @@ código (`# RN-012`) precisa de um endereço estável.
   partida e da postura.
 - **[`02-regras-de-negocio.md`](02-regras-de-negocio.md)** — RN-001 a RN-042,
   cada uma com o ponto onde é imposta e o que prova que ela vale.
+- **[`06-plano-de-evals.md`](06-plano-de-evals.md)** — métricas, portões,
+  conjuntos e o que o CI cobra de cada um.
 - **[`08-achados.md`](08-achados.md)** — log de descobertas: o que surpreendeu, o
   que quebrou de um jeito que ensinou algo. Alimenta artigo e evita reaprender o
   mesmo tropeço.

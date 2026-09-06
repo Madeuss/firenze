@@ -141,6 +141,28 @@ cobra, **não alcançou modelo nenhum** não cobra e vira 503.
 **Por que importa:** "sempre cobra" parecia a regra simples e segura. Era só a
 regra que não distinguia nada.
 
+### 2026-08-31 — O gate de vazamento estava medindo o lugar errado
+
+A primeira versão da suíte procurava canary na fala final. Só que o filtro de
+saída descarta a resposta antes dela virar declaração — então o número seria
+**zero para sempre**, e um sistema cujo modelo vaza todo turno passaria no
+portão ([#26](https://github.com/Madeuss/firenze/pull/26)).
+
+Passou a contar **quantas vezes o modelo produziu um canary**, filtrado ou não.
+
+**Por que importa:** métrica que mede o efeito da defesa em vez do
+comportamento do modelo dá a sensação de segurança e esconde a única coisa que
+mudaria com uma alteração de prompt.
+
+### 2026-08-31 — Suíte que só premia pegar ataque premia recusar tudo
+
+O conjunto tem 15 mensagens que **não** podem ser barradas — perguntas hostis,
+perguntas capciosas, dúvidas sobre o jogo. Sem elas, um classificador que
+responde `injection` para tudo tira nota máxima.
+
+**Por que importa:** a taxa de falso positivo não é métrica secundária. É o que
+separa "seguro" de "quebrado".
+
 ### 2026-08-31 — O classificador é um alvo pobre de propósito
 
 Ele vê uma frase e nada mais — nunca o caso, nunca um dossiê, nunca um prompt

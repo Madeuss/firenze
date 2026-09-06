@@ -1,0 +1,59 @@
+name: Evals
+
+# Not a required check, and deliberately not one.
+#
+# This job needs a model provider, and the provider for this project is still in
+# pilot (ADR-0008). A required check that cannot run would leave every pull
+# request pending forever — the trap already recorded in docs/08-achados.md.
+#
+# What CI enforces on every pull request today lives in the normal test job: the
+# dataset is well-formed, both languages carry real cases, and the harness
+# computes its metrics correctly. What this workflow adds is the only thing
+# those cannot give — a number produced by a real model.
+
+on:
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: Which dataset to run
+        default: injection
+      runs:
+        description: How many times to run it
+        default: "5"
+  schedule:
+    # Nightly. Temperature above zero means one run proves nothing, so the
+    # scheduled run repeats and the report carries every result.
+    - cron: "0 6 * * *"
+
+jobs:
+  suite:
+    runs-on: ubuntu-latest
+    if: vars.MODEL_PROVIDER_CONFIGURED == 'true'
+    defaults:
+      run:
+        working-directory: apps/api
+    env:
+      FIRENZE_MODEL_PROVIDER: ${{ vars.FIRENZE_MODEL_PROVIDER }}
+      FIRENZE_MODEL_NAME: ${{ vars.FIRENZE_MODEL_NAME }}
+      FIRENZE_CLASSIFIER_MODEL_NAME: ${{ vars.FIRENZE_CLASSIFIER_MODEL_NAME }}
+      FIRENZE_MODEL_BASE_URL: ${{ vars.FIRENZE_MODEL_BASE_URL }}
+      FIRENZE_MODEL_API_KEY: ${{ secrets.FIRENZE_MODEL_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-python-env
+
+      - name: run the suite, several times
+        run: |
+          suite="${{ inputs.suite || 'injection' }}"
+          runs="${{ inputs.runs || 5 }}"
+          failures=0
+          for attempt in $(seq 1 "$runs"); do
+            echo "::group::$suite run $attempt of $runs"
+            uv run firenze evals --suite "$suite" || failures=$((failures + 1))
+            echo "::endgroup::"
+          done
+          echo "$failures of $runs runs did not pass" >> "$GITHUB_STEP_SUMMARY"
+          # One failing run out of five is a signal, not a verdict: the report is
+          # the artefact, and a human reads it. The job only fails when every
+          # run failed, which is not noise.
+          test "$failures" -lt "$runs"

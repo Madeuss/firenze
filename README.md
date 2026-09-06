@@ -181,6 +181,7 @@ The glossary maps both vocabularies.
 | [`docs/00-plano-de-projeto.md`](docs/00-plano-de-projeto.md) | Scope, roadmap, method |
 | [`docs/01-dominio.md`](docs/01-dominio.md) | Glossary, domain model, state machines |
 | [`docs/02-regras-de-negocio.md`](docs/02-regras-de-negocio.md) | RN-001 to RN-042, each with where it is enforced |
+| [`docs/06-plano-de-evals.md`](docs/06-plano-de-evals.md) | Metrics, gates, datasets |
 | [`docs/adr/`](docs/adr/) | Why things are the way they are |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | Branch, commit and PR flow |
 

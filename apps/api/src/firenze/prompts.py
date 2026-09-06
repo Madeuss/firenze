@@ -8,9 +8,11 @@ directory.
 import os
 from pathlib import Path
 
+from firenze.paths import repo_root
+
 
 def prompts_dir() -> Path:
     override = os.environ.get("FIRENZE_PROMPTS_DIR")
     if override:
         return Path(override)
-    return Path(__file__).resolve().parents[4] / "prompts"
+    return repo_root() / "prompts"
