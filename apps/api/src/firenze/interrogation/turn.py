@@ -49,6 +49,10 @@ class UnknownEvidence(LookupError):
     """A player cannot present what they were never told."""
 
 
+class MatchIsOver(RuntimeError):
+    """An accusation ends the match. Nobody answers anything after it. (RN-031)"""
+
+
 class TurnResult(BaseModel):
     """What a turn produced, and what it cost."""
 
@@ -163,6 +167,8 @@ def ask(
     turns that into a 503 and the turn is not charged. Everything a model did
     produce, including a refusal, comes back as a result.
     """
+    if match.is_over:
+        raise MatchIsOver("this match has been decided")
     if match.turns_left <= 0:
         raise NoTurnsLeft("no turns left in this match")
 
@@ -281,6 +287,8 @@ def confront(
     at a fact they already hold, and the only thing that could be hostile about
     that is the fact itself.
     """
+    if match.is_over:
+        raise MatchIsOver("this match has been decided")
     if match.turns_left < COST:
         raise NoTurnsLeft(f"a confrontation costs {COST} turns and {match.turns_left} remain")
     if evidence_id not in match.evidence:

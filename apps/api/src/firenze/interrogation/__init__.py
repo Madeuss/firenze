@@ -7,6 +7,7 @@ from firenze.interrogation.guard import ReplyRejected
 from firenze.interrogation.models import NpcReply
 from firenze.interrogation.turn import (
     PROMPT_VERSION,
+    MatchIsOver,
     NoTurnsLeft,
     TurnResult,
     UnknownEvidence,
@@ -20,6 +21,7 @@ __all__ = [
     "Contradiction",
     "Dossier",
     "Landed",
+    "MatchIsOver",
     "NoTurnsLeft",
     "NpcReply",
     "ReplyRejected",
