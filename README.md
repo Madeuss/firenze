@@ -9,9 +9,10 @@ character has no way of knowing.
 
 ![CI](https://github.com/Madeuss/firenze/actions/workflows/ci.yml/badge.svg)
 
-> **Status: phase 3 of 8.** Cases generate, a suspect answers over HTTP, matches
-> persist, and player input is classified before any character hears it. The
-> words are still synthetic — the model provider (Magalu Prosa) is in pilot.
+> **Status: phase 4 of 8.** Cases generate, suspects answer over HTTP, matches
+> persist, input is classified before any character hears it, and evidence can
+> break an alibi. The words are still synthetic — the model provider (Magalu
+> Prosa) is in pilot.
 
 ## See it work
 
@@ -195,8 +196,8 @@ transcribed — duplicated text drifts.
 | 0 | Foundation — repo, docs, local stack | done |
 | 1 | Case generator and deducibility solver | done |
 | 2 | A single NPC: isolated dossier, structured output, streaming | |
-| 3 | Security: canary, input classifier, output filter, CI gates | in progress |
-| 4 | Full game: six NPCs, evidence, confrontation, verdict | |
+| 3 | Security: canary, input classifier, output filter, CI gates | done |
+| 4 | Full game: six NPCs, evidence, confrontation, verdict | in progress |
 | 5–7 | Front end, observability, production | |
 
 Built with Python and FastAPI, on Postgres with pgvector for both game state

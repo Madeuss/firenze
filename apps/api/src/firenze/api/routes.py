@@ -24,6 +24,7 @@ from sqlalchemy.engine import Connection
 from firenze.api.schemas import (
     Answer,
     CastMember,
+    Confrontation,
     KnownFact,
     MatchState,
     NewMatch,
@@ -34,8 +35,8 @@ from firenze.config import settings
 from firenze.domain import Match, Role
 from firenze.generation import UnsolvableCase, generate
 from firenze.i18n import UnknownLocale, load
-from firenze.interrogation import ask
-from firenze.interrogation.turn import NoTurnsLeft
+from firenze.interrogation import ask, confront
+from firenze.interrogation.turn import NoTurnsLeft, UnknownEvidence
 from firenze.model import ModelUnavailable, StructuredModel, resolve
 from firenze.storage import NotFound, load_match, record_turn, start_match, transaction
 
@@ -104,6 +105,7 @@ def _state(match_id: uuid.UUID, match: Match) -> MatchState:
             for fact in case.facts
             if fact.scope.public
         ),
+        evidence=tuple(sorted(match.evidence)),
         notebook=tuple(
             Said(
                 turn=said.turn,
@@ -137,6 +139,55 @@ def read(match_id: uuid.UUID, db: Db) -> MatchState:
         return _state(match_id, load_match(db, match_id))
     except NotFound as missing:
         raise HTTPException(status.HTTP_404_NOT_FOUND, str(missing)) from missing
+
+
+@router.post("/{match_id}/confrontations", summary="Show a suspect a piece of evidence")
+def take_confrontation(match_id: uuid.UUID, body: Confrontation, db: Db, model: Model) -> Answer:
+    """Costs two turns, and only the evidence the player already holds."""
+    try:
+        match = load_match(db, match_id)
+    except NotFound as missing:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(missing)) from missing
+
+    if body.suspect not in {s.id for s in match.case.suspects}:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            f"{body.suspect} is not a suspect in this case",
+        )
+
+    try:
+        result = confront(
+            match, body.suspect, body.evidence, catalog=load(match.locale), model=model
+        )
+    except UnknownEvidence as unheld:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(unheld)) from unheld
+    except NoTurnsLeft as spent:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(spent)) from spent
+    except ModelUnavailable as unreachable:
+        log.warning("confrontation abandoned on match %s: %s", match_id, unreachable)
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE, "the model is unreachable"
+        ) from unreachable
+
+    record_turn(db, match_id, result.match, result.statement)
+
+    if result.statement is None:
+        log.warning("confrontation rejected on match %s: %s", match_id, result.rejection)
+        return Answer(
+            answered=False,
+            character=body.suspect,
+            reason="rejected",
+            turns_left=result.match.turns_left,
+        )
+
+    return Answer(
+        answered=True,
+        character=body.suspect,
+        line=result.statement.line,
+        stance=result.statement.stance,
+        alibi_broken=result.alibi_broken,
+        turns_left=result.match.turns_left,
+    )
 
 
 @router.post("/{match_id}/turns", summary="Question a suspect")

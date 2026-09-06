@@ -198,6 +198,8 @@ class Statement(BaseModel):
     claimed_room: str | None = None
     """Where they said they were, when the answer said anything about it."""
     claimed_interval: int | None = None
+    clue_revealed: str | None = None
+    """A fact this answer gave away. How the player comes to hold evidence."""
     intent: Intent = Intent.question
     """How the question was labelled. An `injection` statement is a canned
     deflection: no model was asked, and the record says so."""
@@ -227,3 +229,16 @@ class Match(BaseModel):
 
     def said_by(self, character: str) -> tuple[Statement, ...]:
         return tuple(s for s in self.statements if s.character == character)
+
+    @property
+    def evidence(self) -> frozenset[str]:
+        """Facts the player is holding, and may confront somebody with.
+
+        Derived rather than stored: it is the public facts plus whatever a
+        suspect gave away. A player cannot present what they were never told,
+        and there is no second place where that could drift out of agreement
+        with the statements it comes from.
+        """
+        given = {s.clue_revealed for s in self.statements if s.clue_revealed}
+        public = {f.id for f in self.case.facts if f.scope.public}
+        return frozenset(public | given)

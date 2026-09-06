@@ -59,11 +59,19 @@ class MatchState(BaseModel):
     cast: tuple[CastMember, ...]
     known: tuple[KnownFact, ...]
     notebook: tuple[Said, ...]
+    evidence: tuple[str, ...] = Field(
+        default=(), description="Fact ids the player holds and may present."
+    )
 
 
 class Question(BaseModel):
     suspect: str = Field(description="Character id, e.g. sus-1.")
     question: str = Field(min_length=1, max_length=500)
+
+
+class Confrontation(BaseModel):
+    suspect: str = Field(description="Character id, e.g. sus-1.")
+    evidence: str = Field(description="Fact id the player holds, e.g. F-014.")
 
 
 class Answer(BaseModel):
@@ -87,5 +95,9 @@ class Answer(BaseModel):
     stance: Stance | None = None
     reason: str | None = Field(
         default=None, description="`rejected` or `model_unavailable`, when unanswered."
+    )
+    alibi_broken: bool = Field(
+        default=False,
+        description="The evidence caught them out. A game event, not a fault (RN-021).",
     )
     turns_left: int

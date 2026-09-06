@@ -88,6 +88,7 @@ statements = Table(
     Column("fact_referenced", String(16), nullable=True),
     Column("claimed_room", String(32), nullable=True),
     Column("claimed_interval", Integer, nullable=True),
+    Column("clue_revealed", String(16), nullable=True),
     Column("created_at", DateTime(timezone=True), server_default=func.now(), nullable=False),
     # Contradiction detection reads one character's statements within one match,
     # never across matches and never across characters (RN-013, RN-021).
