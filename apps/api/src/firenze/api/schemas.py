@@ -69,10 +69,14 @@ class Question(BaseModel):
 class Answer(BaseModel):
     """What came back, and what it cost.
 
-    `answered` is false when the reply was discarded or the model was
-    unreachable. The turn is spent either way (RN-030), and the reason stays
-    coarse on purpose — the detail can quote a canary token, which is precisely
-    the thing that must not travel.
+    `answered` is false when a reply was produced and then discarded — by the
+    output filters, or by the provider declining. The turn is spent, because the
+    player had their go.
+
+    An unreachable model is not this shape: it is a 503 and costs nothing.
+
+    `reason` stays coarse on purpose. The detail can quote the canary token the
+    reply was discarded for, which is precisely the thing that must not travel.
     """
 
     model_config = ConfigDict(frozen=True)

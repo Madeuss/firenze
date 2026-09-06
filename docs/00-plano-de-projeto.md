@@ -186,6 +186,8 @@ ADR escrita para convencer, não para decidir.
   fornecedor, com adaptador OpenAI-compatible
 - [`0009`](adr/0009-a-case-is-a-document-a-match-is-rows.md) — caso é documento,
   partida é linhas; solução em tabela própria
+- [`0010`](adr/0010-classify-before-the-character-hears-it.md) — classificar
+  antes do personagem ouvir; o que um turno cobra
 
 Todas as ADRs são escritas em inglês (ADR-0006) — as quatro primeiras foram
 traduzidas depois de escritas.

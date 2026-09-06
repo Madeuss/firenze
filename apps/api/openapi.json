@@ -2,7 +2,7 @@
   "components": {
     "schemas": {
       "Answer": {
-        "description": "What came back, and what it cost.\n\n`answered` is false when the reply was discarded or the model was\nunreachable. The turn is spent either way (RN-030), and the reason stays\ncoarse on purpose — the detail can quote a canary token, which is precisely\nthe thing that must not travel.",
+        "description": "What came back, and what it cost.\n\n`answered` is false when a reply was produced and then discarded — by the\noutput filters, or by the provider declining. The turn is spent, because the\nplayer had their go.\n\nAn unreachable model is not this shape: it is a 503 and costs nothing.\n\n`reason` stays coarse on purpose. The detail can quote the canary token the\nreply was discarded for, which is precisely the thing that must not travel.",
         "properties": {
           "answered": {
             "title": "Answered",

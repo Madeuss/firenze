@@ -84,5 +84,11 @@
     "secrets": "SECRETS (why the innocent lie)",
     "hidden": "Solution withheld. Use --reveal to see it.",
     "language_name": "English"
-  }
+  },
+  "deflections": [
+    "I beg your pardon, but I have no idea what you mean.",
+    "That is no matter for this house. Ask me something else.",
+    "You are mistaking me for someone who would understand that.",
+    "I would rather speak of what I saw that night, if you do not mind."
+  ]
 }

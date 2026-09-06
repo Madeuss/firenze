@@ -24,6 +24,13 @@ class Settings(BaseSettings):
     model_name: str = ""
     """Which model at that provider, from its catalog."""
 
+    classifier_model_name: str = ""
+    """Which model labels player input. Empty means the same as `model_name`.
+
+    A separate knob because the classifier runs on every turn and reads one
+    sentence — the cheapest model in the catalogue is usually enough, and the
+    turn budget notices (RN-040)."""
+
     model_base_url: str = ""
     """Endpoint of the OpenAI-compatible API. Prosa shows it beside the API key."""
 

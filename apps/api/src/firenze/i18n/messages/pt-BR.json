@@ -84,5 +84,11 @@
     "secrets": "SEGREDOS (por que os inocentes mentem)",
     "hidden": "Solução omitida. Use --reveal para vê-la.",
     "language_name": "português do Brasil"
-  }
+  },
+  "deflections": [
+    "Perdão, senhor, mas não faço ideia do que está falando.",
+    "Isso não é assunto para esta casa. Pergunte outra coisa.",
+    "O senhor está me confundindo com alguém que entende disso.",
+    "Prefiro falar do que vi naquela noite, se não se importa."
+  ]
 }

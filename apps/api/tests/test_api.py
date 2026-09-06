@@ -15,13 +15,14 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 
-from firenze.api import connection, model_port
+from firenze.api import classifier_port, connection, model_port
 from firenze.config import settings
-from firenze.domain import Stance
+from firenze.domain import Intent, Stance
 from firenze.generation import generate
 from firenze.interrogation.models import NpcReply
 from firenze.main import app
 from firenze.model import FakeModel
+from firenze.safety import Classification
 from firenze.storage import metadata
 
 URL = os.environ.get(
@@ -46,6 +47,8 @@ pytestmark = pytest.mark.skipif(
 
 
 class Scripted:
+    """Plays both parts: the classifier first, then the suspect (RN-040)."""
+
     def __init__(self, reply: NpcReply | None = None, failure: Exception | None = None) -> None:
         self._reply = reply
         self._failure = failure
@@ -55,6 +58,8 @@ class Scripted:
         return "scripted"
 
     def complete(self, **kwargs: Any) -> Any:
+        if kwargs["schema"] is Classification:
+            return Classification(intent=Intent.question, reason="a question")
         if self._failure is not None:
             raise self._failure
         return self._reply
@@ -74,6 +79,7 @@ def client() -> Iterator[TestClient]:
         transaction = open_connection.begin()
         app.dependency_overrides[connection] = lambda: open_connection
         app.dependency_overrides[model_port] = FakeModel
+        app.dependency_overrides[classifier_port] = FakeModel
         with TestClient(app) as test_client:
             yield test_client
         app.dependency_overrides.clear()
@@ -195,6 +201,7 @@ def test_no_provider_configured_is_a_deployment_problem(
     """
     match = _start(client)
     del app.dependency_overrides[model_port]
+    del app.dependency_overrides[classifier_port]
     monkeypatch.setattr(settings, "model_provider", "none")
 
     response = client.post(
