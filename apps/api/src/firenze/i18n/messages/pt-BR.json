@@ -87,7 +87,11 @@
     "language_name": "português do Brasil",
     "confrontation_question": "O detetive lhe mostra uma prova. O que você diz?",
     "right": "certo",
-    "wrong": "errado"
+    "wrong": "errado",
+    "nobody": "ninguém",
+    "no_motive": "sem motivo declarado",
+    "no_evidence": "sem provas apresentadas",
+    "accusation_summary": "Você vai acusar {who}, por {why}, apresentando: {what}. Isso não pode ser desfeito."
   },
   "deflections": [
     "Perdão, senhor, mas não faço ideia do que está falando.",
