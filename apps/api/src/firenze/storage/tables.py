@@ -6,9 +6,14 @@ Two shapes of data, stored differently on purpose.
 ever read whole. Normalising facts and cast into tables would buy joins nobody
 needs and a migration every time the generator gains a field. It goes in JSONB.
 
-**A match is relational.** Turns accumulate, statements are queried per
-character to find contradictions (RN-021), and budgets change under
-concurrency. Those are rows.
+**A match is relational.** Turns accumulate, they are queried per character to
+find contradictions (RN-021), and budgets change under concurrency. Those are
+rows.
+
+The table is `turns`, not `statements`, because a turn that produced nothing —
+refused, contradicted, discarded by a check — still spent budget and still
+belongs in the record. A row with no `line` is the account of where a turn
+went; leaving it out would make a finished match unexplainable.
 
 ## Why the solution has its own table
 
@@ -75,15 +80,17 @@ matches = Table(
     Column("created_at", DateTime(timezone=True), server_default=func.now(), nullable=False),
 )
 
-statements = Table(
-    "statements",
+turns = Table(
+    "turns",
     metadata,
     Column("id", UUID_PK, primary_key=True),
     Column("match_id", UUID_PK, ForeignKey("matches.id", ondelete="CASCADE"), nullable=False),
     Column("turn", Integer, nullable=False),
     Column("character", String(32), nullable=False),
     Column("question", Text, nullable=False),
-    Column("line", Text, nullable=False),
+    Column("line", Text, nullable=False, server_default=""),
+    Column("rejected_by", String(32), nullable=True),
+    Column("cost", Integer, nullable=False, server_default="1"),
     Column("stance", String(16), nullable=False),
     Column("lied", Boolean, nullable=False),
     Column("intent", String(16), nullable=False, server_default="question"),
@@ -92,9 +99,9 @@ statements = Table(
     Column("claimed_interval", Integer, nullable=True),
     Column("clue_revealed", String(16), nullable=True),
     Column("created_at", DateTime(timezone=True), server_default=func.now(), nullable=False),
-    # Contradiction detection reads one character's statements within one match,
+    # Contradiction detection reads one character's turns within one match,
     # never across matches and never across characters (RN-013, RN-021).
-    UniqueConstraint("match_id", "turn", name="uq_statements_turn"),
+    UniqueConstraint("match_id", "turn", name="uq_turns_turn"),
 )
 
-__all__ = ["cases", "matches", "metadata", "solutions", "statements"]
+__all__ = ["cases", "matches", "metadata", "solutions", "turns"]

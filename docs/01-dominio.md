@@ -21,8 +21,8 @@ Regras que operam sobre estas entidades: [`02-regras-de-negocio.md`](02-regras-d
 | **Solução** | `Solution` | Culpado, meio, motivo e a cadeia de dedução que leva até eles. Entidade separada do `Caso` justamente para nunca ser projetada em dossiê. |
 | **Dossiê** | `Case.dossier()` | Projeção dos fatos visíveis para um NPC específico. Nunca contém a `Solução`. É o que o backend monta a cada turno para compor o contexto. |
 | **Partida** | `Match` | Instância jogável de um caso por um jogador. Guarda orçamento, turnos, provas e postura de cada NPC. |
-| **Turno** | `Turn` | Uma interação jogador → NPC → resposta. Unidade de orçamento e unidade de trace na observabilidade. |
-| **Declaração** | `Statement` | Afirmação que um NPC fez ao jogador, persistida e indexada. É a matéria-prima da detecção de contradição. |
+| **Turno** | `Turn` | Uma interação jogador → NPC, tenha ela produzido resposta ou não. Unidade de orçamento e unidade de trace na observabilidade. Turno rejeitado é gravado sem fala, com o nome da checagem que o descartou. |
+| **Declaração** | `Turn.answered` | Turno que produziu fala. Não é entidade própria: é a projeção dos turnos que deram certo (`Match.statements`). É a matéria-prima da detecção de contradição. |
 | **Contradição** | `Contradiction` | Par de declarações do mesmo NPC logicamente incompatíveis. Detectada por código, não pelo LLM. |
 | **Prova** | `Evidence` | Fato descoberto pelo jogador, utilizável em confronto. Um fato só vira prova depois de descoberto. |
 | **Confronto** | `Confrontation` | Ação de apresentar uma prova a um NPC, alterando sua postura. Custa mais que uma pergunta. |

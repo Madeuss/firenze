@@ -25,7 +25,7 @@ import re
 
 from pydantic import BaseModel, ConfigDict
 
-from firenze.domain import Case, Fact, Intent, Match, Stance, Statement
+from firenze.domain import Case, Fact, Intent, Match, Stance, Turn
 from firenze.i18n import Catalog
 from firenze.interrogation import stance as stance_machine
 from firenze.interrogation.confrontation import COST, weigh
@@ -59,7 +59,8 @@ class TurnResult(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     match: Match
-    statement: Statement | None
+    turn: Turn
+    """What happened, answered or not. The record keeps both (RN-030)."""
     rejection: str | None = None
     rejected_by: str | None = None
     """Which check discarded the reply, as a name rather than a sentence.
@@ -76,6 +77,40 @@ class TurnResult(BaseModel):
     """True when the model suggested a move the machine would not allow."""
     intent: Intent = Intent.question
     """How the question was labelled before anyone answered it."""
+
+
+def _record(match: Match, turn: Turn, stances: dict[str, Stance] | None = None) -> Match:
+    """Append one turn to the record, and the stance it left behind."""
+    update: dict[str, object] = {"turns": (*match.turns, turn)}
+    if stances is not None:
+        update["stances"] = stances
+    return match.model_copy(update=update)
+
+
+def _rejected(
+    match: Match,
+    character: str,
+    question: str,
+    dossier: Dossier,
+    why: str,
+    cost: int,
+    intent: Intent,
+) -> Turn:
+    """A turn that produced nothing, recorded anyway.
+
+    Leaving it out would make the budget unaccountable: a finished match would
+    show turns spent that nothing explains, and a replay would tell a story
+    that did not happen.
+    """
+    return Turn(
+        turn=len(match.turns) + 1,
+        character=character,
+        question=question,
+        stance=dossier.stance,
+        rejected_by=why,
+        cost=cost,
+        intent=intent,
+    )
 
 
 def load_prompt(version: str = PROMPT_VERSION) -> tuple[str, str]:
@@ -137,7 +172,7 @@ def render(
     )
 
 
-def _recall(said: Statement, catalog: Catalog, case: Case) -> str:
+def _recall(said: Turn, catalog: Catalog, case: Case) -> str:
     """One line of what a character already said, with the claim spelled out.
 
     The prose alone is not enough to stay consistent with: a model asked to
@@ -187,16 +222,20 @@ def ask(
         reply = model.complete(system=system, user=user, schema=NpcReply, max_tokens=MAX_TOKENS)
     except ModelRefused as refusal:
         # Produced: the provider decided. Charged, and worth counting.
-        return TurnResult(match=spent, statement=None, rejection=str(refusal), intent=intent)
+        turn = _rejected(match, character, question, dossier, "refusal", 1, intent)
+        return TurnResult(
+            match=_record(spent, turn), turn=turn, rejection=str(refusal), intent=intent
+        )
 
     conflict = contradicts(reply.claimed_room, reply.claimed_interval, dossier.said_before)
     if conflict is not None:
         # RN-021: a suspect does not contradict themselves unprompted. Once
         # confrontation exists, a contradiction *caused* by evidence becomes a
         # game event instead — this is the unprompted case, and it is a fault.
+        turn = _rejected(match, character, question, dossier, "contradiction", 1, intent)
         return TurnResult(
-            match=spent,
-            statement=None,
+            match=_record(spent, turn),
+            turn=turn,
             rejection=str(conflict),
             rejected_by="contradiction",
             contradiction=str(conflict),
@@ -207,17 +246,18 @@ def ask(
         check(reply, dossier, match.case)
     except ReplyRejected as rejected:
         # Discarded, not repaired. The turn is still spent.
+        turn = _rejected(match, character, question, dossier, rejected.check, 1, intent)
         return TurnResult(
-            match=spent,
-            statement=None,
+            match=_record(spent, turn),
+            turn=turn,
             rejection=str(rejected),
             rejected_by=rejected.check,
             intent=intent,
         )
 
     settled = stance_machine.settle(dossier.stance, reply.stance)
-    statement = Statement(
-        turn=len(match.statements) + 1,
+    turn = Turn(
+        turn=len(match.turns) + 1,
         character=character,
         question=question,
         line=reply.line,
@@ -231,13 +271,8 @@ def ask(
     )
 
     return TurnResult(
-        match=spent.model_copy(
-            update={
-                "statements": (*match.statements, statement),
-                "stances": {**match.stances, character: settled},
-            }
-        ),
-        statement=statement,
+        match=_record(spent, turn, {**match.stances, character: settled}),
+        turn=turn,
         stance_overruled=settled is not reply.stance,
         intent=intent,
     )
@@ -257,20 +292,15 @@ def _deflect(
     Nothing about the case, the dossier or the system prompt was in reach of the
     text that produced this reply (RN-041).
     """
-    statement = Statement(
-        turn=len(match.statements) + 1,
+    turn = Turn(
+        turn=len(match.turns) + 1,
         character=dossier.character,
         question=question,
-        line=catalog.deflection(len(match.statements)),
+        line=catalog.deflection(len(match.turns)),
         stance=dossier.stance,
-        lied=False,
         intent=intent,
     )
-    return TurnResult(
-        match=spent.model_copy(update={"statements": (*match.statements, statement)}),
-        statement=statement,
-        intent=intent,
-    )
+    return TurnResult(match=_record(spent, turn), turn=turn, intent=intent)
 
 
 def confront(
@@ -304,16 +334,31 @@ def confront(
     try:
         reply = model.complete(system=system, user=user, schema=NpcReply, max_tokens=MAX_TOKENS)
     except ModelRefused as refusal:
+        turn = _rejected(
+            match, character, f"[{evidence_id}]", dossier, "refusal", COST, Intent.confrontation
+        )
         return TurnResult(
-            match=spent, statement=None, rejection=str(refusal), intent=Intent.confrontation
+            match=_record(spent, turn),
+            turn=turn,
+            rejection=str(refusal),
+            intent=Intent.confrontation,
         )
 
     try:
         check(reply, dossier, match.case)
     except ReplyRejected as rejected:
+        turn = _rejected(
+            match,
+            character,
+            f"[{evidence_id}]",
+            dossier,
+            rejected.check,
+            COST,
+            Intent.confrontation,
+        )
         return TurnResult(
-            match=spent,
-            statement=None,
+            match=_record(spent, turn),
+            turn=turn,
             rejection=str(rejected),
             rejected_by=rejected.check,
             intent=Intent.confrontation,
@@ -327,8 +372,8 @@ def confront(
         else stance_machine.settle(dossier.stance, reply.stance)
     )
 
-    statement = Statement(
-        turn=len(match.statements) + 1,
+    turn = Turn(
+        turn=len(match.turns) + 1,
         character=character,
         question=f"[{evidence_id}]",
         line=reply.line,
@@ -339,16 +384,12 @@ def confront(
         claimed_interval=reply.claimed_interval,
         clue_revealed=reply.clue_revealed,
         intent=Intent.confrontation,
+        cost=COST,
     )
 
     return TurnResult(
-        match=spent.model_copy(
-            update={
-                "statements": (*match.statements, statement),
-                "stances": {**match.stances, character: settled},
-            }
-        ),
-        statement=statement,
+        match=_record(spent, turn, {**match.stances, character: settled}),
+        turn=turn,
         stance_overruled=settled is not reply.stance,
         intent=Intent.confrontation,
         alibi_broken=landed.breaks_alibi,

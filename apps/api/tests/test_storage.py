@@ -12,7 +12,7 @@ import pytest
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import OperationalError
 
-from firenze.domain import Match, Stance, Statement
+from firenze.domain import Match, Stance, Turn
 from firenze.generation import generate
 from firenze.i18n import load
 from firenze.interrogation import ask
@@ -134,7 +134,7 @@ def test_a_turn_persists_the_statement_the_stance_and_the_budget(connection) -> 
     match = load_match(connection, match_id)
 
     result = ask(match, "sus-1", "onde você estava?", catalog=load("pt-BR"), model=FakeModel())
-    record_turn(connection, match_id, result.match, result.statement)
+    record_turn(connection, match_id, result.match, result.turn)
 
     reloaded = load_match(connection, match_id)
     assert reloaded.turns_left == 29
@@ -143,17 +143,30 @@ def test_a_turn_persists_the_statement_the_stance_and_the_budget(connection) -> 
     assert reloaded.stance_of("sus-1") is result.match.stance_of("sus-1")
 
 
-def test_a_rejected_turn_still_moves_the_budget(connection) -> None:  # type: ignore[no-untyped-def]
-    """No statement to record, and the turn is spent anyway. (RN-030)"""
+def test_a_rejected_turn_is_recorded_with_no_line(connection) -> None:  # type: ignore[no-untyped-def]
+    """The turn is spent, and the record says where it went. (RN-030)
+
+    Persisting only the answers would leave a finished match showing thirty
+    turns spent and twenty statements, with nothing to explain the other ten.
+    """
     match_id = start_match(connection, generate(seed=42), "pt-BR")
     match = load_match(connection, match_id)
-    spent = match.model_copy(update={"turns_left": 29})
+    rejected = Turn(
+        turn=1,
+        character="sus-1",
+        question="e então?",
+        stance=Stance.cooperative,
+        rejected_by="canary",
+    )
 
-    record_turn(connection, match_id, spent, None)
+    record_turn(connection, match_id, match.model_copy(update={"turns_left": 29}), rejected)
 
     reloaded = load_match(connection, match_id)
     assert reloaded.turns_left == 29
-    assert reloaded.statements == ()
+    assert reloaded.statements == (), "nothing was said"
+    assert len(reloaded.turns) == 1
+    assert reloaded.turns[0].rejected_by == "canary"
+    assert reloaded.turns[0].line == ""
 
 
 def test_statements_come_back_in_the_order_they_were_said(connection) -> None:  # type: ignore[no-untyped-def]
@@ -162,7 +175,7 @@ def test_statements_come_back_in_the_order_they_were_said(connection) -> None:  
 
     for question in ("primeira?", "segunda?", "terceira?"):
         result = ask(match, "sus-1", question, catalog=load("pt-BR"), model=FakeModel())
-        record_turn(connection, match_id, result.match, result.statement)
+        record_turn(connection, match_id, result.match, result.turn)
         match = result.match
 
     said = load_match(connection, match_id).statements
@@ -179,7 +192,7 @@ def test_two_matches_on_the_same_case_do_not_share_statements(connection) -> Non
 
     match = load_match(connection, first_id)
     result = ask(match, "sus-1", "onde?", catalog=load("pt-BR"), model=FakeModel())
-    record_turn(connection, first_id, result.match, result.statement)
+    record_turn(connection, first_id, result.match, result.turn)
 
     assert len(load_match(connection, first_id).statements) == 1
     assert load_match(connection, second_id).statements == ()
@@ -191,7 +204,7 @@ def test_the_turn_number_is_unique_within_a_match(connection) -> None:  # type: 
 
     match_id = start_match(connection, generate(seed=42), "pt-BR")
     match = load_match(connection, match_id)
-    statement = Statement(
+    statement = Turn(
         turn=1,
         character="sus-1",
         question="?",

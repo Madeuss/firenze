@@ -12,7 +12,7 @@ from firenze.domain.models import (
     Scope,
     Solution,
     Stance,
-    Statement,
+    Turn,
 )
 
 __all__ = [
@@ -27,5 +27,5 @@ __all__ = [
     "Scope",
     "Solution",
     "Stance",
-    "Statement",
+    "Turn",
 ]

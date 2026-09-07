@@ -156,8 +156,8 @@ def test_an_overruled_stance_is_reported(match: Match) -> None:
     result = ask(match, "sus-1", "e então?", catalog=load("pt-BR"), model=model)
 
     assert result.stance_overruled
-    assert result.statement is not None
-    assert result.statement.stance is Stance.cooperative
+    assert result.turn.answered
+    assert result.turn.stance is Stance.cooperative
 
 
 # --- the output guard -----------------------------------------------------
@@ -205,10 +205,10 @@ def test_a_good_reply_becomes_a_statement(match: Match) -> None:
 
     result = ask(match, "sus-1", "onde você estava às 22h?", catalog=load("pt-BR"), model=model)
 
-    assert result.statement is not None
-    assert result.statement.character == "sus-1"
-    assert result.statement.lied is True
-    assert result.match.said_by("sus-1") == (result.statement,)
+    assert result.turn.answered
+    assert result.turn.character == "sus-1"
+    assert result.turn.lied is True
+    assert result.match.said_by("sus-1") == (result.turn,)
     assert result.match.stance_of("sus-1") is Stance.cooperative
 
 
@@ -218,10 +218,11 @@ def test_a_rejected_reply_still_costs_the_turn(match: Match) -> None:
 
     result = ask(match, "sus-1", "e então?", catalog=load("pt-BR"), model=model)
 
-    assert result.statement is None
+    assert not result.turn.answered
     assert result.rejection is not None
     assert result.match.turns_left == match.turns_left - 1
     assert result.match.statements == ()
+    assert result.match.turns[-1].rejected_by is not None, "the record says what happened"
 
 
 def test_a_refusal_costs_the_turn(match: Match) -> None:
@@ -230,7 +231,7 @@ def test_a_refusal_costs_the_turn(match: Match) -> None:
 
     result = ask(match, "sus-1", "e então?", catalog=load("pt-BR"), model=model)
 
-    assert result.statement is None
+    assert not result.turn.answered
     assert result.match.turns_left == match.turns_left - 1
 
 
@@ -265,9 +266,9 @@ def test_the_whole_turn_runs_on_a_fake_model(match: Match) -> None:
     """No key, no network: the guarded pipeline is exercised end to end."""
     result = ask(match, "sus-1", "onde você estava?", catalog=load("pt-BR"), model=FakeModel())
 
-    assert result.statement is not None
-    assert "[fake]" in result.statement.line
-    assert result.statement.stance in set(Stance)
+    assert result.turn.answered
+    assert "[fake]" in result.turn.line
+    assert result.turn.stance in set(Stance)
 
 
 def test_the_dossier_is_the_only_type_the_prompt_builder_sees() -> None:
@@ -277,3 +278,47 @@ def test_the_dossier_is_the_only_type_the_prompt_builder_sees() -> None:
     parameters = inspect.signature(render).parameters
 
     assert parameters["dossier"].annotation is Dossier
+
+
+# --- the record ------------------------------------------------------------
+
+
+def test_the_record_accounts_for_every_turn_the_budget_paid_for(match: Match) -> None:
+    """The property this whole shape exists for.
+
+    A record that held only answers would leave a finished match showing turns
+    spent that nothing explains. Whatever happened — answered, refused,
+    discarded — the costs in the record add up to the budget that moved.
+    """
+    good = Scripted(_reply())
+    bad = Scripted(_reply(line="CN-deadbeef"))
+    refusing = Scripted(failure=ModelRefused("policy"))
+
+    current = match
+    for model in (good, bad, refusing, good):
+        current = ask(current, "sus-1", "onde estava?", catalog=load("pt-BR"), model=model).match
+
+    assert len(current.turns) == 4
+    assert len(current.statements) == 2, "two of them produced nothing"
+    assert sum(t.cost for t in current.turns) == match.turns_left - current.turns_left
+
+
+def test_a_rejected_turn_says_which_check_discarded_it(match: Match) -> None:
+    """`rejected_by` is a name so the evals can count causes, not read sentences."""
+    result = ask(
+        match, "sus-1", "onde?", catalog=load("pt-BR"), model=Scripted(_reply(line="CN-deadbeef"))
+    )
+
+    recorded = result.match.turns[-1]
+    assert recorded.rejected_by == "canary"
+    assert recorded.line == ""
+    assert recorded.question == "onde?", "the question is kept; the answer is what was dropped"
+
+
+def test_the_turn_numbers_run_without_gaps(match: Match) -> None:
+    """A gap would be the old bug in a different disguise."""
+    current = match
+    for model in (Scripted(_reply()), Scripted(failure=ModelRefused("no")), Scripted(_reply())):
+        current = ask(current, "sus-1", "e depois?", catalog=load("pt-BR"), model=model).match
+
+    assert [t.turn for t in current.turns] == [1, 2, 3]

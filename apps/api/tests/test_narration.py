@@ -9,7 +9,7 @@ from typing import Any
 
 import pytest
 
-from firenze.domain import Match, Stance, Statement
+from firenze.domain import Match, Stance, Turn
 from firenze.generation import generate
 from firenze.i18n import load
 from firenze.model import ModelRefused, ModelUnavailable
@@ -183,7 +183,7 @@ def test_render_needs_no_model_at_all() -> None:
 
     assert system and user
     assert isinstance(
-        Statement(
+        Turn(
             turn=1,
             character="sus-1",
             question="?",
@@ -191,5 +191,5 @@ def test_render_needs_no_model_at_all() -> None:
             stance=Stance.cooperative,
             lied=False,
         ),
-        Statement,
+        Turn,
     )

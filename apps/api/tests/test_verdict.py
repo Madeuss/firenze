@@ -8,7 +8,7 @@ about it.
 
 import pytest
 
-from firenze.domain import Match, Stance, Statement
+from firenze.domain import Match, Stance, Turn
 from firenze.generation import generate
 from firenze.verdict import (
     CULPRIT_POINTS,
@@ -25,7 +25,7 @@ from firenze.verdict import (
 def _match(turns_left: int = 30, holding: tuple[str, ...] = ()) -> Match:
     """A match where the player holds whatever the test says they hold."""
     given = tuple(
-        Statement(
+        Turn(
             turn=i + 1,
             character="sus-2",
             question="?",
@@ -36,9 +36,7 @@ def _match(turns_left: int = 30, holding: tuple[str, ...] = ()) -> Match:
         )
         for i, fact_id in enumerate(holding)
     )
-    return Match(
-        full_case=generate(seed=42), locale="pt-BR", turns_left=turns_left, statements=given
-    )
+    return Match(full_case=generate(seed=42), locale="pt-BR", turns_left=turns_left, turns=given)
 
 
 def _culprit() -> str:
