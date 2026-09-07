@@ -188,11 +188,16 @@ class CaseWithSolution(BaseModel):
     solution: Solution
 
 
-class Statement(BaseModel):
-    """Something a suspect said, kept because contradiction is found in the record.
+class Turn(BaseModel):
+    """One go, whether or not anybody said anything.
 
-    Persisted per turn and per character rather than per match: RN-021 compares a
-    suspect against themselves, and nobody contradicts anybody else.
+    The record used to hold only answers, which meant a finished match showed
+    thirty turns spent and twenty statements, with no account of the other ten.
+    A budget that cannot be reconciled is a budget a player cannot trust, and a
+    replay that skips the rejections tells a story that did not happen.
+
+    `line` is empty when the turn produced nothing — a leaked canary, a
+    contradiction, an unreachable provider. `rejected_by` says which.
     """
 
     model_config = ConfigDict(frozen=True)
@@ -200,9 +205,13 @@ class Statement(BaseModel):
     turn: int
     character: str
     question: str
-    line: str
+    line: str = ""
     stance: Stance
-    lied: bool
+    lied: bool = False
+    rejected_by: str | None = None
+    """Which check discarded the reply, when one did. Empty for an answer."""
+    cost: int = 1
+    """Turns this cost. A confrontation costs two (RN-030)."""
     fact_referenced: str | None = None
     claimed_room: str | None = None
     """Where they said they were, when the answer said anything about it."""
@@ -210,6 +219,11 @@ class Statement(BaseModel):
     clue_revealed: str | None = None
     """A fact this answer gave away. How the player comes to hold evidence."""
     intent: Intent = Intent.question
+
+    @property
+    def answered(self) -> bool:
+        return bool(self.line) and self.rejected_by is None
+
     """How the question was labelled. An `injection` statement is a canned
     deflection: no model was asked, and the record says so."""
 
@@ -227,7 +241,8 @@ class Match(BaseModel):
     locale: str
     turns_left: int = 30
     stances: dict[str, Stance] = Field(default_factory=dict)
-    statements: tuple[Statement, ...] = ()
+    turns: tuple[Turn, ...] = ()
+    """Everything that happened, in order — answers and rejections alike."""
     accused_culprit: str | None = None
     """Set once, never unset. RN-031 makes an accusation irreversible, and the
     cheapest way to keep a rule like that is to have nowhere to put a second
@@ -246,7 +261,16 @@ class Match(BaseModel):
     def stance_of(self, character: str) -> Stance:
         return self.stances.get(character, Stance.cooperative)
 
-    def said_by(self, character: str) -> tuple[Statement, ...]:
+    @property
+    def statements(self) -> tuple[Turn, ...]:
+        """The turns that produced something a character actually said.
+
+        Contradiction detection and the notebook read this; the replay reads
+        `turns`. Same record, two questions asked of it.
+        """
+        return tuple(t for t in self.turns if t.answered)
+
+    def said_by(self, character: str) -> tuple[Turn, ...]:
         return tuple(s for s in self.statements if s.character == character)
 
     @property

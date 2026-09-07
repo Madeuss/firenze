@@ -20,7 +20,7 @@ who else might have, never the means, never the motive, never the chain.
 
 from pydantic import BaseModel, ConfigDict
 
-from firenze.domain import Fact, Match, Stance, Statement
+from firenze.domain import Fact, Match, Stance, Turn
 
 
 class Dossier(BaseModel):
@@ -39,7 +39,7 @@ class Dossier(BaseModel):
     """Only ever true for the one suspect it is true of."""
     stance: Stance
     facts: tuple[Fact, ...]
-    said_before: tuple[Statement, ...]
+    said_before: tuple[Turn, ...]
     """Their own past statements. RN-021 compares a suspect against themselves."""
 
 

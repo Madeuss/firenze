@@ -10,14 +10,14 @@ from typing import Any
 import pytest
 
 from firenze.accusation import Draft, known_motives, parse, render, summarise, tidy
-from firenze.domain import FactKind, Match, Stance, Statement
+from firenze.domain import FactKind, Match, Stance, Turn
 from firenze.generation import generate
 from firenze.i18n import load
 
 
 def _match(holding: tuple[str, ...] = ()) -> Match:
     given = tuple(
-        Statement(
+        Turn(
             turn=i + 1,
             character="sus-2",
             question="?",
@@ -28,7 +28,7 @@ def _match(holding: tuple[str, ...] = ()) -> Match:
         )
         for i, fact_id in enumerate(holding)
     )
-    return Match(full_case=generate(seed=42), locale="pt-BR", statements=given)
+    return Match(full_case=generate(seed=42), locale="pt-BR", turns=given)
 
 
 def _motive_fact_id(match: Match) -> str:

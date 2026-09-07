@@ -16,7 +16,7 @@ it, and to the confrontation mechanic that has not arrived yet.
 
 from pydantic import BaseModel, ConfigDict
 
-from firenze.domain import Statement
+from firenze.domain import Turn
 
 
 class Contradiction(BaseModel):
@@ -39,11 +39,11 @@ class Contradiction(BaseModel):
         )
 
 
-def _claims(statements: tuple[Statement, ...]) -> list[Statement]:
+def _claims(statements: tuple[Turn, ...]) -> list[Turn]:
     return [s for s in statements if s.claimed_room is not None and s.claimed_interval is not None]
 
 
-def find(statements: tuple[Statement, ...]) -> tuple[Contradiction, ...]:
+def find(statements: tuple[Turn, ...]) -> tuple[Contradiction, ...]:
     """Every contradiction among these statements, oldest pair first.
 
     Compares a suspect only against themselves. Two suspects disagreeing is not
@@ -51,7 +51,7 @@ def find(statements: tuple[Statement, ...]) -> tuple[Contradiction, ...]:
     """
     found: list[Contradiction] = []
     for character in sorted({s.character for s in statements}):
-        said: dict[int, Statement] = {}
+        said: dict[int, Turn] = {}
         for statement in sorted(
             _claims(tuple(s for s in statements if s.character == character)), key=lambda s: s.turn
         ):
@@ -77,7 +77,7 @@ def find(statements: tuple[Statement, ...]) -> tuple[Contradiction, ...]:
 def contradicts(
     claimed_room: str | None,
     claimed_interval: int | None,
-    said_before: tuple[Statement, ...],
+    said_before: tuple[Turn, ...],
 ) -> Contradiction | None:
     """Whether a new claim contradicts something this suspect already said.
 

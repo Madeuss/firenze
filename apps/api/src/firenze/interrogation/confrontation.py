@@ -23,7 +23,7 @@ question felt intense.
 
 from pydantic import BaseModel, ConfigDict
 
-from firenze.domain import Case, Fact, FactKind, Statement
+from firenze.domain import Case, Fact, FactKind, Turn
 
 COST = 2
 
@@ -40,7 +40,7 @@ class Landed(BaseModel):
     interval: int | None = None
 
 
-def weigh(evidence: Fact, said_before: tuple[Statement, ...], case: Case) -> Landed:
+def weigh(evidence: Fact, said_before: tuple[Turn, ...], case: Case) -> Landed:
     """Decide whether this evidence catches this suspect out.
 
     It does when the fact places them somewhere at an hour they claimed to have

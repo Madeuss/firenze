@@ -97,9 +97,13 @@ contra as regras e mantém a postura atual se a sugestão for inválida.
 
 ## 4. Progressão e veredito (RN-030 … RN-039)
 
-**RN-030** — Orçamento padrão: 30 turnos. Confronto custa 2 turnos.
+**RN-030** — Orçamento padrão: 30 turnos. Confronto custa 2 turnos. Todo turno
+debitado é gravado, tenha produzido fala ou não: turno rejeitado entra no
+registro sem fala, com o nome da checagem que o descartou e o que custou.
 *Verificação:* débito no fechamento do turno; turno com resposta rejeitada por
-schema não debita (ver RN-022), turno bloqueado por injeção debita (RN-041).
+schema não debita (ver RN-022), turno bloqueado por injeção debita (RN-041). A
+soma dos custos gravados fecha com o orçamento consumido — teste de propriedade
+sobre uma sequência de turnos bons, rejeitados e recusados.
 
 **RN-031** — Uma acusação por partida, irreversível.
 *Verificação:* transição de estado da partida; segunda acusação é erro de

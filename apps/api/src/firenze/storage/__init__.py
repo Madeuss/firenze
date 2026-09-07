@@ -8,6 +8,7 @@ from firenze.storage.store import (
     load_match,
     record_turn,
     save_case,
+    save_match,
     start_match,
 )
 from firenze.storage.tables import metadata
@@ -21,6 +22,7 @@ __all__ = [
     "metadata",
     "record_turn",
     "save_case",
+    "save_match",
     "start_match",
     "transaction",
 ]

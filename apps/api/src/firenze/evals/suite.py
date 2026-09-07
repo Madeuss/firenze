@@ -148,7 +148,7 @@ def run(
         except ModelUnavailable as unreachable:
             raise ModelUnavailable(f"suite stopped at {case.id}: {unreachable}") from unreachable
 
-        line = result.statement.line if result.statement else ""
+        line = result.turn.line
         yield Outcome(
             case=case,
             labelled=labelled,

@@ -9,7 +9,7 @@ from typing import Any
 
 import pytest
 
-from firenze.domain import Intent, Match, Stance, Statement
+from firenze.domain import Intent, Match, Stance, Turn
 from firenze.generation import generate
 from firenze.i18n import load
 from firenze.interrogation import ask
@@ -24,8 +24,8 @@ def _said(
     character: str = "sus-1",
     room: str | None = None,
     interval: int | None = None,
-) -> Statement:
-    return Statement(
+) -> Turn:
+    return Turn(
         turn=turn,
         character=character,
         question="onde?",
@@ -171,9 +171,9 @@ def test_a_claim_is_recorded_with_the_statement() -> None:
 
     result = ask(match, "sus-1", "onde?", catalog=load("pt-BR"), model=Claiming("kitchen", 2))
 
-    assert result.statement is not None
-    assert result.statement.claimed_room == "kitchen"
-    assert result.statement.claimed_interval == 2
+    assert result.turn.answered
+    assert result.turn.claimed_room == "kitchen"
+    assert result.turn.claimed_interval == 2
 
 
 def test_an_unprompted_contradiction_is_discarded() -> None:
@@ -185,7 +185,7 @@ def test_an_unprompted_contradiction_is_discarded() -> None:
         first.match, "sus-1", "e às 22h?", catalog=load("pt-BR"), model=Claiming("cellar", 2)
     )
 
-    assert second.statement is None
+    assert not second.turn.answered
     assert second.rejected_by == "contradiction"
     assert second.contradiction is not None
     assert "kitchen" in second.contradiction
@@ -200,7 +200,7 @@ def test_repeating_the_same_claim_is_fine() -> None:
         first.match, "sus-1", "tem certeza?", catalog=load("pt-BR"), model=Claiming("kitchen", 2)
     )
 
-    assert second.statement is not None
+    assert second.turn.answered
 
 
 def test_the_prompt_shows_the_commitment_not_only_the_sentence() -> None:

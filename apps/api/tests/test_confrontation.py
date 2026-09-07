@@ -9,7 +9,7 @@ from typing import Any
 
 import pytest
 
-from firenze.domain import FactKind, Intent, Match, Stance, Statement
+from firenze.domain import FactKind, Intent, Match, Stance, Turn
 from firenze.generation import generate
 from firenze.i18n import load
 from firenze.interrogation import COST, NoTurnsLeft, UnknownEvidence, ask, confront, weigh
@@ -21,8 +21,8 @@ def _match() -> Match:
     return Match(full_case=generate(seed=42), locale="pt-BR")
 
 
-def _said(turn: int, character: str, room: str, interval: int) -> Statement:
-    return Statement(
+def _said(turn: int, character: str, room: str, interval: int) -> Turn:
+    return Turn(
         turn=turn,
         character=character,
         question="onde?",
@@ -137,22 +137,22 @@ def test_a_landed_confrontation_breaks_the_stance_whatever_the_model_suggests() 
     match = Match(
         full_case=full,
         locale="pt-BR",
-        statements=(_said(1, "sus-1", elsewhere, presence.interval),),
+        turns=(_said(1, "sus-1", elsewhere, presence.interval),),
     ).model_copy(update={"stances": {"sus-1": Stance.evasive}})
-    holding = match.model_copy(update={"statements": (*match.statements, _revealing(presence.id))})
+    holding = match.model_copy(update={"turns": (*match.turns, _revealing(presence.id))})
 
     model = Reacting()
     result = confront(holding, "sus-1", presence.id, catalog=load("pt-BR"), model=model)
 
     assert result.alibi_broken
-    assert result.statement is not None
-    assert result.statement.stance is Stance.broken, "the model suggested cooperative"
+    assert result.turn.answered
+    assert result.turn.stance is Stance.broken, "the model suggested cooperative"
     assert result.stance_overruled
 
 
-def _revealing(fact_id: str) -> Statement:
+def _revealing(fact_id: str) -> Turn:
     """A statement that handed the player a fact, so they may present it."""
-    return Statement(
+    return Turn(
         turn=2,
         character="sus-3",
         question="e então?",
@@ -169,16 +169,16 @@ def test_a_confrontation_that_lands_nothing_leaves_the_machine_in_charge() -> No
     result = confront(match, "sus-1", "F-001", catalog=load("pt-BR"), model=Reacting())
 
     assert not result.alibi_broken
-    assert result.statement is not None
-    assert result.statement.stance is Stance.cooperative
+    assert result.turn.answered
+    assert result.turn.stance is Stance.cooperative
 
 
 def test_the_confrontation_is_recorded_as_one() -> None:
     result = confront(_match(), "sus-1", "F-001", catalog=load("pt-BR"), model=Reacting())
 
-    assert result.statement is not None
-    assert result.statement.intent is Intent.confrontation
-    assert result.statement.fact_referenced == "F-001"
+    assert result.turn.answered
+    assert result.turn.intent is Intent.confrontation
+    assert result.turn.fact_referenced == "F-001"
 
 
 def test_the_suspect_is_shown_the_evidence_in_words() -> None:
@@ -213,7 +213,22 @@ def test_a_revealed_clue_becomes_evidence() -> None:
     match = _match()
     secret = next(f for f in match.case.facts if not f.scope.public)
 
-    holding = match.model_copy(update={"statements": (_revealing(secret.id),)})
+    holding = match.model_copy(update={"turns": (_revealing(secret.id),)})
 
     assert secret.id in holding.evidence
     assert secret.id not in match.evidence
+
+
+def test_a_confrontation_is_recorded_at_what_it_cost() -> None:
+    """Two turns spent, one row, `cost` two. (RN-030)
+
+    A confrontation is one event, not two, so it is one row — and the row has
+    to carry its own price or the record stops adding up to the budget.
+    """
+    match = _match()
+
+    result = confront(match, "sus-1", "F-001", catalog=load("pt-BR"), model=Reacting())
+
+    assert len(result.match.turns) == 1
+    assert result.turn.cost == COST
+    assert sum(t.cost for t in result.match.turns) == match.turns_left - result.match.turns_left

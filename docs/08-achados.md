@@ -325,6 +325,35 @@ a query conveniente ([#21](https://github.com/Madeuss/firenze/pull/21)).
 domínio vale uma camada abaixo. Fronteira que existe só em um nível vaza no
 outro.
 
+### 2026-09-06 — Registro que só guarda acerto não fecha com o orçamento
+
+Turno rejeitado — canary, contradição, escopo, recusa do provedor — debitava o
+orçamento e não gravava nada. Uma partida terminada mostraria trinta turnos
+gastos e vinte declarações, sem nada explicando os outros dez.
+
+`Statement` virou `Turn`, com fala vazia e o nome da checagem que descartou. A
+declaração deixou de ser entidade e virou projeção (`Match.statements` = turnos
+que produziram fala). O teste que segura isso não olha campo nenhum: soma os
+custos gravados e compara com o orçamento consumido.
+
+**Por que importa:** o nome da tabela estava contando a história do caminho
+feliz. Enquanto o registro só guardava sucesso, ele não era registro — era
+resultado, e não dava para auditar nem para reconstruir a partida.
+
+### 2026-09-06 — `create_all` no teste criou tabela que a migration nunca viu
+
+Os testes de storage rodam contra o Postgres de dev e chamam
+`metadata.create_all`. Ao renomear a tabela, o pytest criou `turns` do lado de
+`statements`, e o `alembic upgrade` então falhou com *relation already exists* —
+tabela existindo em dev sem nunca ter passado pela migration.
+
+O dado dos testes volta atrás (a fixture faz rollback), mas DDL não: `create_all`
+comita. Foi preciso derrubar a tabela órfã à mão para exercitar a migration.
+
+**Por que importa:** o banco de dev estava sendo mantido por dois donos que não
+se falam. Vale rodar os testes contra um banco descartável, ou criar o schema
+por migration também no teste — senão a migration só é testada em produção.
+
 ---
 
 ## Idioma

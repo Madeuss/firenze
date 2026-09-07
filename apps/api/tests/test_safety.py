@@ -113,8 +113,8 @@ def test_an_injection_never_reaches_the_suspect(match: Match) -> None:
 
     assert npc.calls == 0, "the NPC model must not have been asked anything"
     assert result.intent is Intent.injection
-    assert result.statement is not None
-    assert result.statement.intent is Intent.injection
+    assert result.turn.answered
+    assert result.turn.intent is Intent.injection
 
 
 def test_the_deflection_is_in_character_and_costs_a_turn(match: Match) -> None:
@@ -128,9 +128,9 @@ def test_the_deflection_is_in_character_and_costs_a_turn(match: Match) -> None:
     )
 
     assert result.match.turns_left == match.turns_left - 1
-    assert result.statement is not None
-    assert result.statement.line in load("pt-BR")._data["deflections"]
-    assert result.statement.lied is False
+    assert result.turn.answered
+    assert result.turn.line in load("pt-BR")._data["deflections"]
+    assert result.turn.lied is False
 
 
 def test_the_deflection_does_not_move_the_stance(match: Match) -> None:
@@ -144,8 +144,8 @@ def test_the_deflection_does_not_move_the_stance(match: Match) -> None:
         classifier=Labeller(Intent.injection),
     )
 
-    assert result.statement is not None
-    assert result.statement.stance is Stance.cooperative
+    assert result.turn.answered
+    assert result.turn.stance is Stance.cooperative
 
 
 def test_the_same_probe_gets_the_same_answer(match: Match) -> None:
@@ -167,8 +167,8 @@ def test_the_same_probe_gets_the_same_answer(match: Match) -> None:
         classifier=Labeller(Intent.injection),
     )
 
-    assert first.statement is not None and second.statement is not None
-    assert first.statement.line == second.statement.line
+    assert first.turn.answered and second.turn.answered
+    assert first.turn.line == second.turn.line
 
 
 def test_a_hard_question_is_still_a_question(match: Match) -> None:
@@ -218,5 +218,5 @@ def test_the_classifier_defaults_to_the_same_model(match: Match) -> None:
 
     result = ask(match, "sus-1", "onde?", catalog=load("pt-BR"), model=both)
 
-    assert result.statement is not None
+    assert result.turn.answered
     assert both.calls == 1, "classified once, then answered"

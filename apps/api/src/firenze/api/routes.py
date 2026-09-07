@@ -44,7 +44,14 @@ from firenze.interrogation import ask, confront
 from firenze.interrogation.turn import MatchIsOver, NoTurnsLeft, UnknownEvidence
 from firenze.model import ModelUnavailable, StructuredModel, resolve
 from firenze.narration import write as narrate
-from firenze.storage import NotFound, load_match, record_turn, start_match, transaction
+from firenze.storage import (
+    NotFound,
+    load_match,
+    record_turn,
+    save_match,
+    start_match,
+    transaction,
+)
 from firenze.verdict import Accusation, AlreadyAccused, NotASuspect, judge
 
 log = logging.getLogger(__name__)
@@ -214,7 +221,7 @@ def accuse(match_id: uuid.UUID, body: NewAccusation, db: Db) -> Outcome:
     decided_match = match.model_copy(
         update={"accused_culprit": body.culprit, "accused_evidence": tuple(body.evidence)}
     )
-    record_turn(db, match_id, decided_match, None)
+    save_match(db, match_id, decided_match)
 
     catalog = load(match.locale)
     # The ending is written after the outcome is decided, and its absence
@@ -278,9 +285,9 @@ def take_confrontation(match_id: uuid.UUID, body: Confrontation, db: Db, model: 
             status.HTTP_503_SERVICE_UNAVAILABLE, "the model is unreachable"
         ) from unreachable
 
-    record_turn(db, match_id, result.match, result.statement)
+    record_turn(db, match_id, result.match, result.turn)
 
-    if result.statement is None:
+    if not result.turn.answered:
         log.warning("confrontation rejected on match %s: %s", match_id, result.rejection)
         return Answer(
             answered=False,
@@ -292,8 +299,8 @@ def take_confrontation(match_id: uuid.UUID, body: Confrontation, db: Db, model: 
     return Answer(
         answered=True,
         character=body.suspect,
-        line=result.statement.line,
-        stance=result.statement.stance,
+        line=result.turn.line,
+        stance=result.turn.stance,
         alibi_broken=result.alibi_broken,
         turns_left=result.match.turns_left,
     )
@@ -331,9 +338,9 @@ def take_turn(
             status.HTTP_503_SERVICE_UNAVAILABLE, "the model is unreachable"
         ) from unreachable
 
-    record_turn(db, match_id, result.match, result.statement)
+    record_turn(db, match_id, result.match, result.turn)
 
-    if result.statement is None:
+    if not result.turn.answered:
         # The detail can quote a canary token. It goes to the log, never the wire.
         log.warning("turn rejected on match %s: %s", match_id, result.rejection)
         return Answer(
@@ -346,7 +353,7 @@ def take_turn(
     return Answer(
         answered=True,
         character=body.suspect,
-        line=result.statement.line,
-        stance=result.statement.stance,
+        line=result.turn.line,
+        stance=result.turn.stance,
         turns_left=result.match.turns_left,
     )

@@ -196,16 +196,16 @@ def _ask(args: argparse.Namespace) -> int:
         return 1
 
     name = match.case.name_of(args.suspect)
-    if result.statement is None:
+    if not result.turn.answered:
         print(f"{name} não respondeu. Motivo: {result.rejection}", file=sys.stderr)
         print(f"Turnos restantes: {result.match.turns_left}")
         return 1
 
-    print(f"{name} ({result.statement.stance.value})")
-    print(f"  {result.statement.line}")
+    print(f"{name} ({result.turn.stance.value})")
+    print(f"  {result.turn.line}")
     print()
-    print(f"  mentiu: {result.statement.lied}")
-    print(f"  fato citado: {result.statement.fact_referenced or '—'}")
+    print(f"  mentiu: {result.turn.lied}")
+    print(f"  fato citado: {result.turn.fact_referenced or '—'}")
     if result.stance_overruled:
         print("  postura sugerida foi recusada pela máquina de estados")
     print(f"  turnos restantes: {result.match.turns_left}")
