@@ -61,18 +61,61 @@
 .begin {
   padding: 0.62rem 1.4rem;
   border-radius: var(--radius);
-  background: var(--amber);
+  background: var(--accent);
   color: var(--night);
-  font-weight: 500;
-  transition: background 120ms ease;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition: transform 120ms ease, box-shadow 120ms ease;
 }
 
+/* Botão claro corre o risco de ler como rótulo. O peso e a sombra dizem que
+   ele é um objeto sobre a noite, sem precisar de cor. */
 .begin:hover:not(:disabled) {
-  background: #f0b25a;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 0 var(--accent-dim);
 }
 
 .failure {
   margin-top: 1.5rem;
   color: var(--alarm);
   font-size: 0.9rem;
+}
+
+.seed span {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.about {
+  width: 1.1rem;
+  height: 1.1rem;
+  border: 1px solid var(--night-line);
+  border-radius: 50%;
+  color: var(--paper-faint);
+  font-size: 0.62rem;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.about:hover {
+  color: var(--paper);
+  border-color: var(--accent-dim);
+}
+
+.about_text {
+  margin: 1.25rem 0 0;
+  padding: 0.7rem 0.85rem;
+  border-left: 2px solid var(--night-line);
+  font-size: 0.85rem;
+  color: var(--paper-dim);
+  max-width: 26rem;
+}
+
+.rules {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
 }

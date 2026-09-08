@@ -1,6 +1,6 @@
 /*
- * Monument Valley numa mansão à noite: chapado, pouca saturação, e uma única
- * cor quente que só aparece onde há ação.
+ * Monument Valley numa mansão à noite: chapado, e quase sem cor. O que age é
+ * osso; a única cor viva da tela é o alerta.
  *
  * As cores são tokens porque a paleta é a parte mais barata de trocar, e a
  * estrutura não depende dela. Ver docs/03-casos-de-uso.md §6.
@@ -17,9 +17,14 @@
   --paper-dim: #b3ac9e;
   --paper-faint: #6f6a60;
 
-  /* a luz de vela: ação, e só ação */
-  --amber: #e0a244;
-  --amber-dim: #8a6529;
+  /* ação: osso, não cor.
+   *
+   * A tela inteira é noite e papel, então o que age é o papel mais claro e com
+   * mais peso — e o vermelhão do alerta fica sendo a única cor viva de todas.
+   * Contradição e álibi quebrado passam a saltar sem precisar competir com
+   * botão nenhum. */
+  --accent: #f5efe2;
+  --accent-dim: #565246;
 
   /* contradição, álibi quebrado */
   --alarm: #c05f47;
@@ -78,7 +83,7 @@ textarea {
 input:focus,
 textarea:focus,
 button:focus-visible {
-  outline: 1px solid var(--amber);
+  outline: 1px solid var(--accent);
   outline-offset: 2px;
 }
 

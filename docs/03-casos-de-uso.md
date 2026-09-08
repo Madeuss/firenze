@@ -48,6 +48,9 @@ jogador precisa sentir que pode raciocinar sem estar sendo cobrado.
 - O elenco à esquerda mostra a **postura** de cada suspeito, que muda sozinha
   conforme a conversa (RN-023). Postura é o único estado do NPC que o jogador
   enxerga.
+- **Acusar** e **?** ficam à direita no topo, sempre. Acusar no turno 1 é jogada
+  legítima; e as regras não podem viver só na tela inicial, que some no primeiro
+  clique.
 - O caderno da API é a **única fonte** da conversa, e traz todo turno cobrado —
   inclusive os que não produziram fala. O front não guarda cópia do que
   aconteceu; se guardasse, teria duas versões da mesma verdade e elas
@@ -190,9 +193,14 @@ API já foi desenhada para isso, devolvendo `reason` grosseiro em vez de detalhe
 |---|---|
 | Fundo, a noite | índigo escuro, quase carvão |
 | Papel do caderno | creme quente, nunca branco |
-| Acento — ação, luz de vela | âmbar |
+| Ação — botão, foco | **osso**, mais claro que o papel e com mais peso |
 | Alerta — contradição, álibi quebrado | vermelhão apagado |
 | Posturas | verde-azulado → âmbar → vermelhão → violeta acinzentado |
+
+O acento é ausência de cor, e isso é a decisão: com a ação em osso, **o alerta
+fica sendo a única cor viva da tela**. Contradição e álibi quebrado saltam sem
+competir com botão nenhum. Botão claro corre o risco de ler como rótulo — quem
+resolve isso é peso e sombra, não cor.
 
 **Tipografia:** serifada para a fala dos suspeitos, que é o que se lê muito; sem
 serifa para a interface; monoespaçada para id de fato (`F-014`).

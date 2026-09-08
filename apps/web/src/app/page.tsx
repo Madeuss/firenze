@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { PITCH, RULES } from "@/components/Rules";
 import { startMatch } from "@/lib/api";
 
 import styles from "./page.module.css";
@@ -11,6 +12,7 @@ export default function Start() {
   const router = useRouter();
   const [seed, setSeed] = useState("");
   const [starting, setStarting] = useState(false);
+  const [explaining, setExplaining] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
 
   async function begin() {
@@ -32,18 +34,29 @@ export default function Start() {
     <main className={styles.page}>
       <div className={styles.card}>
         <h1 className={styles.title}>Firenze</h1>
-        <p className={`prose ${styles.pitch}`}>
-          Um homem foi encontrado morto na própria casa. Seis pessoas estavam lá, e
-          todas têm o que esconder — só uma esconde o assassinato.
-        </p>
-        <p className={`${styles.rules} muted`}>
-          Trinta turnos para perguntar. Confrontar alguém com uma prova custa dois.
-          Pensar não custa nada.
-        </p>
+        {/* O mesmo texto do modal de ajuda, importado em vez de repetido: duas
+            cópias de uma regra divergem na primeira vez que uma delas muda. */}
+        <p className={`prose ${styles.pitch}`}>{PITCH}</p>
+        <ul className={`${styles.rules} muted`}>
+          {RULES.map((rule) => (
+            <li key={rule}>{rule}</li>
+          ))}
+        </ul>
 
         <div className={styles.actions}>
           <label className={styles.seed}>
-            <span className="faint">semente</span>
+            <span className="faint">
+              semente
+              <button
+                type="button"
+                className={styles.about}
+                onClick={() => setExplaining((open) => !open)}
+                aria-expanded={explaining}
+                aria-label="o que é a semente"
+              >
+                ?
+              </button>
+            </span>
             <input
               className="mono"
               value={seed}
@@ -57,6 +70,14 @@ export default function Start() {
             {starting ? "abrindo a casa…" : "Começar investigação"}
           </button>
         </div>
+
+        {explaining ? (
+          <p className={styles.about_text}>
+            O mesmo número gera sempre o mesmo mistério — mesmo elenco, mesmo culpado,
+            mesma noite. Serve para repetir um caso, ou passar um bom para alguém. Em
+            branco, você recebe uma noite qualquer.
+          </p>
+        ) : null}
 
         {failure ? <p className={styles.failure}>{failure}</p> : null}
       </div>

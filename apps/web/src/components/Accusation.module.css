@@ -1,0 +1,188 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 11, 16, 0.8);
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  z-index: 10;
+}
+
+.sheet {
+  width: min(34rem, 100%);
+  max-height: 85vh;
+  overflow-y: auto;
+  background: var(--night-soft);
+  border: 1px solid var(--night-line);
+  border-radius: var(--radius);
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-prose), Georgia, serif;
+  font-size: 1.6rem;
+  font-weight: 400;
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.text {
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--night-line);
+  border-radius: var(--radius);
+  background: var(--night);
+  resize: vertical;
+}
+
+.text::placeholder {
+  color: var(--paper-faint);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.field > span,
+.field legend {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  padding: 0;
+}
+
+.field select {
+  padding: 0.55rem 0.6rem;
+  border: 1px solid var(--night-line);
+  border-radius: var(--radius);
+  background: var(--night);
+  color: var(--paper);
+}
+
+.checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.55rem;
+  border: 1px solid var(--night-line);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.check:hover {
+  border-color: var(--accent-dim);
+}
+
+/* O que o parser não encaixou volta ao jogador em vez de virar palpite. */
+.unresolved {
+  margin: 0;
+  padding: 0.6rem 0.75rem;
+  border-left: 2px solid var(--alarm);
+  background: rgba(192, 95, 71, 0.08);
+  font-size: 0.85rem;
+  color: var(--paper-dim);
+}
+
+.warning {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--alarm);
+  letter-spacing: 0.02em;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.8rem;
+  margin-top: 0.25rem;
+}
+
+.primary {
+  padding: 0.6rem 1.3rem;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--night);
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 0 var(--accent-dim);
+}
+
+.ghost {
+  color: var(--paper-dim);
+  font-size: 0.88rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.ghost:hover {
+  color: var(--paper);
+}
+
+/* o veredito */
+
+.truth {
+  margin: 0;
+}
+
+.score {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(5rem, 1fr));
+  gap: 0.75rem;
+  margin: 0.5rem 0 0;
+  padding-top: 1rem;
+  border-top: 1px solid var(--night-line);
+}
+
+.score div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.score dt {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--paper-faint);
+}
+
+.score dd {
+  margin: 0;
+  font-size: 1.3rem;
+  font-family: var(--font-prose), Georgia, serif;
+}
+
+.total dd {
+  color: var(--accent);
+}
+
+.failure {
+  margin: 0;
+  color: var(--alarm);
+  font-size: 0.85rem;
+}

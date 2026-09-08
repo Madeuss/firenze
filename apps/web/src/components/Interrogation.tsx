@@ -13,6 +13,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ask, confront, readMatch, type MatchState } from "@/lib/api";
 
+import Accusation from "./Accusation";
+import Rules from "./Rules";
 import styles from "./Interrogation.module.css";
 
 const STANCE_LABEL: Record<string, string> = {
@@ -29,6 +31,7 @@ export default function Interrogation({ matchId }: { matchId: string }) {
   const [armed, setArmed] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
+  const [showing, setShowing] = useState<"rules" | "accusation" | null>(null);
   const foot = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -109,6 +112,19 @@ export default function Interrogation({ matchId }: { matchId: string }) {
         <span className={styles.turns}>
           <strong>{match.turns_left}</strong> turnos
         </span>
+        <button
+          className={styles.help}
+          onClick={() => setShowing("rules")}
+          aria-label="como se joga"
+          title="como se joga"
+        >
+          ?
+        </button>
+        {/* Sempre visível: acusar no turno 1 é jogada legítima, e vale mais
+            pontos de rapidez se der certo (RN-033). */}
+        <button className={styles.accuse} onClick={() => setShowing("accusation")}>
+          Acusar
+        </button>
       </header>
 
       <div className={styles.body}>
@@ -228,6 +244,11 @@ export default function Interrogation({ matchId }: { matchId: string }) {
           </div>
         </section>
       </div>
+
+      {showing === "rules" ? <Rules onClose={() => setShowing(null)} /> : null}
+      {showing === "accusation" ? (
+        <Accusation match={match} onClose={() => setShowing(null)} />
+      ) : null}
     </main>
   );
 }
