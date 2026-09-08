@@ -14,7 +14,7 @@
  */
 
 import { Canvas, useThree, type ThreeEvent } from '@react-three/fiber'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 
 import type { FloorPlan } from '@/lib/api'
@@ -275,39 +275,78 @@ function PecaNaPlanta({
   )
 }
 
-function Rotulos({
+/** Onde cada cômodo caiu na tela: o ponto do rótulo e o ladrilho inteiro. */
+type Medida = {
+  id: string
+  nome: string
+  x: number
+  y: number
+  /** Os quatro cantos do chão, em pixels do palco. É o alvo de quem arrasta. */
+  quadro: [number, number][]
+}
+
+/**
+ * Projeta os cômodos para coordenadas de tela, uma vez por tamanho de canvas.
+ *
+ * A câmera é fixa, então isto não precisa acontecer a cada quadro — mas
+ * precisa acontecer de novo quando o palco muda de tamanho, senão o rótulo
+ * fica torto e, pior, largar um retrato acerta o cômodo errado.
+ */
+function Medir({
   assento,
   nomes,
   aoMedir,
 }: {
   assento: Map<string, [number, number]>
   nomes: Map<string, string>
-  aoMedir: (
-    pontos: { id: string; nome: string; x: number; y: number }[],
-  ) => void
+  aoMedir: (medidas: Medida[]) => void
 }) {
   const { camera, size } = useThree()
 
   useEffect(() => {
-    const pontos = [...assento].map(([id, [x, z]]) => {
+    const emTela = (x: number, y: number, z: number): [number, number] => {
+      const v = new THREE.Vector3(x, y, z).project(camera)
+      return [((v.x + 1) / 2) * size.width, ((1 - v.y) / 2) * size.height]
+    }
+
+    const medidas = [...assento].map(([id, [x, z]]) => {
+      const andar = degrauDe(id) * DEGRAU_ALTURA
+      const meio = LADO / 2
       // Na quina da frente, fora do ladrilho: em cima do cômodo o rótulo
       // atravessava as peças e ficava ilegível.
-      const v = new THREE.Vector3(
-        x,
-        degrauDe(id) * DEGRAU_ALTURA,
-        z + LADO / 2 + VAO * 0.45,
-      ).project(camera)
+      const [rx, ry] = emTela(x, andar, z + LADO / 2 + VAO * 0.45)
       return {
         id,
         nome: nomes.get(id) ?? id,
-        x: ((v.x + 1) / 2) * size.width,
-        y: ((1 - v.y) / 2) * size.height,
+        x: rx,
+        y: ry,
+        quadro: [
+          emTela(x - meio, andar, z - meio),
+          emTela(x + meio, andar, z - meio),
+          emTela(x + meio, andar, z + meio),
+          emTela(x - meio, andar, z + meio),
+        ] as [number, number][],
       }
     })
-    aoMedir(pontos)
+    aoMedir(medidas)
   }, [assento, nomes, camera, size, aoMedir])
 
   return null
+}
+
+/** Ponto dentro do quadrilátero convexo: mesmo lado de todas as arestas. */
+function dentro(ponto: [number, number], quadro: [number, number][]): boolean {
+  let sinal = 0
+  for (let i = 0; i < quadro.length; i++) {
+    const a = quadro[i]!
+    const b = quadro[(i + 1) % quadro.length]!
+    const cruz = (b[0] - a[0]) * (ponto[1] - a[1]) - (b[1] - a[1]) * (ponto[0] - a[0])
+    if (cruz === 0) continue
+    const lado = cruz > 0 ? 1 : -1
+    if (sinal === 0) sinal = lado
+    else if (sinal !== lado) return false
+  }
+  return true
 }
 
 export default function Planta({
@@ -318,6 +357,7 @@ export default function Planta({
   selecionado,
   preencher = false,
   aoEscolherComodo,
+  aoSoltarSuspeito,
 }: {
   plan: FloorPlan
   hora: number
@@ -327,6 +367,8 @@ export default function Planta({
   /** Ocupa a altura que sobrar em vez de guardar a proporção 4:3. */
   preencher?: boolean
   aoEscolherComodo: (comodo: string) => void
+  /** Alguém foi largado num cômodo. Sem isto a planta não aceita arrasto. */
+  aoSoltarSuspeito?: (comodo: string, suspeito: string) => void
 }) {
   const comodos = useMemo(() => plan.rooms.map((r) => r.id), [plan])
   const assento = useMemo(() => assentar(comodos), [comodos])
@@ -334,10 +376,32 @@ export default function Planta({
     () => new Map(plan.rooms.map((r) => [r.id, r.name])),
     [plan],
   )
-  const [rotulos, setRotulos] = useState<
-    { id: string; nome: string; x: number; y: number }[]
-  >([])
-  const medido = useRef(false)
+  const [medidas, setMedidas] = useState<Medida[]>([])
+  // Identidade estável: o efeito que mede depende dela, e uma função nova a
+  // cada render faria a medida rodar em laço.
+  const guardarMedidas = useCallback((novas: Medida[]) => setMedidas(novas), [])
+  const palco = useRef<HTMLDivElement>(null)
+  const [alvo, setAlvo] = useState<string | null>(null)
+
+  /** Em que cômodo o ponteiro está, na hora de largar alguém. */
+  const comodoSob = useCallback(
+    (evento: { clientX: number; clientY: number }): string | null => {
+      const caixa = palco.current?.getBoundingClientRect()
+      if (!caixa) return null
+      const ponto: [number, number] = [
+        evento.clientX - caixa.left,
+        evento.clientY - caixa.top,
+      ]
+      // De trás para a frente: os cômodos da frente desenham por cima, então
+      // ganham o empate onde os ladrilhos se encostam.
+      for (let i = medidas.length - 1; i >= 0; i--) {
+        const medida = medidas[i]!
+        if (dentro(ponto, medida.quadro)) return medida.id
+      }
+      return null
+    },
+    [medidas],
+  )
 
   const porComodo = useMemo(() => {
     const mapa = new Map<string, Peca[]>()
@@ -353,7 +417,32 @@ export default function Planta({
   const giz = useGiz()
 
   return (
-    <div className={preencher ? styles.palcoCheio : styles.palco}>
+    <div
+      ref={palco}
+      className={preencher ? styles.palcoCheio : styles.palco}
+      onDragOver={
+        aoSoltarSuspeito
+          ? (evento) => {
+              // Sem o preventDefault o navegador recusa o alvo e não há solta.
+              evento.preventDefault()
+              evento.dataTransfer.dropEffect = 'move'
+              setAlvo(comodoSob(evento))
+            }
+          : undefined
+      }
+      onDragLeave={aoSoltarSuspeito ? () => setAlvo(null) : undefined}
+      onDrop={
+        aoSoltarSuspeito
+          ? (evento) => {
+              evento.preventDefault()
+              const quem = evento.dataTransfer.getData('text/plain')
+              const comodo = comodoSob(evento)
+              setAlvo(null)
+              if (quem && comodo) aoSoltarSuspeito(comodo, quem)
+            }
+          : undefined
+      }
+    >
       <Canvas
         orthographic
         shadows
@@ -369,7 +458,7 @@ export default function Planta({
             key={id}
             comodo={id}
             posicao={posicao}
-            aceso={selecionado === id}
+            aceso={selecionado === id || alvo === id}
             emChoque={emChoque.has(id)}
             doCrime={id === plan.crime_room}
             naHoraDoCrime={naHoraDoCrime}
@@ -408,18 +497,10 @@ export default function Planta({
           })
         })}
 
-        <Rotulos
-          assento={assento}
-          nomes={nomes}
-          aoMedir={(pontos) => {
-            if (medido.current) return
-            medido.current = true
-            setRotulos(pontos)
-          }}
-        />
+        <Medir assento={assento} nomes={nomes} aoMedir={guardarMedidas} />
       </Canvas>
 
-      {rotulos.map((rotulo) => (
+      {medidas.map((rotulo) => (
         <span
           key={rotulo.id}
           className={[

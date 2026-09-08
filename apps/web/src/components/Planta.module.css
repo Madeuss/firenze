@@ -1,6 +1,8 @@
 .palco {
   position: relative;
   width: 100%;
+  flex: 1;
+  min-width: 0;
   aspect-ratio: 4 / 3;
   border: 1px solid var(--night-line);
   border-radius: var(--radius);

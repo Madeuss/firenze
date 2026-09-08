@@ -37,7 +37,9 @@ import {
   onde,
 } from '@/lib/notas'
 
+import EscolherComodo from './EscolherComodo'
 import Planta, { type Peca } from './Planta'
+import Retrato from './Retrato'
 import styles from './Deducao.module.css'
 
 export type Vista = 'planta' | 'grade' | 'ambos'
@@ -59,6 +61,9 @@ export default function Deducao({
     suspeito: string
     hora: number
   } | null>(null)
+  // Quem foi pego na bandeja e ainda não foi colocado. Vale para o arrasto e
+  // para o toque: num celular não existe arrastar, e clicar-e-clicar existe.
+  const [naMao, setNaMao] = useState<string | null>(null)
 
   const suspeitos = useMemo(
     () => match.cast.filter((p): p is CastMember => p.role === 'suspect'),
@@ -75,12 +80,35 @@ export default function Deducao({
 
   const escolherComodo = useCallback(
     (comodo: string) => {
+      if (naMao) {
+        registrar(naMao, hora, comodo)
+        setNaMao(null)
+        return
+      }
       if (!celula) return
       const jaEsta = onde(notas, celula.suspeito, celula.hora) === comodo
       registrar(celula.suspeito, celula.hora, jaEsta ? null : comodo)
       setCelula(null)
     },
-    [celula, notas, registrar],
+    [celula, hora, naMao, notas, registrar],
+  )
+
+  const fecharCelula = useCallback(() => setCelula(null), [])
+
+  const soltarEm = useCallback(
+    (comodo: string, suspeito: string) => {
+      registrar(suspeito, hora, comodo)
+      setNaMao(null)
+    },
+    [hora, registrar],
+  )
+
+  // A bandeja é o avesso da planta: quem não está em cômodo nenhum nesta hora.
+  // Mudar de hora esvazia a planta e devolve todo mundo para cá, que é o que
+  // torna a linha do tempo uma linha do tempo e não um desenho só.
+  const naBandeja = useMemo(
+    () => suspeitos.filter((pessoa) => !onde(notas, pessoa.id, hora)),
+    [suspeitos, notas, hora],
   )
 
   const pecas = useMemo<Peca[]>(
@@ -104,15 +132,54 @@ export default function Deducao({
 
   const planta = (
       <div className={styles.coluna}>
-        <Planta
-          preencher={vista === 'planta'}
-          plan={match.plan}
-          hora={hora}
-          pecas={pecas}
-          emChoque={emChoque}
-          selecionado={celula ? onde(notas, celula.suspeito, celula.hora) : null}
-          aoEscolherComodo={escolherComodo}
-        />
+        <div className={styles.tabuleiro}>
+          <Planta
+            preencher={vista === 'planta'}
+            plan={match.plan}
+            hora={hora}
+            pecas={pecas}
+            emChoque={emChoque}
+            selecionado={celula ? onde(notas, celula.suspeito, celula.hora) : null}
+            aoEscolherComodo={escolherComodo}
+            aoSoltarSuspeito={soltarEm}
+          />
+
+          {/* Quem ainda não tem lugar nesta hora. Arraste para um cômodo — ou,
+              se arrastar não der, clique no retrato e depois no cômodo. */}
+          <div className={styles.bandeja} aria-label="suspeitos sem lugar nesta hora">
+            {naBandeja.map((pessoa) => (
+              <button
+                key={pessoa.id}
+                className={naMao === pessoa.id ? styles.fichaNaMao : styles.ficha}
+                draggable
+                onDragStart={(evento) => {
+                  evento.dataTransfer.setData('text/plain', pessoa.id)
+                  evento.dataTransfer.effectAllowed = 'move'
+                  setNaMao(pessoa.id)
+                }}
+                onDragEnd={() => setNaMao(null)}
+                onClick={() =>
+                  setNaMao(naMao === pessoa.id ? null : pessoa.id)
+                }
+                title={`onde ${pessoa.name} disse que estava?`}
+              >
+                <Retrato
+                  nome={pessoa.name}
+                  tamanho={38}
+                  aceso={naMao === pessoa.id}
+                />
+                <span className={styles.fichaNome}>
+                  {pessoa.name.split(' ')[0]}
+                </span>
+              </button>
+            ))}
+            {naBandeja.length === 0 ? (
+              <span className={styles.bandejaVazia}>
+                todos colocados nesta hora
+              </span>
+            ) : null}
+          </div>
+        </div>
 
         <div className={styles.relogio}>
           {/* A hora da morte marcada no trilho, na mesma cruz que marca o
@@ -166,9 +233,9 @@ export default function Deducao({
   const grade = (
       <div className={styles.coluna}>
         <p className={styles.instrucao}>
-          {celula
-            ? `Onde ${match.cast.find((p) => p.id === celula.suspeito)?.name} disse que estava às ${match.plan.hours[celula.hora]?.label}? Clique num cômodo.`
-            : 'Clique numa célula e depois num cômodo. Isto é seu caderno — nada aqui vem do jogo.'}
+          {naMao
+            ? `Clique no cômodo onde ${match.cast.find((p) => p.id === naMao)?.name} disse que estava às ${match.plan.hours[hora]?.label}.`
+            : 'Arraste um retrato para um cômodo, ou preencha a grade. Isto é seu caderno — nada aqui vem do jogo.'}
         </p>
 
         <table className={styles.grade}>
@@ -197,7 +264,7 @@ export default function Deducao({
                     celula?.suspeito === pessoa.id && celula.hora === h.interval
                   const bate = !!comodo && choques(notas, h.interval).has(comodo)
                   return (
-                    <td key={h.interval}>
+                    <td key={h.interval} className={styles.gaveta}>
                       <button
                         className={[
                           styles.celula,
@@ -217,6 +284,18 @@ export default function Deducao({
                       >
                         {comodo ? nomeDoComodo.get(comodo)?.slice(0, 3) : '·'}
                       </button>
+
+                      {escolhida ? (
+                        <EscolherComodo
+                          comodos={match.plan.rooms}
+                          atual={comodo}
+                          aoEscolher={(escolhido) => {
+                            registrar(pessoa.id, h.interval, escolhido)
+                            setCelula(null)
+                          }}
+                          aoFechar={fecharCelula}
+                        />
+                      ) : null}
                     </td>
                   )
                 })}
