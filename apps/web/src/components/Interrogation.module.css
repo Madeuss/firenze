@@ -414,14 +414,12 @@
 /* ajuda e acusação, sempre no topo */
 
 .help {
-  width: 1.6rem;
-  height: 1.6rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex: none;
-  border: 1px solid var(--night-line);
-  border-radius: 50%;
   color: var(--paper-faint);
-  font-size: 0.8rem;
-  line-height: 1;
+  line-height: 0;
 }
 
 .help:hover {
@@ -429,20 +427,34 @@
   border-color: var(--accent-dim);
 }
 
+/* Sólido, e não contornado: é a única jogada irreversível do jogo, e estava
+   passando por decoração no canto do topo. O botão sólido é o mesmo peso que
+   "Perguntar" tem na conversa — o que se pode fazer, se enxerga. Clicar não
+   acusa ninguém: abre a ficha, que ainda pede confirmação (RN-031). */
 .accuse {
-  padding: 0.4rem 1rem;
-  border: 1px solid var(--accent-dim);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 1.1rem;
   border-radius: var(--radius);
-  color: var(--paper);
+  background: var(--accent);
+  color: var(--night);
+  font-weight: 600;
   white-space: nowrap;
+  box-shadow: 0 2px 0 var(--accent-dim);
   transition:
-    background 120ms ease,
-    color 120ms ease;
+    transform 120ms ease,
+    box-shadow 120ms ease;
 }
 
 .accuse:hover {
-  background: var(--accent);
-  color: var(--night);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 0 var(--accent-dim);
+}
+
+.accuse:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 var(--accent-dim);
 }
 
 /* Os dois modos. O jogo alterna entre falar e pensar, e a interface nomeia

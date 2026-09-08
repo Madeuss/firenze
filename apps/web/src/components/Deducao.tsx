@@ -39,6 +39,8 @@ import {
   onde,
 } from '@/lib/notas'
 
+import { Skull } from 'lucide-react'
+
 import EscolherComodo from './EscolherComodo'
 import Planta, { type Bussola, type Peca } from './Planta'
 import Retrato from './Retrato'
@@ -65,9 +67,10 @@ export default function Deducao({
   } | null>(null)
   // Quem está na mão: pego na bandeja ou tirado de um cômodo. Um estado só
   // para os dois porque, para o jogador, é o mesmo gesto.
-  const [naMao, setNaMao] = useState<{ quem: string; de: string | null } | null>(
-    null,
-  )
+  const [naMao, setNaMao] = useState<{
+    quem: string
+    de: string | null
+  } | null>(null)
   const [alvo, setAlvo] = useState<string | null>(null)
   // O gesto em curso mora numa ref, não no estado: ele muda a cada pixel do
   // ponteiro, e um estado por pixel re-renderizaria a cena 3D inteira.
@@ -83,7 +86,10 @@ export default function Deducao({
 
   const registrar = useCallback(
     (suspeito: string, quando: number, comodo: string | null) => {
-      escrever(match.id, anotar(instantaneo(match.id), suspeito, quando, comodo))
+      escrever(
+        match.id,
+        anotar(instantaneo(match.id), suspeito, quando, comodo),
+      )
     },
     [match.id],
   )
@@ -195,181 +201,191 @@ export default function Deducao({
   )
 
   const planta = (
-      <div className={styles.coluna}>
-        <div className={styles.tabuleiro}>
-          <Planta
-            preencher={vista === 'planta'}
-            plan={match.plan}
-            hora={hora}
-            pecas={pecas}
-            emChoque={emChoque}
-            selecionado={celula ? onde(notas, celula.suspeito, celula.hora) : null}
-            aoEscolherComodo={escolherComodo}
-            alvo={alvo}
-            aoPegarPeca={(quem, de, evento) => pegar(quem, de, evento)}
-            bussola={bussola}
-          />
+    <div className={styles.coluna}>
+      <div className={styles.tabuleiro}>
+        <Planta
+          preencher={vista === 'planta'}
+          plan={match.plan}
+          hora={hora}
+          pecas={pecas}
+          emChoque={emChoque}
+          selecionado={
+            celula ? onde(notas, celula.suspeito, celula.hora) : null
+          }
+          aoEscolherComodo={escolherComodo}
+          alvo={alvo}
+          aoPegarPeca={(quem, de, evento) => pegar(quem, de, evento)}
+          bussola={bussola}
+        />
 
-          {/* Quem ainda não tem lugar nesta hora. Arraste para um cômodo — ou,
+        {/* Quem ainda não tem lugar nesta hora. Arraste para um cômodo — ou,
               se arrastar não der, clique no retrato e depois no cômodo. */}
-          <div className={styles.bandeja} aria-label="suspeitos sem lugar nesta hora">
-            {naBandeja.map((pessoa) => (
-              <button
-                key={pessoa.id}
-                className={
-                  naMao?.quem === pessoa.id ? styles.fichaNaMao : styles.ficha
-                }
-                onPointerDown={(evento) => {
-                  if (naMao?.quem === pessoa.id) {
-                    setNaMao(null)
-                    setAlvo(null)
-                    return
-                  }
-                  pegar(pessoa.id, null, evento.nativeEvent)
-                }}
-                title={`onde ${pessoa.name} disse que estava?`}
-              >
-                <Retrato
-                  nome={pessoa.name}
-                  tamanho={38}
-                  aceso={naMao?.quem === pessoa.id}
-                />
-                <span className={styles.fichaNome}>
-                  {pessoa.name.split(' ')[0]}
-                </span>
-              </button>
-            ))}
-            {naBandeja.length === 0 ? (
-              <span className={styles.bandejaVazia}>
-                todos colocados nesta hora
-              </span>
-            ) : null}
-          </div>
-        </div>
-
-        <div className={styles.relogio}>
-          {/* A hora da morte marcada no trilho, na mesma cruz que marca o
-              cômodo na planta. Sem ela o jogador tinha que guardar de cabeça
-              qual intervalo importava enquanto arrastava. */}
-          <div className={styles.trilho}>
-            <span
-              className={styles.marcaCrime}
-              style={
-                {
-                  '--fracao': String(
-                    match.plan.hours.length > 1
-                      ? match.plan.crime_interval / (match.plan.hours.length - 1)
-                      : 0,
-                  ),
-                } as CSSProperties
+        <div
+          className={styles.bandeja}
+          aria-label="suspeitos sem lugar nesta hora"
+        >
+          {naBandeja.map((pessoa) => (
+            <button
+              key={pessoa.id}
+              className={
+                naMao?.quem === pessoa.id ? styles.fichaNaMao : styles.ficha
               }
-              title="por volta desta hora o corpo foi encontrado"
+              onPointerDown={(evento) => {
+                if (naMao?.quem === pessoa.id) {
+                  setNaMao(null)
+                  setAlvo(null)
+                  return
+                }
+                pegar(pessoa.id, null, evento.nativeEvent)
+              }}
+              title={`onde ${pessoa.name} disse que estava?`}
             >
-              ✝
+              <Retrato
+                nome={pessoa.name}
+                tamanho={38}
+                aceso={naMao?.quem === pessoa.id}
+              />
+              <span className={styles.fichaNome}>
+                {pessoa.name.split(' ')[0]}
+              </span>
+            </button>
+          ))}
+          {naBandeja.length === 0 ? (
+            <span className={styles.bandejaVazia}>
+              todos colocados nesta hora
             </span>
-            <input
-              type="range"
-              min={0}
-              max={match.plan.hours.length - 1}
-              value={hora}
-              onChange={(e) => setHora(Number(e.target.value))}
-              aria-label="hora da noite"
-            />
-          </div>
-          <div className={styles.horas}>
-            {match.plan.hours.map((h) => (
-              <button
-                key={h.interval}
-                className={[
-                  h.interval === hora ? styles.horaAgora : styles.hora,
-                  h.interval === match.plan.crime_interval ? styles.horaCrime : '',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-                onClick={() => setHora(h.interval)}
-              >
-                {h.label}
-              </button>
-            ))}
-          </div>
+          ) : null}
         </div>
       </div>
+
+      <div className={styles.relogio}>
+        {/* A hora da morte marcada no trilho, na mesma cruz que marca o
+              cômodo na planta. Sem ela o jogador tinha que guardar de cabeça
+              qual intervalo importava enquanto arrastava. */}
+        <div className={styles.trilho}>
+          <span
+            className={styles.marcaCrime}
+            style={
+              {
+                '--fracao': String(
+                  match.plan.hours.length > 1
+                    ? match.plan.crime_interval / (match.plan.hours.length - 1)
+                    : 0,
+                ),
+              } as CSSProperties
+            }
+            title="por volta desta hora o corpo foi encontrado"
+          >
+            <Skull size={14} strokeWidth={3} />
+          </span>
+          <input
+            type="range"
+            min={0}
+            max={match.plan.hours.length - 1}
+            value={hora}
+            onChange={(e) => setHora(Number(e.target.value))}
+            aria-label="hora da noite"
+          />
+        </div>
+        <div className={styles.horas}>
+          {match.plan.hours.map((h) => (
+            <button
+              key={h.interval}
+              className={[
+                h.interval === hora ? styles.horaAgora : styles.hora,
+                h.interval === match.plan.crime_interval
+                  ? styles.horaCrime
+                  : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              onClick={() => setHora(h.interval)}
+            >
+              {h.label}
+              {h.interval === match.plan.crime_interval ? (
+                <Skull size={11} strokeWidth={1.75} />
+              ) : null}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
   )
 
   const grade = (
-      <div className={styles.coluna}>
-        <p className={styles.instrucao}>
-          {naMao
-            ? `Solte ${match.cast.find((p) => p.id === naMao.quem)?.name} num cômodo — ou fora da planta, para tirá-la de lá.`
-            : 'Arraste um retrato para um cômodo, e de um cômodo para outro. Isto é seu caderno — nada aqui vem do jogo.'}
-        </p>
+    <div className={styles.coluna}>
+      <p className={styles.instrucao}>
+        {naMao
+          ? `Solte ${match.cast.find((p) => p.id === naMao.quem)?.name} num cômodo — ou fora da planta, para tirá-la de lá.`
+          : 'Arraste um retrato para um cômodo, e de um cômodo para outro. Isto é seu caderno — nada aqui vem do jogo.'}
+      </p>
 
-        <table className={styles.grade}>
-          <thead>
-            <tr>
-              <th />
-              {match.plan.hours.map((h) => (
-                <th key={h.interval}>{h.label}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {suspeitos.map((pessoa) => (
-              <tr key={pessoa.id}>
-                <th scope="row">
-                  {pessoa.name}
-                  {/* A grade é lida de relance. A função é o que faz "quem é
-                      esse" caber numa linha da tabela. */}
-                  {pessoa.occupation ? (
-                    <span className={styles.funcao}>{pessoa.occupation}</span>
-                  ) : null}
-                </th>
-                {match.plan.hours.map((h) => {
-                  const comodo = onde(notas, pessoa.id, h.interval)
-                  const escolhida =
-                    celula?.suspeito === pessoa.id && celula.hora === h.interval
-                  const bate = !!comodo && choques(notas, h.interval).has(comodo)
-                  return (
-                    <td key={h.interval} className={styles.gaveta}>
-                      <button
-                        className={[
-                          styles.celula,
-                          escolhida ? styles.celulaEscolhida : '',
-                          bate ? styles.celulaChoque : '',
-                        ]
-                          .filter(Boolean)
-                          .join(' ')}
-                        onClick={() =>
-                          setCelula(
-                            escolhida
-                              ? null
-                              : { suspeito: pessoa.id, hora: h.interval },
-                          )
-                        }
-                        title={comodo ? nomeDoComodo.get(comodo) : 'sem anotação'}
-                      >
-                        {comodo ? nomeDoComodo.get(comodo)?.slice(0, 3) : '·'}
-                      </button>
-
-                      {escolhida ? (
-                        <EscolherComodo
-                          comodos={match.plan.rooms}
-                          atual={comodo}
-                          aoEscolher={(escolhido) => {
-                            registrar(pessoa.id, h.interval, escolhido)
-                            setCelula(null)
-                          }}
-                          aoFechar={fecharCelula}
-                        />
-                      ) : null}
-                    </td>
-                  )
-                })}
-              </tr>
+      <table className={styles.grade}>
+        <thead>
+          <tr>
+            <th />
+            {match.plan.hours.map((h) => (
+              <th key={h.interval}>{h.label}</th>
             ))}
-          </tbody>
-        </table>
-      </div>
+          </tr>
+        </thead>
+        <tbody>
+          {suspeitos.map((pessoa) => (
+            <tr key={pessoa.id}>
+              <th scope="row">
+                {pessoa.name}
+                {/* A grade é lida de relance. A função é o que faz "quem é
+                      esse" caber numa linha da tabela. */}
+                {pessoa.occupation ? (
+                  <span className={styles.funcao}>{pessoa.occupation}</span>
+                ) : null}
+              </th>
+              {match.plan.hours.map((h) => {
+                const comodo = onde(notas, pessoa.id, h.interval)
+                const escolhida =
+                  celula?.suspeito === pessoa.id && celula.hora === h.interval
+                const bate = !!comodo && choques(notas, h.interval).has(comodo)
+                return (
+                  <td key={h.interval} className={styles.gaveta}>
+                    <button
+                      className={[
+                        styles.celula,
+                        escolhida ? styles.celulaEscolhida : '',
+                        bate ? styles.celulaChoque : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                      onClick={() =>
+                        setCelula(
+                          escolhida
+                            ? null
+                            : { suspeito: pessoa.id, hora: h.interval },
+                        )
+                      }
+                      title={comodo ? nomeDoComodo.get(comodo) : 'sem anotação'}
+                    >
+                      {comodo ? nomeDoComodo.get(comodo)?.slice(0, 3) : '·'}
+                    </button>
+
+                    {escolhida ? (
+                      <EscolherComodo
+                        comodos={match.plan.rooms}
+                        atual={comodo}
+                        aoEscolher={(escolhido) => {
+                          registrar(pessoa.id, h.interval, escolhido)
+                          setCelula(null)
+                        }}
+                        aoFechar={fecharCelula}
+                      />
+                    ) : null}
+                  </td>
+                )
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   )
 
   return (

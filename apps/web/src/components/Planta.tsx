@@ -14,6 +14,7 @@
  */
 
 import { Canvas, useThree, type ThreeEvent } from '@react-three/fiber'
+import { Skull } from 'lucide-react'
 import {
   useCallback,
   useEffect,
@@ -565,6 +566,11 @@ export default function Planta({
           style={{ left: rotulo.x, top: rotulo.y }}
         >
           {rotulo.nome}
+          {/* A caveira em vez da cruz: cruz é sepultura, e o corpo foi
+              encontrado ali, não enterrado ali. */}
+          {rotulo.id === plan.crime_room ? (
+            <Skull size={11} strokeWidth={1.75} aria-label="onde o corpo foi encontrado" />
+          ) : null}
         </span>
       ))}
     </div>

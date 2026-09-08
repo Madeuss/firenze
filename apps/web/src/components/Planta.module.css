@@ -40,6 +40,9 @@
    as peças. */
 .rotulo {
   position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
   transform: translate(-50%, -0.2rem);
   pointer-events: none;
   font-size: 0.68rem;
@@ -59,9 +62,4 @@
 /* Onde o corpo foi encontrado. O briefing já diz; isto só evita reler a frase. */
 .rotuloCrime {
   color: var(--paper);
-}
-
-.rotuloCrime::after {
-  content: ' ✝';
-  opacity: 0.7;
 }

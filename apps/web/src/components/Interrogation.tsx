@@ -11,6 +11,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { CircleHelp, Gavel } from 'lucide-react'
+
 import { ask, confront, readMatch, type MatchState } from '@/lib/api'
 import { useTelaLarga } from '@/lib/tela'
 
@@ -146,7 +148,7 @@ export default function Interrogation({ matchId }: { matchId: string }) {
             aria-label="como se joga"
             title="como se joga"
           >
-            ?
+            <CircleHelp size={16} strokeWidth={1.75} />
           </button>
         </span>
         <span className={styles.turns}>
@@ -175,6 +177,7 @@ export default function Interrogation({ matchId }: { matchId: string }) {
           className={styles.accuse}
           onClick={() => setShowing('accusation')}
         >
+          <Gavel size={15} strokeWidth={2} />
           Acusar
         </button>
       </header>
