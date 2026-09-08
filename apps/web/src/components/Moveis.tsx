@@ -178,7 +178,11 @@ function Movelzinho({ movel, lado }: { movel: Movel; lado: number }) {
 
   return (
     <group
-      position={[movel.em[0] * lado, 0.11, movel.em[1] * lado]}
+      position={[
+        movel.em[0] * lado,
+        0.11 + (movel.sobre ?? 0) * lado,
+        movel.em[1] * lado,
+      ]}
       rotation={[0, ((movel.giro ?? 0) * Math.PI) / 2, 0]}
     >
       {modelo ? (

@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "contracts": "openapi-typescript ../api/openapi.json -o src/lib/contracts.ts"
+    "contracts": "openapi-typescript ../api/openapi.json -o src/lib/contracts.ts",
+    "mobilia": "node scripts/conferir-mobilia.mjs"
   },
   "dependencies": {
     "@react-three/fiber": "9.7.0",

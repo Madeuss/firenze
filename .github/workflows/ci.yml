@@ -89,6 +89,9 @@ jobs:
       - run: yarn install --frozen-lockfile
       - run: yarn lint
       - run: yarn typecheck
+      # Estante atravessando parede e lareira dentro de poltrona sao coisas que
+      # so se ve renderizando — e o CI nao renderiza. Viram aritmetica.
+      - run: yarn mobilia
       - run: yarn build
       # Os tipos do front sao gerados do openapi.json, nunca escritos a mao.
       # Se o contrato mudou e ninguem regerou, o front acredita numa API que

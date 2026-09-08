@@ -41,6 +41,8 @@ export type Movel = {
   giro?: number
   /** Multiplica o tamanho padrão da espécie. */
   escala?: number
+  /** Levanta o móvel, em frações do lado. É o que empilha um caixote no outro. */
+  sobre?: number
 }
 
 /**
@@ -49,33 +51,36 @@ export type Movel = {
  * Serve para o desenho e para a conferência: nada pode atravessar parede, e o
  * limite útil é metade do lado menos a espessura dela.
  */
-export const VULTO: Record<Especie, { largura: number; altura: number; fundo: number }> = {
-  mesa: { largura: 0.62, altura: 0.17, fundo: 0.3 },
-  cadeira: { largura: 0.16, altura: 0.3, fundo: 0.16 },
-  estante: { largura: 0.34, altura: 0.5, fundo: 0.12 },
-  poltrona: { largura: 0.3, altura: 0.22, fundo: 0.24 },
-  barril: { largura: 0.17, altura: 0.24, fundo: 0.17 },
-  caixote: { largura: 0.2, altura: 0.2, fundo: 0.2 },
-  vaso: { largura: 0.16, altura: 0.3, fundo: 0.16 },
-  bancada: { largura: 0.55, altura: 0.2, fundo: 0.18 },
-  fogao: { largura: 0.24, altura: 0.26, fundo: 0.22 },
-  escrivaninha: { largura: 0.44, altura: 0.18, fundo: 0.24 },
-  lareira: { largura: 0.4, altura: 0.34, fundo: 0.16 },
+export const VULTO: Record<
+  Especie,
+  { largura: number; altura: number; fundo: number }
+> = {
+  mesa: { largura: 0.5, altura: 0.13, fundo: 0.28 },
+  cadeira: { largura: 0.15, altura: 0.16, fundo: 0.15 },
+  estante: { largura: 0.3, altura: 0.26, fundo: 0.11 },
+  poltrona: { largura: 0.26, altura: 0.14, fundo: 0.22 },
+  barril: { largura: 0.16, altura: 0.17, fundo: 0.16 },
+  caixote: { largura: 0.18, altura: 0.15, fundo: 0.18 },
+  vaso: { largura: 0.14, altura: 0.18, fundo: 0.14 },
+  bancada: { largura: 0.46, altura: 0.14, fundo: 0.16 },
+  fogao: { largura: 0.2, altura: 0.18, fundo: 0.18 },
+  escrivaninha: { largura: 0.38, altura: 0.14, fundo: 0.22 },
+  lareira: { largura: 0.34, altura: 0.24, fundo: 0.14 },
 }
 
 export const MOBILIA: Record<string, Movel[]> = {
   library: [
-    { especie: 'estante', em: [-0.2, -0.34] },
-    { especie: 'estante', em: [0.2, -0.34] },
-    { especie: 'poltrona', em: [-0.16, 0.2], giro: 2 },
-    { especie: 'mesa', em: [0.18, 0.22], escala: 0.5 },
+    { especie: 'estante', em: [-0.19, -0.36] },
+    { especie: 'estante', em: [0.19, -0.36] },
+    { especie: 'poltrona', em: [-0.18, 0.22], giro: 2 },
+    { especie: 'mesa', em: [0.22, 0.24], escala: 0.45 },
   ],
   parlour: [
-    { especie: 'poltrona', em: [-0.22, -0.24] },
-    { especie: 'poltrona', em: [0.22, -0.24] },
-    { especie: 'mesa', em: [0, 0.06], escala: 0.55 },
-    { especie: 'vaso', em: [0.28, 0.3] },
-    { especie: 'lareira', em: [0, -0.33] },
+    { especie: 'lareira', em: [0, -0.35] },
+    { especie: 'poltrona', em: [-0.26, 0.0], giro: 1 },
+    { especie: 'poltrona', em: [0.26, 0.0], giro: 3 },
+    { especie: 'mesa', em: [0, 0.06], escala: 0.5 },
+    { especie: 'vaso', em: [0.3, 0.32] },
   ],
   dining_room: [
     { especie: 'mesa', em: [0, 0] },
@@ -96,9 +101,9 @@ export const MOBILIA: Record<string, Movel[]> = {
     { especie: 'estante', em: [0.22, 0.3], giro: 2 },
   ],
   study: [
-    { especie: 'escrivaninha', em: [0, -0.14] },
-    { especie: 'cadeira', em: [0, 0.18], giro: 2 },
-    { especie: 'estante', em: [-0.22, -0.34] },
+    { especie: 'estante', em: [0, -0.36] },
+    { especie: 'escrivaninha', em: [0, -0.05] },
+    { especie: 'cadeira', em: [0, 0.24], giro: 2 },
   ],
   conservatory: [
     { especie: 'vaso', em: [-0.3, -0.28] },
@@ -108,9 +113,9 @@ export const MOBILIA: Record<string, Movel[]> = {
   ],
   basement: [
     { especie: 'caixote', em: [-0.26, -0.24] },
-    { especie: 'caixote', em: [-0.26, -0.24], escala: 0.6 },
-    { especie: 'caixote', em: [0.24, 0.08] },
-    { especie: 'caixote', em: [-0.02, 0.3], escala: 0.8 },
+    { especie: 'caixote', em: [-0.26, -0.24], escala: 0.7, sobre: 0.15 },
+    { especie: 'caixote', em: [0.24, 0.06] },
+    { especie: 'caixote', em: [0.02, 0.3], escala: 0.8 },
   ],
 }
 
