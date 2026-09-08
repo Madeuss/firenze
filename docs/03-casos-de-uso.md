@@ -184,6 +184,26 @@ conclusão dela. A tela diz o que houve: não veio resposta, o turno foi gasto. 
 API já foi desenhada para isso, devolvendo `reason` grosseiro em vez de detalhe
 (o detalhe pode conter o canary, ver [T-02](05-threat-model.md)).
 
+### Idioma: escolhido uma vez, no começo
+
+O idioma é **propriedade da partida** ([ADR-0005](adr/0005-locale-is-a-property-of-the-match.md)),
+e o único momento em que se escolhe é a tela inicial, ao lado da semente. Depois
+não muda, e a razão não é preguiça de implementar: o caderno guarda o que os
+suspeitos já disseram, no idioma em que disseram. Trocar no meio deixaria uma
+partida bilíngue, com metade das respostas numa língua e metade na outra.
+
+A interface segue `match.locale` em vez de uma preferência do navegador. Botão
+em inglês com mordomo respondendo em português seria pior que ter um idioma só.
+
+**Perguntar num idioma e ser respondido noutro é permitido, e é assim de
+propósito.** O suspeito responde no idioma da partida — a casa é dela, não da
+pergunta. Nada valida o que o jogador digita: a classificação de intenção
+(RN-040) olha o que a pergunta *quer*, não em que língua ela está.
+
+Nomes próprios não se traduzem. Uma mansão brasileira mantém nomes brasileiros
+em qualquer idioma; traduzi-los soaria a dublagem ruim. As **funções**, sim, são
+conteúdo e vêm do catálogo da API — `mordomo` e `butler` são a mesma chave.
+
 ## 6. Paleta e tipografia
 
 **Direção:** Monument Valley numa mansão à noite. Chapado, pouca saturação, uma

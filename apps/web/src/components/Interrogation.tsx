@@ -14,6 +14,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CircleHelp, Gavel } from 'lucide-react'
 
 import { ask, confront, readMatch, type MatchState } from '@/lib/api'
+import { Idioma, useTextos } from '@/lib/idioma'
 import { useTelaLarga } from '@/lib/tela'
 
 import Accusation from './Accusation'
@@ -22,16 +23,59 @@ import Retrato from './Retrato'
 import Rules from './Rules'
 import styles from './Interrogation.module.css'
 
-const STANCE_LABEL: Record<string, string> = {
-  cooperative: 'cooperativo',
-  evasive: 'evasivo',
-  hostile: 'hostil',
-  broken: 'quebrado',
-}
-
 export default function Interrogation({ matchId }: { matchId: string }) {
   const [match, setMatch] = useState<MatchState | null>(null)
-  const [selected, setSelected] = useState<string | null>(null)
+  const [failure, setFailure] = useState<string | null>(null)
+  // Duas leituras da partida podem voltar fora de ordem, e a mais velha
+  // sobrescreveria a mais nova — o turno recem-gasto sumia da conversa.
+  const leitura = useRef(0)
+
+  useEffect(() => {
+    const minha = ++leitura.current
+    readMatch(matchId)
+      .then((state) => {
+        if (minha === leitura.current) setMatch(state)
+      })
+      .catch((error: unknown) =>
+        setFailure(
+          error instanceof Error ? error.message : 'could not open the match',
+        ),
+      )
+  }, [matchId])
+
+  const recarregar = useCallback(async () => {
+    const minha = ++leitura.current
+    try {
+      const estado = await readMatch(matchId)
+      if (minha === leitura.current) setMatch(estado)
+    } catch {
+      // Recarregar e conforto; o turno ja aconteceu no servidor de todo jeito.
+    }
+  }, [matchId])
+
+  if (failure && !match) return <main className={styles.empty}>{failure}</main>
+  if (!match) return <main className={styles.empty} />
+
+  // O idioma da moldura é o da partida, e não uma preferência do navegador: o
+  // caso inteiro já veio escrito nele (ADR-0005).
+  return (
+    <Idioma locale={match.locale}>
+      <Mesa match={match} recarregar={recarregar} />
+    </Idioma>
+  )
+}
+
+function Mesa({
+  match,
+  recarregar,
+}: {
+  match: MatchState
+  recarregar: () => Promise<void>
+}) {
+  const t = useTextos()
+  const [selected, setSelected] = useState<string | null>(
+    () => match.cast.find((person) => person.role === 'suspect')?.id ?? null,
+  )
   const [question, setQuestion] = useState('')
   const [armed, setArmed] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
@@ -47,30 +91,8 @@ export default function Interrogation({ matchId }: { matchId: string }) {
   // `pending` e estado, e estado nao muda a tempo: dois Enter seguidos passam
   // os dois pela guarda antes do primeiro render. Este trava na hora.
   const enviando = useRef(false)
-  // Duas leituras da partida podem voltar fora de ordem, e a mais velha
-  // sobrescreveria a mais nova — o turno recem-gasto sumia da conversa.
-  const leitura = useRef(0)
-
-  useEffect(() => {
-    const minha = ++leitura.current
-    readMatch(matchId)
-      .then((state) => {
-        if (minha !== leitura.current) return
-        setMatch(state)
-        const first = state.cast.find((person) => person.role === 'suspect')
-        setSelected((current) => current ?? first?.id ?? null)
-      })
-      .catch((error: unknown) =>
-        setFailure(
-          error instanceof Error
-            ? error.message
-            : 'não deu para abrir a partida',
-        ),
-      )
-  }, [matchId])
-
   const suspects = useMemo(
-    () => match?.cast.filter((person) => person.role === 'suspect') ?? [],
+    () => match.cast.filter((person) => person.role === 'suspect'),
     [match],
   )
 
@@ -79,7 +101,7 @@ export default function Interrogation({ matchId }: { matchId: string }) {
   // o recarregamento chegava. O caderno da API já é o registro inteiro —
   // inclusive os turnos que não produziram nada (RN-030).
   const thread = useMemo(
-    () => match?.notebook.filter((entry) => entry.character === selected) ?? [],
+    () => match.notebook.filter((entry) => entry.character === selected),
     [match, selected],
   )
 
@@ -90,16 +112,6 @@ export default function Interrogation({ matchId }: { matchId: string }) {
     if (caixa) caixa.scrollTop = caixa.scrollHeight
   }, [thread.length, pending, selected])
 
-  const refresh = useCallback(async () => {
-    const minha = ++leitura.current
-    try {
-      const estado = await readMatch(matchId)
-      if (minha === leitura.current) setMatch(estado)
-    } catch {
-      // Recarregar e conforto; o turno ja aconteceu no servidor de todo jeito.
-    }
-  }, [matchId])
-
   async function send() {
     if (!selected || enviando.current) return
     enviando.current = true
@@ -107,18 +119,18 @@ export default function Interrogation({ matchId }: { matchId: string }) {
     setPending(true)
     try {
       if (armed) {
-        await confront(matchId, selected, armed)
+        await confront(match.id, selected, armed)
         setArmed(null)
       } else {
         const asked = question.trim()
         if (!asked) return
-        await ask(matchId, selected, asked)
+        await ask(match.id, selected, asked)
         setQuestion('')
       }
-      await refresh()
+      await recarregar()
     } catch (error) {
       setFailure(
-        error instanceof Error ? error.message : 'não deu para perguntar',
+        error instanceof Error ? error.message : t['jogo.falha.pergunta'],
       )
     } finally {
       enviando.current = false
@@ -126,8 +138,7 @@ export default function Interrogation({ matchId }: { matchId: string }) {
     }
   }
 
-  if (failure && !match) return <main className={styles.empty}>{failure}</main>
-  if (!match || !selected) return <main className={styles.empty} />
+  if (!selected) return <main className={styles.empty} />
 
   const current = suspects.find((person) => person.id === selected)
   const stance = current?.stance ?? null
@@ -138,21 +149,21 @@ export default function Interrogation({ matchId }: { matchId: string }) {
     <main className={styles.screen}>
       <header className={styles.top}>
         <span className={styles.case}>
-          Caso <span className="mono">{match.seed}</span>
+          {t['jogo.caso']} <span className="mono">{match.seed}</span>
         </span>
         <span className={styles.briefing}>
           {match.known[0]?.text}
           <button
             className={styles.help}
             onClick={() => setShowing('rules')}
-            aria-label="como se joga"
-            title="como se joga"
+            aria-label={t['regras.como']}
+            title={t['regras.como']}
           >
             <CircleHelp size={16} strokeWidth={1.75} />
           </button>
         </span>
         <span className={styles.turns}>
-          <strong>{match.turns_left}</strong> turnos
+          <strong>{match.turns_left}</strong> {t['jogo.turnos']}
         </span>
         {largo ? null : (
           <div className={styles.modos}>
@@ -160,14 +171,14 @@ export default function Interrogation({ matchId }: { matchId: string }) {
               className={modo === 'interrogatorio' ? styles.modoAgora : styles.modo}
               onClick={() => setModo('interrogatorio')}
             >
-              Interrogatório
+              {t['jogo.interrogatorio']}
             </button>
             <button
               className={modo === 'deducao' ? styles.modoAgora : styles.modo}
               onClick={() => setModo('deducao')}
-              title="não gasta turno"
+              title={t['jogo.deducao.gratis']}
             >
-              Dedução
+              {t['jogo.deducao']}
             </button>
           </div>
         )}
@@ -178,7 +189,7 @@ export default function Interrogation({ matchId }: { matchId: string }) {
           onClick={() => setShowing('accusation')}
         >
           <Gavel size={15} strokeWidth={2} />
-          Acusar
+          {t['jogo.acusar']}
         </button>
       </header>
 
@@ -188,7 +199,7 @@ export default function Interrogation({ matchId }: { matchId: string }) {
         </div>
       ) : (
       <div className={largo ? styles.mesa : styles.body}>
-        <nav className={styles.cast} aria-label="elenco">
+        <nav className={styles.cast} aria-label={t['jogo.elenco']}>
           {suspects.map((person) => (
             <button
               key={person.id}
@@ -236,30 +247,36 @@ export default function Interrogation({ matchId }: { matchId: string }) {
             </div>
             {stance ? (
               <span className={styles.stance} data-stance={stance}>
-                {STANCE_LABEL[stance]}
+                {t[`postura.${stance}` as const]}
               </span>
             ) : (
-              <span className="faint">ainda não falou com você</span>
+              <span className="faint">{t['jogo.mudo']}</span>
             )}
           </header>
 
           <div className={styles.thread} ref={rolagem}>
             {thread.length === 0 ? (
               <p className={`prose ${styles.nothing}`}>
-                Ninguém disse nada ainda. Pergunte alguma coisa.
+                {t['jogo.silencio.nada']}
               </p>
             ) : null}
 
             {thread.map((entry) =>
               entry.answered ? (
                 <article key={entry.turn} className={styles.exchange}>
-                  <p className={styles.asked}>{entry.question}</p>
+                  <p className={styles.asked}>
+                    <span className={styles.autor}>{t['jogo.voce']}</span>
+                    {entry.question}
+                  </p>
                   <p className={`prose ${styles.line}`}>{entry.line}</p>
                 </article>
               ) : (
                 <article key={entry.turn} className={styles.silence}>
-                  <p className={styles.asked}>{entry.question}</p>
-                  <p>Não veio resposta. O turno foi gasto.</p>
+                  <p className={styles.asked}>
+                    <span className={styles.autor}>{t['jogo.voce']}</span>
+                    {entry.question}
+                  </p>
+                  <p>{t['jogo.silencio.turno']}</p>
                 </article>
               ),
             )}
@@ -271,14 +288,14 @@ export default function Interrogation({ matchId }: { matchId: string }) {
             {failure ? <p className={styles.failure}>{failure}</p> : null}
             {broke ? (
               <p className={styles.failure}>
-                Turnos insuficientes. Só resta acusar.
+                {t['jogo.sem.turnos']}
               </p>
             ) : null}
 
             <div className={styles.evidence}>
-              <span className="faint">provas</span>
+              <span className="faint">{t['jogo.provas']}</span>
               {match.evidence.length === 0 ? (
-                <span className="faint">— nada nas mãos ainda</span>
+                <span className="faint">{t['jogo.provas.vazio']}</span>
               ) : (
                 match.evidence.map((id) => (
                   <button
@@ -297,13 +314,13 @@ export default function Interrogation({ matchId }: { matchId: string }) {
               {armed ? (
                 <div className={styles.armed}>
                   <span>
-                    apresentar <span className="mono">{armed}</span>
+                    {t['jogo.apresentar']} <span className="mono">{armed}</span>
                   </span>
                   <button
                     className={styles.disarm}
                     onClick={() => setArmed(null)}
                   >
-                    cancelar
+                    {t['jogo.cancelar']}
                   </button>
                 </div>
               ) : (
@@ -317,10 +334,10 @@ export default function Interrogation({ matchId }: { matchId: string }) {
                       void send()
                     }
                   }}
-                  placeholder="pergunte alguma coisa…"
+                  placeholder={t['jogo.pergunte']}
                   maxLength={500}
                   rows={2}
-                  aria-label="sua pergunta"
+                  aria-label={t['jogo.pergunta.rotulo']}
                 />
               )}
               <button
@@ -328,7 +345,7 @@ export default function Interrogation({ matchId }: { matchId: string }) {
                 onClick={() => void send()}
                 disabled={pending || broke || (!armed && question.trim() === '')}
               >
-                {armed ? 'Confrontar — custa 2 turnos' : 'Perguntar'}
+                {armed ? t['jogo.confrontar'] : t['jogo.perguntar']}
               </button>
             </div>
 
@@ -336,16 +353,13 @@ export default function Interrogation({ matchId }: { matchId: string }) {
                 numa tela só o recado perdeu a casa, e volta aqui, onde o gasto
                 acontece. */}
             {largo ? (
-              <p className={styles.custo}>
-                perguntar gasta 1 turno, confrontar gasta 2 · o painel ao lado
-                não gasta nada
-              </p>
+              <p className={styles.custo}>{t['jogo.custo']}</p>
             ) : null}
           </div>
         </section>
 
         {largo ? (
-          <aside className={styles.painel} aria-label="dedução">
+          <aside className={styles.painel} aria-label={t['jogo.deducao']}>
             {/* As abas são o que sobrou do alternador, e agora se enxergam:
                 ocupam a coluna em vez de duas palavras no canto do topo. */}
             <div className={styles.abas}>
@@ -353,13 +367,13 @@ export default function Interrogation({ matchId }: { matchId: string }) {
                 className={aba === 'planta' ? styles.abaAgora : styles.aba}
                 onClick={() => setAba('planta')}
               >
-                Planta
+                {t['deducao.planta']}
               </button>
               <button
                 className={aba === 'grade' ? styles.abaAgora : styles.aba}
                 onClick={() => setAba('grade')}
               >
-                Grade
+                {t['deducao.grade']}
               </button>
             </div>
             <Deducao match={match} vista={aba} />

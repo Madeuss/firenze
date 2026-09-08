@@ -293,8 +293,11 @@
   font-size: 0.85rem;
 }
 
-.asked::before {
-  content: "você — ";
+/* Quem perguntou. Estava no CSS como `content: "você — "`, o que funciona até
+   a interface ganhar um segundo idioma: texto que o jogador lê não pode morar
+   numa folha de estilo. */
+.autor::after {
+  content: " — ";
 }
 
 .line {

@@ -27,6 +27,7 @@ import {
 import * as THREE from 'three'
 
 import type { FloorPlan } from '@/lib/api'
+import { useTextos } from '@/lib/idioma'
 import { silhuetaDeGiz } from '@/lib/giz'
 import { degrauDe, lugarLivre } from '@/lib/mobilia'
 import { retratoDe } from '@/lib/retratos'
@@ -448,6 +449,7 @@ export default function Planta({
     () => new Map(plan.rooms.map((r) => [r.id, r.name])),
     [plan],
   )
+  const t = useTextos()
   const [medidas, setMedidas] = useState<Medida[]>([])
   // Identidade estável: o efeito que mede depende dela, e uma função nova a
   // cada render faria a medida rodar em laço. E medida igual não vira estado
@@ -587,7 +589,7 @@ export default function Planta({
           {/* A caveira em vez da cruz: cruz é sepultura, e o corpo foi
               encontrado ali, não enterrado ali. */}
           {rotulo.id === plan.crime_room ? (
-            <Skull size={11} strokeWidth={1.75} aria-label="onde o corpo foi encontrado" />
+            <Skull size={11} strokeWidth={1.75} aria-label={t['deducao.corpo']} />
           ) : null}
         </span>
       ))}

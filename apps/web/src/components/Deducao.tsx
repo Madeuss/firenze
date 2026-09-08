@@ -29,6 +29,8 @@ import {
 } from 'react'
 
 import type { CastMember, MatchState } from '@/lib/api'
+import { useTextos } from '@/lib/idioma'
+import { com } from '@/lib/textos'
 import {
   anotar,
   assinar,
@@ -55,6 +57,7 @@ export default function Deducao({
   match: MatchState
   vista?: Vista
 }) {
+  const t = useTextos()
   const notas = useSyncExternalStore(
     assinar,
     () => instantaneo(match.id),
@@ -222,7 +225,7 @@ export default function Deducao({
               se arrastar não der, clique no retrato e depois no cômodo. */}
         <div
           className={styles.bandeja}
-          aria-label="suspeitos sem lugar nesta hora"
+          aria-label={t['deducao.bandeja']}
         >
           {naBandeja.map((pessoa) => (
             <button
@@ -238,7 +241,7 @@ export default function Deducao({
                 }
                 pegar(pessoa.id, null, evento.nativeEvent)
               }}
-              title={`onde ${pessoa.name} disse que estava?`}
+              title={com(t['deducao.onde'], { nome: pessoa.name })}
             >
               <Retrato
                 nome={pessoa.name}
@@ -252,7 +255,7 @@ export default function Deducao({
           ))}
           {naBandeja.length === 0 ? (
             <span className={styles.bandejaVazia}>
-              todos colocados nesta hora
+              {t['deducao.bandeja.vazia']}
             </span>
           ) : null}
         </div>
@@ -274,7 +277,7 @@ export default function Deducao({
                 ),
               } as CSSProperties
             }
-            title="por volta desta hora o corpo foi encontrado"
+            title={t['deducao.hora.crime']}
           >
             <Skull size={19} strokeWidth={2} />
           </span>
@@ -284,7 +287,7 @@ export default function Deducao({
             max={match.plan.hours.length - 1}
             value={hora}
             onChange={(e) => setHora(Number(e.target.value))}
-            aria-label="hora da noite"
+            aria-label={t['deducao.hora']}
           />
         </div>
         <div className={styles.horas}>
@@ -316,8 +319,11 @@ export default function Deducao({
     <div className={styles.coluna}>
       <p className={styles.instrucao}>
         {naMao
-          ? `Solte ${match.cast.find((p) => p.id === naMao.quem)?.name} num cômodo — ou fora da planta, para tirá-la de lá.`
-          : 'Arraste um retrato para um cômodo, e de um cômodo para outro. Isto é seu caderno — nada aqui vem do jogo.'}
+          ? com(t['deducao.solte'], {
+              nome:
+                match.cast.find((p) => p.id === naMao.quem)?.name ?? naMao.quem,
+            })
+          : t['deducao.instrucao']}
       </p>
 
       <table className={styles.grade}>
@@ -362,7 +368,9 @@ export default function Deducao({
                             : { suspeito: pessoa.id, hora: h.interval },
                         )
                       }
-                      title={comodo ? nomeDoComodo.get(comodo) : 'sem anotação'}
+                      title={
+                        comodo ? nomeDoComodo.get(comodo) : t['deducao.celula.vazia']
+                      }
                     >
                       {comodo ? nomeDoComodo.get(comodo)?.slice(0, 3) : '·'}
                     </button>

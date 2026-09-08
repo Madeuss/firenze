@@ -22,6 +22,8 @@ import {
   type MatchState,
   type Outcome,
 } from "@/lib/api";
+import { useTextos } from "@/lib/idioma";
+import { com, type Textos } from "@/lib/textos";
 
 import styles from "./Accusation.module.css";
 
@@ -34,6 +36,7 @@ export default function Accusation({
   match: MatchState;
   onClose: () => void;
 }) {
+  const t = useTextos();
   const [stage, setStage] = useState<Stage>("writing");
   const [text, setText] = useState("");
   const [draft, setDraft] = useState<DraftAccusation | null>(null);
@@ -60,7 +63,9 @@ export default function Accusation({
     try {
       adopt(await draftAccusation(match.id, text.trim()));
     } catch (error) {
-      setFailure(error instanceof Error ? error.message : "não deu para ler a acusação");
+      setFailure(
+        error instanceof Error ? error.message : t["acusacao.falha.leitura"],
+      );
     } finally {
       setBusy(false);
     }
@@ -74,48 +79,47 @@ export default function Accusation({
       setOutcome(await accuse(match.id, { culprit, motive_key: motive, evidence }));
       setStage("decided");
     } catch (error) {
-      setFailure(error instanceof Error ? error.message : "não deu para acusar");
+      setFailure(
+        error instanceof Error ? error.message : t["acusacao.falha.acusar"],
+      );
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <div className={styles.backdrop} role="dialog" aria-modal="true" aria-label="acusação">
+    <div className={styles.backdrop} role="dialog" aria-modal="true" aria-label={t["acusacao.dialogo"]}>
       <div className={styles.sheet}>
         {stage === "writing" ? (
           <>
-            <h2 className={styles.title}>Quem foi?</h2>
-            <p className={`${styles.hint} muted`}>
-              Escreva com suas palavras — quem, por quê, e com que prova. Você confere
-              antes de valer.
-            </p>
+            <h2 className={styles.title}>{t["acusacao.quem"]}</h2>
+            <p className={`${styles.hint} muted`}>{t["acusacao.dica"]}</p>
             <textarea
               className={styles.text}
               value={text}
               onChange={(event) => setText(event.target.value)}
-              placeholder="foi a governanta, por causa da herança, e a prova é o lenço…"
+              placeholder={t["acusacao.exemplo"]}
               maxLength={1000}
               rows={4}
               autoFocus
-              aria-label="sua acusação, em texto livre"
+              aria-label={t["acusacao.rotulo"]}
             />
             <div className={styles.actions}>
               <button className={styles.ghost} onClick={onClose}>
-                voltar
+                {t["acusacao.voltar"]}
               </button>
               <button
                 className={styles.ghost}
                 onClick={() => adopt(null)}
               >
-                prefiro escolher
+                {t["acusacao.escolher"]}
               </button>
               <button
                 className={styles.primary}
                 onClick={() => void read()}
                 disabled={busy || text.trim() === ""}
               >
-                {busy ? "lendo…" : "Continuar"}
+                {busy ? t["acusacao.lendo"] : t["acusacao.continuar"]}
               </button>
             </div>
           </>
@@ -123,15 +127,15 @@ export default function Accusation({
 
         {stage === "checking" ? (
           <>
-            <h2 className={styles.title}>Confira antes de valer</h2>
+            <h2 className={styles.title}>{t["acusacao.confira"]}</h2>
 
             <label className={styles.field}>
-              <span className="faint">culpado</span>
+              <span className="faint">{t["acusacao.culpado"]}</span>
               <select
                 value={culprit ?? ""}
                 onChange={(event) => setCulprit(event.target.value || null)}
               >
-                <option value="">— ninguém</option>
+                <option value="">{t["acusacao.ninguem"]}</option>
                 {suspects.map((person) => (
                   <option key={person.id} value={person.id}>
                     {person.name}
@@ -141,7 +145,7 @@ export default function Accusation({
             </label>
 
             <label className={styles.field}>
-              <span className="faint">motivo</span>
+              <span className="faint">{t["acusacao.motivo"]}</span>
               <select
                 value={motive ?? ""}
                 onChange={(event) => setMotive(event.target.value || null)}
@@ -149,8 +153,8 @@ export default function Accusation({
               >
                 <option value="">
                   {match.known_motives.length === 0
-                    ? "— você não descobriu nenhum"
-                    : "— não reivindicado"}
+                    ? t["acusacao.motivo.nenhum"]
+                    : t["acusacao.motivo.livre"]}
                 </option>
                 {match.known_motives.map((key) => (
                   <option key={key} value={key}>
@@ -161,7 +165,7 @@ export default function Accusation({
             </label>
 
             <fieldset className={styles.field}>
-              <legend className="faint">provas</legend>
+              <legend className="faint">{t["acusacao.provas"]}</legend>
               <div className={styles.checks}>
                 {match.evidence.map((id) => (
                   <label key={id} className={styles.check}>
@@ -184,29 +188,30 @@ export default function Accusation({
 
             {draft?.unresolved?.length ? (
               <p className={styles.unresolved}>
-                Não consegui encaixar: {draft.unresolved.join("; ")}. Ajuste acima — não
-                vou adivinhar por você.
+                {com(t["acusacao.sobrou"], {
+                  itens: draft.unresolved.join("; "),
+                })}
               </p>
             ) : null}
 
-            <p className={styles.warning}>Isto não pode ser desfeito.</p>
+            <p className={styles.warning}>{t["acusacao.irreversivel"]}</p>
 
             <div className={styles.actions}>
               <button className={styles.ghost} onClick={() => setStage("writing")}>
-                voltar
+                {t["acusacao.voltar"]}
               </button>
               <button
                 className={styles.primary}
                 onClick={() => void commit()}
                 disabled={busy || !culprit}
               >
-                {busy ? "acusando…" : "Acusar"}
+                {busy ? t["acusacao.acusando"] : t["acusacao.acusar"]}
               </button>
             </div>
           </>
         ) : null}
 
-        {stage === "decided" && outcome ? <Verdict outcome={outcome} /> : null}
+        {stage === "decided" && outcome ? <Verdict outcome={outcome} t={t} /> : null}
 
         {failure ? <p className={styles.failure}>{failure}</p> : null}
       </div>
@@ -214,42 +219,50 @@ export default function Accusation({
   );
 }
 
-function Verdict({ outcome }: { outcome: Outcome }) {
+function Verdict({ outcome, t }: { outcome: Outcome; t: Textos }) {
   return (
     <>
-      <h2 className={styles.title}>{outcome.correct ? "Era ele mesmo." : "Não era."}</h2>
+      <h2 className={styles.title}>
+        {outcome.correct ? t["veredito.certo"] : t["veredito.errado"]}
+      </h2>
+      {/* A frase inteira vem do catálogo, e não montada em pedaços: a ordem
+          das palavras é do idioma, não nossa. */}
       <p className={`prose ${styles.truth}`}>
-        Foi <strong>{outcome.culprit}</strong>, com {outcome.means}, por {outcome.motive}.
+        {com(t["veredito.frase"], {
+          culpado: outcome.culprit,
+          meio: outcome.means,
+          motivo: outcome.motive,
+        })}
       </p>
 
       {outcome.epilogue ? <p className={`prose ${styles.truth}`}>{outcome.epilogue}</p> : null}
 
       <dl className={styles.score}>
         <div>
-          <dt>culpado</dt>
+          <dt>{t["veredito.culpado"]}</dt>
           <dd>{outcome.culprit_points}</dd>
         </div>
         <div>
-          <dt>motivo</dt>
+          <dt>{t["veredito.motivo"]}</dt>
           <dd>{outcome.motive_points}</dd>
         </div>
         <div>
-          <dt>provas</dt>
+          <dt>{t["veredito.provas"]}</dt>
           <dd>{outcome.evidence_points}</dd>
         </div>
         <div>
-          <dt>rapidez</dt>
+          <dt>{t["veredito.rapidez"]}</dt>
           <dd>{outcome.speed_points}</dd>
         </div>
         <div className={styles.total}>
-          <dt>total</dt>
+          <dt>{t["veredito.total"]}</dt>
           <dd>{outcome.score}</dd>
         </div>
       </dl>
 
       <div className={styles.actions}>
         <Link className={styles.primary} href="/">
-          Nova investigação
+          {t["veredito.nova"]}
         </Link>
       </div>
     </>
