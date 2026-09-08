@@ -166,6 +166,24 @@ herança"* — `POST /accusation/draft` reads prose into a form, and `POST
 prose, so the confirmation is structural rather than a habit: an accusation is
 irreversible, and a misreading should never become one.
 
+### The front end
+
+Requires Node 20 and [yarn](https://classic.yarnpkg.com/). With the API up:
+
+```bash
+make web-install   # yarn install, once
+make web           # http://localhost:3000
+```
+
+The browser never talks to FastAPI. Everything goes through a route handler in
+`apps/web/src/app/api`, which is the only place that knows the API's address —
+and the place a session goes when [T-11](docs/05-threat-model.md) is closed.
+
+The front's TypeScript types are **generated** from `apps/api/openapi.json`
+(`make contracts`), never written by hand, and CI fails if the checked-in types
+drift from the spec. A front that believes in an API that no longer exists is a
+front whose typechecker passes.
+
 `make` on its own lists every target.
 
 ## Layout
@@ -179,6 +197,7 @@ irreversible, and a misreading should never become one.
 | [`apps/api/src/firenze/storage/`](apps/api/src/firenze/storage/) | The only package that writes SQL |
 | [`apps/api/src/firenze/model/`](apps/api/src/firenze/model/) | The model port. No other module names a provider |
 | [`apps/api/src/firenze/i18n/`](apps/api/src/firenze/i18n/) | Message catalogs. Grammar lives here, not in the domain |
+| [`apps/web/src/`](apps/web/src/) | Next.js. Types generated from the OpenAPI, never hand-written |
 | [`docs/adr/`](docs/adr/) | Architecture decisions, with their downsides written down |
 | [`infra/compose/`](infra/compose/) | Local Postgres with pgvector, Redis, API |
 
@@ -193,6 +212,8 @@ The glossary maps both vocabularies.
 | [`docs/00-plano-de-projeto.md`](docs/00-plano-de-projeto.md) | Scope, roadmap, method |
 | [`docs/01-dominio.md`](docs/01-dominio.md) | Glossary, domain model, state machines |
 | [`docs/02-regras-de-negocio.md`](docs/02-regras-de-negocio.md) | RN-001 to RN-042, each with where it is enforced |
+| [`docs/03-casos-de-uso.md`](docs/03-casos-de-uso.md) | What the player sees, clicks and types |
+| [`docs/05-threat-model.md`](docs/05-threat-model.md) | Threats, and the test that proves each mitigation |
 | [`docs/06-plano-de-evals.md`](docs/06-plano-de-evals.md) | Metrics, gates, datasets |
 | [`docs/adr/`](docs/adr/) | Why things are the way they are |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | Branch, commit and PR flow |

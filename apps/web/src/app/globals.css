@@ -1,0 +1,105 @@
+/*
+ * Monument Valley numa mansão à noite: chapado, pouca saturação, e uma única
+ * cor quente que só aparece onde há ação.
+ *
+ * As cores são tokens porque a paleta é a parte mais barata de trocar, e a
+ * estrutura não depende dela. Ver docs/03-casos-de-uso.md §6.
+ */
+
+:root {
+  /* a noite */
+  --night: #14161f;
+  --night-soft: #1c1f2b;
+  --night-line: #2a2e3d;
+
+  /* o papel do caderno — creme quente, nunca branco */
+  --paper: #ece4d4;
+  --paper-dim: #b3ac9e;
+  --paper-faint: #6f6a60;
+
+  /* a luz de vela: ação, e só ação */
+  --amber: #e0a244;
+  --amber-dim: #8a6529;
+
+  /* contradição, álibi quebrado */
+  --alarm: #c05f47;
+
+  /* posturas, na ordem em que a máquina de estados anda */
+  --cooperative: #6fa295;
+  --evasive: #d2a04a;
+  --hostile: #c05f47;
+  --broken: #8d7d9c;
+
+  --radius: 3px;
+  --column: 46rem;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--night);
+  color: var(--paper);
+  font-family: var(--font-ui), system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+input,
+textarea {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+}
+
+input:focus,
+textarea:focus,
+button:focus-visible {
+  outline: 1px solid var(--amber);
+  outline-offset: 2px;
+}
+
+/* fala de suspeito: serifada, porque é o que se lê muito */
+.prose {
+  font-family: var(--font-prose), Georgia, serif;
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+/* id de fato: F-014 tem que alinhar e não parecer palavra */
+.mono {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+}
+
+.muted {
+  color: var(--paper-dim);
+}
+
+.faint {
+  color: var(--paper-faint);
+}

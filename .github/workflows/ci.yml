@@ -74,6 +74,30 @@ jobs:
           git diff --exit-code openapi.json \
             || { echo "::error::openapi.json desatualizado — rode 'make openapi' e commite"; exit 1; }
 
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+          cache-dependency-path: apps/web/yarn.lock
+      - run: yarn install --frozen-lockfile
+      - run: yarn lint
+      - run: yarn typecheck
+      - run: yarn build
+      # Os tipos do front sao gerados do openapi.json, nunca escritos a mao.
+      # Se o contrato mudou e ninguem regerou, o front acredita numa API que
+      # nao existe mais — e o tsc passa, porque ele confia no arquivo antigo.
+      - name: tipos do front batem com o contrato
+        run: |
+          yarn contracts
+          git diff --exit-code src/lib/contracts.ts             || { echo "::error::contracts.ts desatualizado — rode 'make contracts' e commite"; exit 1; }
+
   pr-title:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
