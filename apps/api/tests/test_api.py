@@ -220,3 +220,134 @@ def test_an_empty_question_is_refused(client: TestClient) -> None:
     )
 
     assert response.status_code == 422
+
+
+# --- the review -----------------------------------------------------------
+
+
+def _accuse(client: TestClient, match_id: str, culprit: str = "sus-1") -> dict[str, Any]:
+    response = client.post(f"/matches/{match_id}/accusation", json={"culprit": culprit})
+    assert response.status_code == 200
+    return dict(response.json())
+
+
+def test_a_match_still_being_played_has_no_review(client: TestClient) -> None:
+    """The same payload mid-match would be a lie detector, so it is a 409."""
+    match = _start(client)
+
+    response = client.get(f"/matches/{match['id']}/review")
+
+    assert response.status_code == 409
+
+
+def test_the_review_of_an_unknown_match_is_not_found(client: TestClient) -> None:
+    assert client.get("/matches/00000000-0000-0000-0000-000000000000/review").status_code == 404
+
+
+def test_the_review_lists_the_rejected_turns_too(client: TestClient) -> None:
+    """The point of the whole record: a turn that produced nothing is in it."""
+    case = generate(seed=42).case
+    canary = next(f.canary for f in case.facts if f.canary)
+    match = _start(client)
+
+    client.post(f"/matches/{match['id']}/turns", json={"suspect": "sus-1", "question": "onde?"})
+    app.dependency_overrides[model_port] = lambda: Scripted(
+        NpcReply(line=f"Ora, {canary}...", stance=Stance.cooperative, lied=False)
+    )
+    client.post(f"/matches/{match['id']}/turns", json={"suspect": "sus-2", "question": "e você?"})
+    app.dependency_overrides[model_port] = FakeModel
+    _accuse(client, match["id"])
+
+    response = client.get(f"/matches/{match['id']}/review")
+    review = response.json()
+
+    assert [t["turn"] for t in review["record"]] == [1, 2]
+    assert review["record"][0]["answered"] is True
+    assert review["record"][1]["answered"] is False
+    assert review["record"][1]["rejected_by"] == "canary"
+    assert review["record"][1]["line"] is None
+    assert canary not in response.text, "the name of the check travels, never the text"
+
+
+def test_the_review_reconciles_the_budget(client: TestClient) -> None:
+    """Costs recorded plus turns left equals the budget. No turn goes missing."""
+    match = _start(client)
+    for who in ("sus-1", "sus-2", "sus-3"):
+        client.post(f"/matches/{match['id']}/turns", json={"suspect": who, "question": "onde?"})
+    _accuse(client, match["id"])
+
+    review = client.get(f"/matches/{match['id']}/review").json()
+
+    assert sum(t["cost"] for t in review["record"]) == review["turns_spent"]
+    assert review["turns_spent"] + review["turns_left"] == review["budget"] == 30
+
+
+def test_the_review_shows_the_ending_the_player_was_shown(client: TestClient) -> None:
+    """Recomputed, not stored — so it has to come out the same (RN-032)."""
+    match = _start(client)
+    client.post(f"/matches/{match['id']}/turns", json={"suspect": "sus-1", "question": "onde?"})
+    outcome = _accuse(client, match["id"])
+
+    reviewed = client.get(f"/matches/{match['id']}/review").json()["outcome"]
+
+    assert reviewed == {**outcome, "epilogue": None}
+
+
+def test_the_review_says_when_a_clue_reached_the_player(client: TestClient) -> None:
+    case = generate(seed=42).case
+    secret = next(f for f in case.facts if not f.scope.public)
+    app.dependency_overrides[model_port] = lambda: Scripted(
+        NpcReply(line="Vi, sim.", stance=Stance.cooperative, lied=False, clue_revealed=secret.id)
+    )
+    match = _start(client)
+    client.post(f"/matches/{match['id']}/turns", json={"suspect": "sus-1", "question": "viu?"})
+    app.dependency_overrides[model_port] = FakeModel
+    _accuse(client, match["id"])
+
+    trail = client.get(f"/matches/{match['id']}/review").json()["evidence_trail"]
+
+    briefing = [e for e in trail if e["turn"] is None]
+    given = [e for e in trail if e["turn"] is not None]
+    assert briefing, "what the player started with"
+    assert given[0]["id"] == secret.id
+    assert given[0]["turn"] == 1
+    assert given[0]["given_by"] == "sus-1"
+
+
+def test_the_review_traces_how_a_stance_moved(client: TestClient) -> None:
+    app.dependency_overrides[model_port] = lambda: Scripted(
+        NpcReply(line="Não vou responder.", stance=Stance.evasive, lied=False)
+    )
+    match = _start(client)
+    client.post(f"/matches/{match['id']}/turns", json={"suspect": "sus-1", "question": "onde?"})
+    app.dependency_overrides[model_port] = FakeModel
+    _accuse(client, match["id"])
+
+    trail = client.get(f"/matches/{match['id']}/review").json()["stance_trail"]
+
+    assert trail[0]["turn"] == 1
+    assert trail[0]["character"] == "sus-1"
+    assert trail[0]["was"] == "cooperative"
+    assert trail[0]["became"] == "evasive"
+
+
+def test_the_review_remembers_the_motive_the_player_named(client: TestClient) -> None:
+    """The one thing the record could not derive, so it had to be kept.
+
+    The verdict is recomputed rather than stored (RN-032). Without the accused
+    motive on the match, a review would score a correct motive as unclaimed and
+    report twenty points fewer than the player was told.
+    """
+    solution = generate(seed=42).solution
+    match = _start(client)
+
+    outcome = client.post(
+        f"/matches/{match['id']}/accusation",
+        json={"culprit": solution.culprit, "motive_key": solution.motive_key},
+    ).json()
+    assert outcome["motive_points"] == 20
+
+    reviewed = client.get(f"/matches/{match['id']}/review").json()["outcome"]
+
+    assert reviewed["motive_points"] == 20
+    assert reviewed["score"] == outcome["score"]

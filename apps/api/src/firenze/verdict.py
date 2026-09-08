@@ -89,11 +89,41 @@ class NotASuspect(ValueError):
     """Accusing somebody who is not in the cast is not a wrong answer, it is a typo."""
 
 
+class NotDecided(RuntimeError):
+    """A match still being played has no verdict to recompute."""
+
+
 def judge(match: Match, accusation: Accusation) -> Verdict:
     """Decide the outcome. Pure: same match and accusation, same verdict."""
     if match.is_over:
         raise AlreadyAccused("this match has already been decided")
+    return _decide(match, accusation)
 
+
+def verdict_of(match: Match) -> Verdict:
+    """The verdict of a match that has already been decided.
+
+    A review recomputes the outcome instead of reading a stored copy. The
+    arithmetic is a function of the record and the accusation (RN-036), and
+    both are on the match — so there is one place the score can come from, and
+    a review cannot disagree with the ending the player was shown.
+
+    `judge` refuses a decided match on purpose (RN-031), which is why this does
+    not call it.
+    """
+    if match.accused_culprit is None:
+        raise NotDecided("this match has not been accused")
+    return _decide(
+        match,
+        Accusation(
+            culprit=match.accused_culprit,
+            motive_key=match.accused_motive_key,
+            evidence=match.accused_evidence,
+        ),
+    )
+
+
+def _decide(match: Match, accusation: Accusation) -> Verdict:
     suspects = {c.id for c in match.case.cast if c.role is Role.suspect}
     if accusation.culprit not in suspects:
         raise NotASuspect(f"{accusation.culprit!r} is not a suspect in this case")

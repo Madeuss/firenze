@@ -127,6 +127,19 @@ pode revelá-lo. Caso em que o motivo não é alcançável não é publicável.
 *Verificação:* o solver recusa; o gerador descarta e regera (mesmo portão de
 RN-002).
 
+**RN-035** — A revisão de partida só existe depois da acusação. Ela mostra a
+contabilidade que o turno esconde (`mentiu`, `fato_referenciado`, motivo da
+rejeição); oferecida durante a partida seria um detector de mentiras.
+*Verificação:* endpoint responde `409` enquanto a partida não terminou; teste
+de HTTP cobre os dois estados. É a mesma fronteira do `Veredito`: RN-011 rege a
+partida, não o fim dela.
+
+**RN-036** — O veredito mostrado na revisão é recalculado a partir do registro,
+nunca lido de cópia guardada. Por isso a acusação inteira — culpado, motivo e
+provas — fica persistida.
+*Verificação:* teste compara o `Outcome` do fim da partida com o da revisão; o
+que a partida guarda é a acusação, não a nota.
+
 ---
 
 ## 5. Antiabuso (RN-040 … RN-049)

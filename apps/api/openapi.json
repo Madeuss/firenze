@@ -260,6 +260,59 @@
         "title": "Health",
         "type": "object"
       },
+      "HeldEvidence": {
+        "description": "A fact the player was holding by the end, and how it got there.",
+        "properties": {
+          "given_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Given By"
+          },
+          "given_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Given By Name"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "turn": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Absent when it was public from the briefing.",
+            "title": "Turn"
+          }
+        },
+        "required": [
+          "id",
+          "text"
+        ],
+        "title": "HeldEvidence",
+        "type": "object"
+      },
       "KnownFact": {
         "properties": {
           "id": {
@@ -531,6 +584,178 @@
         "title": "Question",
         "type": "object"
       },
+      "Review": {
+        "description": "A finished match, in order, with the budget reconciled.\n\n`budget`, `turns_left` and the costs in `record` add up, by construction:\nevery turn that was charged is a row here, including the ones that produced\nnothing.",
+        "properties": {
+          "budget": {
+            "title": "Budget",
+            "type": "integer"
+          },
+          "evidence_trail": {
+            "items": {
+              "$ref": "#/components/schemas/HeldEvidence"
+            },
+            "title": "Evidence Trail",
+            "type": "array"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "locale": {
+            "title": "Locale",
+            "type": "string"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/Outcome",
+            "description": "Recomputed from the record, not read from a stored copy (RN-036). The epilogue is not part of it: prose was never persisted, and its absence changes nothing about the score."
+          },
+          "record": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewedTurn"
+            },
+            "title": "Record",
+            "type": "array"
+          },
+          "seed": {
+            "title": "Seed",
+            "type": "integer"
+          },
+          "stance_trail": {
+            "items": {
+              "$ref": "#/components/schemas/StanceMove"
+            },
+            "title": "Stance Trail",
+            "type": "array"
+          },
+          "turns_left": {
+            "title": "Turns Left",
+            "type": "integer"
+          },
+          "turns_spent": {
+            "title": "Turns Spent",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "seed",
+          "locale",
+          "budget",
+          "turns_left",
+          "turns_spent",
+          "record",
+          "stance_trail",
+          "evidence_trail",
+          "outcome"
+        ],
+        "title": "Review",
+        "type": "object"
+      },
+      "ReviewedTurn": {
+        "description": "One turn as the review shows it: what was asked, and what became of it.\n\nThis carries the bookkeeping `Said` withholds — `lied`, `fact_referenced`,\n`clue_revealed`. It is safe here and nowhere else, for the same reason\n`Outcome` may carry the solution: the match is over. A review of a match\nstill being played would be a lie detector, so there is no such thing\n(RN-035).",
+        "properties": {
+          "answered": {
+            "title": "Answered",
+            "type": "boolean"
+          },
+          "character": {
+            "title": "Character",
+            "type": "string"
+          },
+          "character_name": {
+            "title": "Character Name",
+            "type": "string"
+          },
+          "clue_revealed": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The fact this answer gave away, if it gave one away.",
+            "title": "Clue Revealed"
+          },
+          "cost": {
+            "description": "Turns this one cost. A confrontation costs two (RN-030).",
+            "title": "Cost",
+            "type": "integer"
+          },
+          "fact_referenced": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fact Referenced"
+          },
+          "intent": {
+            "description": "How it was classified before anybody answered (RN-040).",
+            "title": "Intent",
+            "type": "string"
+          },
+          "lied": {
+            "default": false,
+            "title": "Lied",
+            "type": "boolean"
+          },
+          "line": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "What they said. Absent when nothing was.",
+            "title": "Line"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          },
+          "rejected_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Which check discarded the reply: `canary`, `scope`, `contradiction`, `refusal`. A name, never the offending text.",
+            "title": "Rejected By"
+          },
+          "stance": {
+            "$ref": "#/components/schemas/Stance",
+            "description": "The stance the turn left them in."
+          },
+          "turn": {
+            "title": "Turn",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "turn",
+          "cost",
+          "character",
+          "character_name",
+          "question",
+          "intent",
+          "answered",
+          "stance"
+        ],
+        "title": "ReviewedTurn",
+        "type": "object"
+      },
       "Said": {
         "description": "One line in the notebook, as the player recorded it.",
         "properties": {
@@ -574,6 +799,38 @@
         ],
         "title": "Stance",
         "type": "string"
+      },
+      "StanceMove": {
+        "description": "A suspect changing footing, and the turn that did it.",
+        "properties": {
+          "became": {
+            "$ref": "#/components/schemas/Stance"
+          },
+          "character": {
+            "title": "Character",
+            "type": "string"
+          },
+          "character_name": {
+            "title": "Character Name",
+            "type": "string"
+          },
+          "turn": {
+            "title": "Turn",
+            "type": "integer"
+          },
+          "was": {
+            "$ref": "#/components/schemas/Stance"
+          }
+        },
+        "required": [
+          "turn",
+          "character",
+          "character_name",
+          "was",
+          "became"
+        ],
+        "title": "StanceMove",
+        "type": "object"
       },
       "ValidationError": {
         "properties": {
@@ -888,6 +1145,50 @@
           }
         },
         "summary": "Show a suspect a piece of evidence",
+        "tags": [
+          "match"
+        ]
+      }
+    },
+    "/matches/{match_id}/review": {
+      "get": {
+        "description": "Every turn in order, the stances, the evidence, and the verdict.\n\nOnly once the match is over, and that is the whole reason it may show the\nbookkeeping — `lied`, which fact an answer leaned on, what a rejected turn\nwas rejected for. Offered mid-match the same payload would be a lie\ndetector and end the game on turn one, so it is a 409 until there is\nnothing left to spoil (RN-035).",
+        "operationId": "review_matches__match_id__review_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "match_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Match Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Review"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "The whole record of a finished match",
         "tags": [
           "match"
         ]
