@@ -10,7 +10,7 @@
 }
 
 .title {
-  font-family: var(--font-prose), Georgia, serif;
+  font-family: var(--font-rubik), Georgia, serif;
   font-size: 3.4rem;
   font-weight: 400;
   letter-spacing: 0.06em;
@@ -29,6 +29,7 @@
 }
 
 .actions {
+  --altura-controle: 2.6rem;
   display: flex;
   align-items: flex-end;
   gap: 1rem;
@@ -46,9 +47,13 @@
   letter-spacing: 0.12em;
 }
 
+/* Semente e botao compartilham a altura. Antes cada um tinha seu proprio
+   padding vertical, entao terminavam com alturas diferentes e o
+   `align-items: flex-end` so encostava as bases de dois blocos desiguais. */
 .seed input {
   width: 7rem;
-  padding: 0.5rem 0.6rem;
+  height: var(--altura-controle);
+  padding: 0 0.7rem;
   border: 1px solid var(--night-line);
   border-radius: var(--radius);
   background: var(--night-soft);
@@ -59,13 +64,18 @@
 }
 
 .begin {
-  padding: 0.62rem 1.4rem;
+  display: inline-flex;
+  align-items: center;
+  height: var(--altura-controle);
+  padding: 0 1.4rem;
   border-radius: var(--radius);
   background: var(--accent);
   color: var(--night);
   font-weight: 600;
   letter-spacing: 0.01em;
-  transition: transform 120ms ease, box-shadow 120ms ease;
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease;
 }
 
 /* Botão claro corre o risco de ler como rótulo. O peso e a sombra dizem que

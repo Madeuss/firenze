@@ -40,6 +40,10 @@ async function forward(request: NextRequest, path: string[]): Promise<NextRespon
 
   return NextResponse.json(await response.json().catch(() => null), {
     status: response.status,
+    // Sem isto o navegador guarda o GET da partida por heuristica propria — e
+    // servia o caderno de antes do turno que o jogador acabou de gastar. O
+    // sintoma era intermitente porque a heuristica e do navegador, nao nossa.
+    headers: { "cache-control": "no-store" },
   });
 }
 

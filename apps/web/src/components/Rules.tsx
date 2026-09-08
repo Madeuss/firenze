@@ -1,4 +1,4 @@
-"use client";
+'use client'
 
 /**
  * As regras, onde elas fazem falta.
@@ -8,22 +8,27 @@
  * confronto.
  */
 
-import styles from "./Rules.module.css";
+import styles from './Rules.module.css'
 
 export const PITCH =
-  "Um homem foi encontrado morto na própria casa. Seis pessoas estavam lá, e " +
-  "todas têm o que esconder — só uma esconde o assassinato.";
+  'Um homem foi encontrado morto na própria casa. Seis pessoas estavam lá, e ' +
+  'todas têm o que esconder — só uma esconde o assassinato.'
 
 export const RULES: readonly string[] = [
-  "Trinta turnos para perguntar. Cada pergunta gasta um.",
-  "Confrontar alguém com uma prova custa dois — e só vale com prova que você tem.",
-  "Pensar não custa nada. Trocar de suspeito e reler o caderno são de graça.",
-  "Uma acusação por partida, e ela não volta atrás.",
-];
+  'Trinta turnos para perguntar. Cada pergunta gasta um.',
+  'Confrontar alguém com uma prova custa dois, e só vale com prova que você tem.',
+  'Pensar não custa nada. Trocar de suspeito e reler o caderno são de graça.',
+  'Uma acusação por partida, e ela não volta atrás.',
+]
 
 export default function Rules({ onClose }: { onClose: () => void }) {
   return (
-    <div className={styles.backdrop} role="dialog" aria-modal="true" aria-label="como se joga">
+    <div
+      className={styles.backdrop}
+      role="dialog"
+      aria-modal="true"
+      aria-label="como se joga"
+    >
       <div className={styles.sheet}>
         <h2 className={styles.title}>Como se joga</h2>
         <p className={`prose ${styles.pitch}`}>{PITCH}</p>
@@ -39,5 +44,5 @@ export default function Rules({ onClose }: { onClose: () => void }) {
         </div>
       </div>
     </div>
-  );
+  )
 }

@@ -1,4 +1,4 @@
-"use client";
+'use client'
 
 /**
  * Modo Interrogatório: elenco, conversa, e o único campo de texto do jogo.
@@ -9,47 +9,60 @@
  * isso que a dedução é do jogador. Ver docs/03-casos-de-uso.md.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { ask, confront, readMatch, type MatchState } from "@/lib/api";
+import { ask, confront, readMatch, type MatchState } from '@/lib/api'
 
-import Accusation from "./Accusation";
-import Rules from "./Rules";
-import styles from "./Interrogation.module.css";
+import Accusation from './Accusation'
+import Retrato from './Retrato'
+import Rules from './Rules'
+import styles from './Interrogation.module.css'
 
 const STANCE_LABEL: Record<string, string> = {
-  cooperative: "cooperativo",
-  evasive: "evasivo",
-  hostile: "hostil",
-  broken: "quebrado",
-};
+  cooperative: 'cooperativo',
+  evasive: 'evasivo',
+  hostile: 'hostil',
+  broken: 'quebrado',
+}
 
 export default function Interrogation({ matchId }: { matchId: string }) {
-  const [match, setMatch] = useState<MatchState | null>(null);
-  const [selected, setSelected] = useState<string | null>(null);
-  const [question, setQuestion] = useState("");
-  const [armed, setArmed] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
-  const [failure, setFailure] = useState<string | null>(null);
-  const [showing, setShowing] = useState<"rules" | "accusation" | null>(null);
-  const foot = useRef<HTMLDivElement>(null);
+  const [match, setMatch] = useState<MatchState | null>(null)
+  const [selected, setSelected] = useState<string | null>(null)
+  const [question, setQuestion] = useState('')
+  const [armed, setArmed] = useState<string | null>(null)
+  const [pending, setPending] = useState(false)
+  const [failure, setFailure] = useState<string | null>(null)
+  const [showing, setShowing] = useState<'rules' | 'accusation' | null>(null)
+  const foot = useRef<HTMLDivElement>(null)
+  // `pending` e estado, e estado nao muda a tempo: dois Enter seguidos passam
+  // os dois pela guarda antes do primeiro render. Este trava na hora.
+  const enviando = useRef(false)
+  // Duas leituras da partida podem voltar fora de ordem, e a mais velha
+  // sobrescreveria a mais nova — o turno recem-gasto sumia da conversa.
+  const leitura = useRef(0)
 
   useEffect(() => {
+    const minha = ++leitura.current
     readMatch(matchId)
       .then((state) => {
-        setMatch(state);
-        const first = state.cast.find((person) => person.role === "suspect");
-        setSelected((current) => current ?? first?.id ?? null);
+        if (minha !== leitura.current) return
+        setMatch(state)
+        const first = state.cast.find((person) => person.role === 'suspect')
+        setSelected((current) => current ?? first?.id ?? null)
       })
       .catch((error: unknown) =>
-        setFailure(error instanceof Error ? error.message : "não deu para abrir a partida"),
-      );
-  }, [matchId]);
+        setFailure(
+          error instanceof Error
+            ? error.message
+            : 'não deu para abrir a partida',
+        ),
+      )
+  }, [matchId])
 
   const suspects = useMemo(
-    () => match?.cast.filter((person) => person.role === "suspect") ?? [],
+    () => match?.cast.filter((person) => person.role === 'suspect') ?? [],
     [match],
-  );
+  )
 
   // Uma fonte só. A primeira versão guardava uma cópia local de cada resposta
   // ao lado do caderno, e todo turno respondido aparecia duas vezes assim que
@@ -58,49 +71,55 @@ export default function Interrogation({ matchId }: { matchId: string }) {
   const thread = useMemo(
     () => match?.notebook.filter((entry) => entry.character === selected) ?? [],
     [match, selected],
-  );
+  )
 
   useEffect(() => {
-    foot.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [thread.length, pending]);
+    foot.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+  }, [thread.length, pending])
 
-  const refresh = useCallback(
-    () =>
-      readMatch(matchId)
-        .then(setMatch)
-        .catch(() => undefined),
-    [matchId],
-  );
+  const refresh = useCallback(async () => {
+    const minha = ++leitura.current
+    try {
+      const estado = await readMatch(matchId)
+      if (minha === leitura.current) setMatch(estado)
+    } catch {
+      // Recarregar e conforto; o turno ja aconteceu no servidor de todo jeito.
+    }
+  }, [matchId])
 
   async function send() {
-    if (!selected || pending) return;
-    setFailure(null);
-    setPending(true);
+    if (!selected || enviando.current) return
+    enviando.current = true
+    setFailure(null)
+    setPending(true)
     try {
       if (armed) {
-        await confront(matchId, selected, armed);
-        setArmed(null);
+        await confront(matchId, selected, armed)
+        setArmed(null)
       } else {
-        const asked = question.trim();
-        if (!asked) return;
-        await ask(matchId, selected, asked);
-        setQuestion("");
+        const asked = question.trim()
+        if (!asked) return
+        await ask(matchId, selected, asked)
+        setQuestion('')
       }
-      await refresh();
+      await refresh()
     } catch (error) {
-      setFailure(error instanceof Error ? error.message : "não deu para perguntar");
+      setFailure(
+        error instanceof Error ? error.message : 'não deu para perguntar',
+      )
     } finally {
-      setPending(false);
+      enviando.current = false
+      setPending(false)
     }
   }
 
-  if (failure && !match) return <main className={styles.empty}>{failure}</main>;
-  if (!match || !selected) return <main className={styles.empty} />;
+  if (failure && !match) return <main className={styles.empty}>{failure}</main>
+  if (!match || !selected) return <main className={styles.empty} />
 
-  const current = suspects.find((person) => person.id === selected);
-  const stance = current?.stance ?? null;
-  const spent = armed ? 2 : 1;
-  const broke = match.turns_left < spent;
+  const current = suspects.find((person) => person.id === selected)
+  const stance = current?.stance ?? null
+  const spent = armed ? 2 : 1
+  const broke = match.turns_left < spent
 
   return (
     <main className={styles.screen}>
@@ -108,21 +127,26 @@ export default function Interrogation({ matchId }: { matchId: string }) {
         <span className={styles.case}>
           Caso <span className="mono">{match.seed}</span>
         </span>
-        <span className={styles.briefing}>{match.known[0]?.text}</span>
+        <span className={styles.briefing}>
+          {match.known[0]?.text}
+          <button
+            className={styles.help}
+            onClick={() => setShowing('rules')}
+            aria-label="como se joga"
+            title="como se joga"
+          >
+            ?
+          </button>
+        </span>
         <span className={styles.turns}>
           <strong>{match.turns_left}</strong> turnos
         </span>
-        <button
-          className={styles.help}
-          onClick={() => setShowing("rules")}
-          aria-label="como se joga"
-          title="como se joga"
-        >
-          ?
-        </button>
         {/* Sempre visível: acusar no turno 1 é jogada legítima, e vale mais
             pontos de rapidez se der certo (RN-033). */}
-        <button className={styles.accuse} onClick={() => setShowing("accusation")}>
+        <button
+          className={styles.accuse}
+          onClick={() => setShowing('accusation')}
+        >
           Acusar
         </button>
       </header>
@@ -132,21 +156,31 @@ export default function Interrogation({ matchId }: { matchId: string }) {
           {suspects.map((person) => (
             <button
               key={person.id}
-              className={person.id === selected ? styles.pickedName : styles.name}
+              className={
+                person.id === selected ? styles.pickedName : styles.name
+              }
               onClick={() => setSelected(person.id)}
             >
-              <span
-                className={styles.dot}
-                data-stance={person.stance ?? "unasked"}
-                aria-hidden="true"
+              <Retrato
+                nome={person.name}
+                tamanho={44}
+                aceso={person.id === selected}
               />
-              {person.name}
+              <span className={styles.quem}>
+                {person.name}
+                <span
+                  className={styles.dot}
+                  data-stance={person.stance ?? 'unasked'}
+                  aria-hidden="true"
+                />
+              </span>
             </button>
           ))}
         </nav>
 
         <section className={styles.conversation}>
           <div className={styles.who}>
+            {current ? <Retrato nome={current.name} tamanho={96} /> : null}
             <h2>{current?.name}</h2>
             {stance ? (
               <span className={styles.stance} data-stance={stance}>
@@ -188,7 +222,10 @@ export default function Interrogation({ matchId }: { matchId: string }) {
                 <span>
                   apresentar <span className="mono">{armed}</span>
                 </span>
-                <button className={styles.disarm} onClick={() => setArmed(null)}>
+                <button
+                  className={styles.disarm}
+                  onClick={() => setArmed(null)}
+                >
                   cancelar
                 </button>
               </div>
@@ -198,9 +235,9 @@ export default function Interrogation({ matchId }: { matchId: string }) {
                 value={question}
                 onChange={(event) => setQuestion(event.target.value)}
                 onKeyDown={(event) => {
-                  if (event.key === "Enter" && !event.shiftKey) {
-                    event.preventDefault();
-                    void send();
+                  if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault()
+                    void send()
                   }
                 }}
                 placeholder="pergunte alguma coisa…"
@@ -212,9 +249,9 @@ export default function Interrogation({ matchId }: { matchId: string }) {
             <button
               className={styles.send}
               onClick={() => void send()}
-              disabled={pending || broke || (!armed && question.trim() === "")}
+              disabled={pending || broke || (!armed && question.trim() === '')}
             >
-              {armed ? "Confrontar — custa 2 turnos" : "Perguntar"}
+              {armed ? 'Confrontar — custa 2 turnos' : 'Perguntar'}
             </button>
           </div>
 
@@ -245,14 +282,14 @@ export default function Interrogation({ matchId }: { matchId: string }) {
         </section>
       </div>
 
-      {showing === "rules" ? <Rules onClose={() => setShowing(null)} /> : null}
-      {showing === "accusation" ? (
+      {showing === 'rules' ? <Rules onClose={() => setShowing(null)} /> : null}
+      {showing === 'accusation' ? (
         <Accusation match={match} onClose={() => setShowing(null)} />
       ) : null}
     </main>
-  );
+  )
 }
 
 function textOf(match: MatchState, id: string): string {
-  return match.known.find((fact) => fact.id === id)?.text ?? id;
+  return match.known.find((fact) => fact.id === id)?.text ?? id
 }
