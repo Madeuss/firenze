@@ -3,7 +3,7 @@ API     := apps/api
 WEB     := apps/web
 
 .DEFAULT_GOAL := help
-.PHONY: help dev down logs psql install api case ask openapi lint fmt typecheck test check migrate migration evals \n        web web-install contracts web-lint web-typecheck web-check
+.PHONY: help dev down logs psql install api case ask openapi lint fmt typecheck test check migrate migration evals \n        web web-install contracts web-lint web-typecheck web-check mobilia
 
 help: ## lista os alvos
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t/' | expand -t 14
@@ -65,7 +65,10 @@ web-lint: ## eslint no front
 web-typecheck: ## tsc no front
 	cd $(WEB) && yarn typecheck
 
-web-check: web-lint web-typecheck ## o que o CI cobra do front
+mobilia: ## confere a mobilia da planta (parede, colisao, altura)
+	cd $(WEB) && yarn mobilia
+
+web-check: web-lint web-typecheck mobilia ## o que o CI cobra do front
 
 check: lint typecheck test ## tudo que o CI cobra da API
 

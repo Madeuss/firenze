@@ -29,6 +29,14 @@
   /* contradição, álibi quebrado */
   --alarm: #c05f47;
 
+  /* a hora e o cômodo do crime. Vinho, e não o vermelho do alarme: o alarme é
+     um achado do jogador e tem que saltar; a hora da morte é dado do caso,
+     sempre ali, e competir com ele seria gritar duas coisas ao mesmo tempo. */
+  --wine: #7a2f38;
+  /* O mesmo vinho, claro o bastante para virar texto sobre a noite. O escuro
+     serve de fundo e some quando vira letra de 11px. */
+  --wine-ink: #c2717c;
+
   /* posturas, na ordem em que a máquina de estados anda */
   --cooperative: #6fa295;
   --evasive: #d2a04a;

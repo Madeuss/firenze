@@ -1,10 +1,33 @@
+/*
+ * O palco define o tamanho; o canvas obedece.
+ *
+ * Isto não é preciosismo de CSS. O canvas se mede pelo elemento que o contém,
+ * e se ele também *empurra* esse elemento — largura de 100% dentro de uma
+ * linha flex, ou proporção fixa dentro de um contêiner que rola — a coisa
+ * oscila: o canvas cresce, aparece barra de rolagem, a barra tira largura, o
+ * canvas encolhe, a barra some. O navegador fica nesse vai e vem para sempre e
+ * a aba trava, sem erro nenhum no console.
+ *
+ * Por isso o palco é `position: relative` e o canvas dentro dele é absoluto:
+ * o que o canvas faz não pode mais mudar o que ele mede.
+ */
 .palco {
   position: relative;
-  width: 100%;
+  flex: 1 1 0;
+  min-width: 0;
+  touch-action: none;
   aspect-ratio: 4 / 3;
   border: 1px solid var(--night-line);
   border-radius: var(--radius);
   overflow: hidden;
+}
+
+/* Dentro do painel a proporção fixa não serve: ali quem manda é a altura que
+   sobrou da conversa, e 4:3 numa coluna larga passaria da janela. */
+.palcoCheio {
+  composes: palco;
+  aspect-ratio: auto;
+  min-height: 10rem;
 }
 
 .palco canvas {
@@ -12,24 +35,42 @@
 }
 
 /* Os rótulos são DOM, não texto 3D: a câmera é fixa, então a posição é
-   calculada uma vez, e texto do navegador sai nítido em qualquer zoom. */
-.rotulo,
-.rotuloAceso {
+   calculada uma vez, e texto do navegador sai nítido em qualquer zoom. Ficam
+   na quina da frente do cômodo, fora do ladrilho — por cima dele atravessavam
+   as peças. */
+.rotulo {
   position: absolute;
-  transform: translate(-50%, 0);
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  transform: translate(-50%, -0.2rem);
   pointer-events: none;
   font-size: 0.68rem;
   letter-spacing: 0.04em;
   text-transform: lowercase;
   white-space: nowrap;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  color: var(--paper-faint);
+  text-shadow:
+    0 1px 3px var(--night),
+    0 0 6px var(--night);
 }
 
-.rotulo {
-  color: var(--paper-dim);
-}
-
-.rotuloAceso {
-  composes: rotulo;
+.rotuloChoque {
   color: var(--alarm);
+}
+
+/* Onde o corpo foi encontrado. O briefing já diz; isto só evita reler a frase. */
+.rotuloCrime {
+  color: var(--wine-ink);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+/* E na hora em que foi encontrado, o rótulo sobe de tom junto com o giz. */
+.rotuloCrimeAgora {
+  composes: rotuloCrime;
+  color: var(--paper);
+  text-shadow:
+    0 0 8px var(--wine),
+    0 1px 3px var(--night);
 }

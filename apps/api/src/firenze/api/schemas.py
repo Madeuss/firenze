@@ -27,6 +27,10 @@ class CastMember(BaseModel):
     id: str
     name: str
     role: str
+    occupation: str | None = Field(
+        default=None,
+        description="What they do in the house, written in the match's language.",
+    )
     stance: Stance | None = Field(
         default=None, description="How they are holding up. Absent until they have been asked."
     )
@@ -56,13 +60,18 @@ class FloorPlan(BaseModel):
     to read, and reach the plan only in the review of a finished match (RN-035).
 
     Neither list is a secret. The rooms are the house and the hours are the
-    night; the briefing already says where the body was found.
+    night; the briefing already says where the body was found — and since it
+    does, saying it again in fields the front end can read is the same
+    information, not more of it. Prose a player has to parse by eye is not a
+    security boundary.
     """
 
     model_config = ConfigDict(frozen=True)
 
     rooms: tuple[Room, ...]
     hours: tuple[Hour, ...]
+    crime_room: str = Field(description="Where the body was found. Already in the briefing.")
+    crime_interval: int = Field(description="When it was found. Already in the briefing.")
 
 
 class Said(BaseModel):

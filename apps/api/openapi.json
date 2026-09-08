@@ -90,6 +90,18 @@
             "title": "Name",
             "type": "string"
           },
+          "occupation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "What they do in the house, written in the match's language.",
+            "title": "Occupation"
+          },
           "role": {
             "title": "Role",
             "type": "string"
@@ -218,8 +230,18 @@
         "type": "object"
       },
       "FloorPlan": {
-        "description": "The empty board the player fills in, and nothing else.\n\nRooms and hours — never who was where. A server that handed over a filled\nplan would be solving the game: reconstructing the night from what people\nclaimed *is* the deduction, so the claims stay in the answers a player has\nto read, and reach the plan only in the review of a finished match (RN-035).\n\nNeither list is a secret. The rooms are the house and the hours are the\nnight; the briefing already says where the body was found.",
+        "description": "The empty board the player fills in, and nothing else.\n\nRooms and hours — never who was where. A server that handed over a filled\nplan would be solving the game: reconstructing the night from what people\nclaimed *is* the deduction, so the claims stay in the answers a player has\nto read, and reach the plan only in the review of a finished match (RN-035).\n\nNeither list is a secret. The rooms are the house and the hours are the\nnight; the briefing already says where the body was found — and since it\ndoes, saying it again in fields the front end can read is the same\ninformation, not more of it. Prose a player has to parse by eye is not a\nsecurity boundary.",
         "properties": {
+          "crime_interval": {
+            "description": "When it was found. Already in the briefing.",
+            "title": "Crime Interval",
+            "type": "integer"
+          },
+          "crime_room": {
+            "description": "Where the body was found. Already in the briefing.",
+            "title": "Crime Room",
+            "type": "string"
+          },
           "hours": {
             "items": {
               "$ref": "#/components/schemas/Hour"
@@ -237,7 +259,9 @@
         },
         "required": [
           "rooms",
-          "hours"
+          "hours",
+          "crime_room",
+          "crime_interval"
         ],
         "title": "FloorPlan",
         "type": "object"

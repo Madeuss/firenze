@@ -39,7 +39,17 @@ export default function Retrato({
   return (
     <span className={classe} style={{ width: tamanho, height: tamanho }}>
       {/* eslint-disable-next-line @next/next/no-img-element -- asset local, sem otimização remota */}
-      <img className={styles.face} src={fonte} alt="" width={tamanho} height={tamanho} />
+      <img
+        className={styles.face}
+        src={fonte}
+        alt=""
+        width={tamanho}
+        height={tamanho}
+        /* Imagem é arrastável por padrão, e na bandeja quem tem que arrastar é
+           o botão em volta: com a imagem arrastando, o que chega no destino é
+           a URL dela, não o suspeito. */
+        draggable={false}
+      />
     </span>
   );
 }

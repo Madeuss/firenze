@@ -42,7 +42,8 @@ def _briefing(
         lines = [lines[0], "", veneer.scene, "", label("cast")]
     for character in case.cast:
         mark = f" ({label('victim')})" if character.role is Role.victim else ""
-        lines.append(f"  {character.id:8} {character.name}{mark}")
+        job = f", {catalog.occupation(character.occupation)}" if character.occupation else ""
+        lines.append(f"  {character.id:8} {character.name}{job}{mark}")
         if veneer is not None and character.role is not Role.victim:
             surface = veneer.for_character(character.id)
             lines.append(f"           {surface.role_title}. {surface.appearance}")

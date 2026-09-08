@@ -68,6 +68,10 @@ class Catalog:
         entry: dict[str, str] = self._section("rooms", room_id)
         return f"{entry['preposition']} {entry['name']}"
 
+    def occupation(self, key: str) -> str:
+        """What a character does in the house, written for this locale."""
+        return str(self._section("occupations", key))
+
     def secret(self, key: str) -> str:
         return str(self._section("secrets", key))
 

@@ -9,151 +9,410 @@
  * câmera livre transformaria "achar o escritório" numa tarefa de pilotagem.
  *
  * A geometria toda sai dos dados: a API devolve os cômodos e as horas, e nada
- * mais. Nenhum modelo importado, nenhuma textura — são blocos, e a arte está na
- * luz e na paleta.
+ * mais. Nenhum modelo importado — são caixas, e a arte está na luz, nas
+ * paredes e na paleta.
  */
 
 import { Canvas, useThree, type ThreeEvent } from '@react-three/fiber'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Skull } from 'lucide-react'
+import {
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+  type RefObject,
+} from 'react'
 import * as THREE from 'three'
 
 import type { FloorPlan } from '@/lib/api'
+import { silhuetaDeGiz } from '@/lib/giz'
+import { degrauDe, lugarLivre } from '@/lib/mobilia'
+import { retratoDe } from '@/lib/retratos'
 
+import Moveis from './Moveis'
 import styles from './Planta.module.css'
 
 const NOITE = '#14161f'
-const PISO = '#2c3040'
+const PISO = '#262a38'
+// Chega menos luz numa adega, e a cor diz isso antes da geometria.
+const PISO_FUNDO = '#1b1e29'
 const PISO_ALVO = '#3b4257'
+// O cômodo onde o corpo foi encontrado, e ele na hora em que foi. O chão puxa
+// para o vinho o tempo todo, e clareia quando a linha do tempo chega lá.
+const PISO_CRIME = '#33202a'
+const PISO_CRIME_AGORA = '#4a2b36'
+const PAREDE = '#1c2030'
+const PAREDE_ALTA = '#39405a'
 const OSSO = '#f5efe2'
 const ALARME = '#c05f47'
 
-const LADO = 2.2 // do cômodo
-const VAO = 0.35 // entre um cômodo e outro
+const LADO = 2.2
+const VAO = 0.5
 const COLUNAS = 4
+const PAREDE_ALTURA = 0.34
+const PAREDE_ESPESSURA = 0.14
+const DEGRAU_ALTURA = 0.6
+// Quanto do cômodo a silhueta de giz ocupa, e quanto dela precisa de chão
+// limpo. São dois números porque o desenho é um corpo esparramado: o tronco
+// tem que cair em piso vago, mas um braço passando por baixo de uma cadeira é
+// como um corpo cai de verdade. Procurar espaço para o quadro inteiro não
+// achava lugar nenhum na sala de jantar.
+const GIZ = 0.38
+const GIZ_NUCLEO = 0.22
+// Um pouco torta: giz no chão não sai alinhado com a parede, e alinhada ela
+// parecia mais um ícone colado que uma marca feita ali.
+const GIRO_DO_GIZ = 0.55
 
-/** Onde cada cômodo fica no tabuleiro. A API dá a lista, não o desenho. */
+/** O que a planta sabe responder a quem está carregando alguém. */
+export type Bussola = {
+  comodoSob: (ponto: { clientX: number; clientY: number }) => string | null
+}
+
+export type Peca = {
+  suspeito: string
+  nome: string
+  comodo: string
+  destacado: boolean
+}
+
 function assentar(comodos: readonly string[]): Map<string, [number, number]> {
   const linhas = Math.ceil(comodos.length / COLUNAS)
   const passo = LADO + VAO
   return new Map(
-    comodos.map((id, i) => {
-      const coluna = i % COLUNAS
-      const linha = Math.floor(i / COLUNAS)
-      return [
-        id,
-        [
-          (coluna - (COLUNAS - 1) / 2) * passo,
-          (linha - (linhas - 1) / 2) * passo,
-        ] as [number, number],
-      ]
-    }),
+    comodos.map((id, i) => [
+      id,
+      [
+        ((i % COLUNAS) - (COLUNAS - 1) / 2) * passo,
+        (Math.floor(i / COLUNAS) - (linhas - 1) / 2) * passo,
+      ] as [number, number],
+    ]),
   )
 }
 
-/** Iniciais numa textura, que é como um bloco carrega um nome. */
-function selo(texto: string): THREE.CanvasTexture {
-  const lado = 128
-  const tela = document.createElement('canvas')
-  tela.width = tela.height = lado
-  const pincel = tela.getContext('2d')
-  if (pincel) {
-    pincel.fillStyle = 'rgba(0,0,0,0)'
-    pincel.fillRect(0, 0, lado, lado)
-    pincel.fillStyle = NOITE
-    pincel.font = '600 58px system-ui, sans-serif'
-    pincel.textAlign = 'center'
-    pincel.textBaseline = 'middle'
-    pincel.fillText(texto, lado / 2, lado / 2 + 4)
-  }
-  const textura = new THREE.CanvasTexture(tela)
-  textura.colorSpace = THREE.SRGBColorSpace
-  return textura
+/**
+ * Onde cada peça fica dentro do cômodo.
+ *
+ * Nada impede quatro pessoas no mesmo lugar — e a versão anterior empilhava
+ * todas na diagonal, o que virava um borrão justamente no caso que mais
+ * interessa ver. Aqui elas entram numa grade que cresce com a quantidade, e
+ * encolhem juntas para continuarem cabendo.
+ */
+function arrumar(quantas: number): { grade: number; escala: number } {
+  const grade = Math.ceil(Math.sqrt(quantas))
+  return { grade, escala: Math.min(1, 2.1 / grade) }
 }
 
 function Comodo({
+  comodo,
   posicao,
   aceso,
   emChoque,
+  doCrime,
+  naHoraDoCrime,
+  giz,
   aoClicar,
 }: {
+  comodo: string
   posicao: [number, number]
   aceso: boolean
   emChoque: boolean
+  doCrime: boolean
+  naHoraDoCrime: boolean
+  giz: THREE.Texture | null
   aoClicar: () => void
 }) {
   const [sobre, setSobre] = useState(false)
-  const cor = emChoque ? ALARME : aceso || sobre ? PISO_ALVO : PISO
+  const meio = LADO / 2 - PAREDE_ESPESSURA / 2
+  const vago = useMemo<[number, number]>(
+    () => lugarLivre(comodo, GIZ_NUCLEO, GIZ_NUCLEO) ?? [0, 0],
+    [comodo],
+  )
+  const degrau = degrauDe(comodo)
+  const afundado = degrau < 0
+  const fundura = Math.abs(degrau) * DEGRAU_ALTURA
+
+  // O choque tinge a parede, não o chão inteiro: preencher o cômodo de laranja
+  // gritava mais que o achado merecia e apagava tudo que estava em cima dele.
+  const corParede = emChoque ? ALARME : aceso || sobre ? PAREDE_ALTA : PAREDE
+  const corPiso = doCrime
+    ? naHoraDoCrime || aceso || sobre
+      ? PISO_CRIME_AGORA
+      : PISO_CRIME
+    : aceso || sobre
+      ? PISO_ALVO
+      : afundado
+        ? PISO_FUNDO
+        : PISO
 
   return (
-    <mesh
-      position={[posicao[0], 0, posicao[1]]}
+    <group
+      position={[posicao[0], degrauDe(comodo) * DEGRAU_ALTURA, posicao[1]]}
       onClick={(evento: ThreeEvent<MouseEvent>) => {
         evento.stopPropagation()
         aoClicar()
       }}
       onPointerOver={() => setSobre(true)}
       onPointerOut={() => setSobre(false)}
-      receiveShadow
     >
-      <boxGeometry args={[LADO, 0.25, LADO]} />
-      <meshLambertMaterial color={cor} />
-    </mesh>
-  )
-}
-
-/** Um suspeito onde o jogador o colocou. */
-function Peca({
-  posicao,
-  iniciais,
-  destacado,
-}: {
-  posicao: [number, number]
-  iniciais: string
-  destacado: boolean
-}) {
-  const textura = useMemo(() => selo(iniciais), [iniciais])
-  useEffect(() => () => textura.dispose(), [textura])
-
-  return (
-    <group position={[posicao[0], 0.42, posicao[1]]}>
-      <mesh castShadow>
-        <cylinderGeometry args={[0.42, 0.42, 0.3, 24]} />
-        <meshLambertMaterial color={destacado ? OSSO : '#9a9384'} />
+      {/* Em isométrico, descer no eixo Y é indistinguível de andar para o sul
+          na grade — foi por isso que o degrau não aparecia. Quem diz
+          "profundidade" é a face lateral: o cômodo afundado ganha uma laje que
+          sobe até o nível do térreo, e é essa parede alta que se vê. */}
+      <mesh position={[0, -fundura / 2, 0]} receiveShadow castShadow>
+        <boxGeometry args={[LADO, 0.22 + fundura, LADO]} />
+        <meshLambertMaterial color={corPiso} />
       </mesh>
-      <mesh position={[0, 0.16, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[0.62, 0.62]} />
-        <meshBasicMaterial map={textura} transparent />
-      </mesh>
+
+      {/* Quatro paredes baixas. É o que separa "azulejo flutuando" de cômodo. */}
+      {(
+        [
+          [0, -meio, LADO, PAREDE_ESPESSURA],
+          [0, meio, LADO, PAREDE_ESPESSURA],
+          [-meio, 0, PAREDE_ESPESSURA, LADO],
+          [meio, 0, PAREDE_ESPESSURA, LADO],
+        ] as const
+      ).map(([x, z, largura, fundo], i) => (
+        <mesh key={i} position={[x, PAREDE_ALTURA / 2 + 0.11, z]} castShadow>
+          <boxGeometry args={[largura, PAREDE_ALTURA, fundo]} />
+          <meshLambertMaterial color={corParede} />
+        </mesh>
+      ))}
+
+      <Moveis comodo={comodo} lado={LADO} />
+
+      {/* Onde o corpo foi encontrado. Era um losango branco, que diz "aqui" e
+          nada mais; a silhueta de giz diz a mesma coisa e ainda diz o quê.
+          Fica num ponto do cômodo que a mobília deixou vago — no centro ela
+          caía dentro da mesa de jantar. */}
+      {doCrime && giz ? (
+        <mesh
+          position={[vago[0] * LADO, 0.125, vago[1] * LADO]}
+          rotation={[-Math.PI / 2, 0, GIRO_DO_GIZ]}
+        >
+          <planeGeometry args={[GIZ * LADO, GIZ * LADO]} />
+          <meshBasicMaterial
+            map={giz}
+            transparent
+            depthWrite={false}
+            // Na hora da morte o giz é branco de giz mesmo; nas outras é um
+            // resto de marca no chão. A diferença é o que faz a linha do tempo
+            // valer a pena arrastar até lá.
+            color={naHoraDoCrime ? '#ffffff' : OSSO}
+            opacity={naHoraDoCrime ? 1 : 0.22}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      ) : null}
     </group>
   )
 }
 
-/** Projeta os centros dos cômodos na tela, uma vez: a câmera não se move. */
-function Rotulos({
+/**
+ * A silhueta de giz como textura, desenhada no navegador.
+ *
+ * Num efeito e não durante a renderização porque canvas não existe no
+ * servidor, e esta árvore é renderizada lá antes de chegar ao navegador.
+ */
+function useGiz(): THREE.Texture | null {
+  // Sem descarte na desmontagem de propósito: em modo estrito o React monta,
+  // limpa e monta de novo, e a limpeza liberaria uma textura que a segunda
+  // montagem ainda usa. Ela vive tanto quanto o canvas, e vai embora com ele.
+  return useMemo(() => {
+    if (typeof document === 'undefined') return null
+    const desenhada = new THREE.CanvasTexture(silhuetaDeGiz(OSSO))
+    desenhada.colorSpace = THREE.SRGBColorSpace
+    return desenhada
+  }, [])
+}
+
+/** Carrega o retrato como textura. Sem retrato, a peça fica sem face. */
+function useRetratoTextura(nome: string): THREE.Texture | null {
+  const [textura, setTextura] = useState<THREE.Texture | null>(null)
+  const url = retratoDe(nome)
+
+  useEffect(() => {
+    if (!url) return
+    let vivo = true
+    const carregador = new THREE.TextureLoader()
+    carregador.load(url, (t) => {
+      if (!vivo) return
+      t.colorSpace = THREE.SRGBColorSpace
+      setTextura(t)
+    })
+    return () => {
+      vivo = false
+    }
+  }, [url])
+
+  useEffect(() => () => textura?.dispose(), [textura])
+  return textura
+}
+
+/**
+ * Um suspeito onde o jogador o colocou — de pé, com a cara dele.
+ *
+ * O cilindro com iniciais não servia: duas pessoas podem ter as mesmas letras,
+ * e um disco visto de cima esconde justamente o que identifica alguém. A carta
+ * fica em pé, virada para a câmera, e como a câmera não se move ela não precisa
+ * ser reorientada a cada quadro.
+ */
+function PecaNaPlanta({
+  posicao,
+  andar,
+  nome,
+  destacado,
+  escala,
+  aoPegar,
+}: {
+  posicao: [number, number]
+  andar: number
+  nome: string
+  destacado: boolean
+  escala: number
+  /** Pegar a peça para levá-la a outro cômodo, ou para fora da planta. */
+  aoPegar?: (evento: PointerEvent) => void
+}) {
+  const textura = useRetratoTextura(nome)
+  const carta = useRef<THREE.Group>(null)
+  const { camera } = useThree()
+
+  useEffect(() => {
+    carta.current?.lookAt(camera.position)
+  }, [camera])
+
+  const largura = 0.78 * escala
+  const altura = largura * 1.28
+
+  return (
+    <group
+      position={[posicao[0], andar + 0.12, posicao[1]]}
+      scale={escala}
+      onPointerDown={(evento: ThreeEvent<PointerEvent>) => {
+        if (!aoPegar) return
+        // Sem isto o cômodo embaixo recebe o mesmo gesto e a peça é largada
+        // no lugar onde foi pega.
+        evento.stopPropagation()
+        aoPegar(evento.nativeEvent)
+      }}
+    >
+      <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[0.34, 20]} />
+        <meshBasicMaterial color={destacado ? OSSO : '#575263'} />
+      </mesh>
+      <group ref={carta} position={[0, altura / 2 + 0.06, 0]}>
+        <mesh position={[0, 0, -0.01]}>
+          <planeGeometry args={[largura + 0.07, altura + 0.07]} />
+          <meshBasicMaterial color={destacado ? OSSO : '#3a3d4d'} />
+        </mesh>
+        {textura ? (
+          <mesh>
+            <planeGeometry args={[largura, altura]} />
+            <meshBasicMaterial map={textura} toneMapped={false} />
+          </mesh>
+        ) : null}
+      </group>
+    </group>
+  )
+}
+
+/** Onde cada cômodo caiu na tela: o ponto do rótulo e o ladrilho inteiro. */
+type Medida = {
+  id: string
+  nome: string
+  x: number
+  y: number
+  /** Os quatro cantos do chão, em pixels do palco. É o alvo de quem arrasta. */
+  quadro: [number, number][]
+}
+
+/**
+ * Projeta os cômodos para coordenadas de tela, uma vez por tamanho de canvas.
+ *
+ * A câmera é fixa, então isto não precisa acontecer a cada quadro — mas
+ * precisa acontecer de novo quando o palco muda de tamanho, senão o rótulo
+ * fica torto e, pior, largar um retrato acerta o cômodo errado.
+ *
+ * As dependências são a **largura e a altura**, não o `size`: o objeto que o
+ * react-three-fiber guarda troca de identidade a cada render, mesmo com as
+ * mesmas medidas. Depender dele faz este efeito rodar de novo sempre, e como
+ * ele produz estado, cada volta pede a próxima — foi assim que arrastar um
+ * retrato travava a aba.
+ */
+function Medir({
   assento,
   nomes,
   aoMedir,
 }: {
   assento: Map<string, [number, number]>
   nomes: Map<string, string>
-  aoMedir: (pontos: { id: string; nome: string; x: number; y: number }[]) => void
+  aoMedir: (medidas: Medida[]) => void
 }) {
   const { camera, size } = useThree()
 
   useEffect(() => {
-    const pontos = [...assento].map(([id, [x, z]]) => {
-      const v = new THREE.Vector3(x, 0.14, z + LADO / 2 - 0.2).project(camera)
+    const emTela = (x: number, y: number, z: number): [number, number] => {
+      const v = new THREE.Vector3(x, y, z).project(camera)
+      return [((v.x + 1) / 2) * size.width, ((1 - v.y) / 2) * size.height]
+    }
+
+    const medidas = [...assento].map(([id, [x, z]]) => {
+      const andar = degrauDe(id) * DEGRAU_ALTURA
+      const meio = LADO / 2
+      // Na quina da frente, fora do ladrilho: em cima do cômodo o rótulo
+      // atravessava as peças e ficava ilegível.
+      const [rx, ry] = emTela(x, andar, z + LADO / 2 + VAO * 0.45)
       return {
         id,
         nome: nomes.get(id) ?? id,
-        x: ((v.x + 1) / 2) * size.width,
-        y: ((1 - v.y) / 2) * size.height,
+        x: rx,
+        y: ry,
+        quadro: [
+          emTela(x - meio, andar, z - meio),
+          emTela(x + meio, andar, z - meio),
+          emTela(x + meio, andar, z + meio),
+          emTela(x - meio, andar, z + meio),
+        ] as [number, number][],
       }
     })
-    aoMedir(pontos)
-  }, [assento, nomes, camera, size, aoMedir])
+    aoMedir(medidas)
+  }, [assento, nomes, camera, size.width, size.height, aoMedir])
 
   return null
+}
+
+/** Duas medidas iguais o bastante para não valerem uma renderização. */
+function mesmasMedidas(a: Medida[], b: Medida[]): boolean {
+  if (a.length !== b.length) return false
+  return a.every((antiga, i) => {
+    const nova = b[i]!
+    return (
+      antiga.id === nova.id &&
+      Math.abs(antiga.x - nova.x) < 0.5 &&
+      Math.abs(antiga.y - nova.y) < 0.5 &&
+      antiga.quadro.every(
+        (canto, j) =>
+          Math.abs(canto[0] - nova.quadro[j]![0]) < 0.5 &&
+          Math.abs(canto[1] - nova.quadro[j]![1]) < 0.5,
+      )
+    )
+  })
+}
+
+/** Ponto dentro do quadrilátero convexo: mesmo lado de todas as arestas. */
+function dentro(ponto: [number, number], quadro: [number, number][]): boolean {
+  let sinal = 0
+  for (let i = 0; i < quadro.length; i++) {
+    const a = quadro[i]!
+    const b = quadro[(i + 1) % quadro.length]!
+    const cruz = (b[0] - a[0]) * (ponto[1] - a[1]) - (b[1] - a[1]) * (ponto[0] - a[0])
+    if (cruz === 0) continue
+    const lado = cruz > 0 ? 1 : -1
+    if (sinal === 0) sinal = lado
+    else if (sinal !== lado) return false
+  }
+  return true
 }
 
 export default function Planta({
@@ -162,15 +421,26 @@ export default function Planta({
   pecas,
   emChoque,
   selecionado,
+  preencher = false,
   aoEscolherComodo,
+  alvo = null,
+  aoPegarPeca,
+  bussola,
 }: {
   plan: FloorPlan
   hora: number
-  /** Quem está em cada cômodo nesta hora, já resolvido pelo pai. */
-  pecas: { comodo: string; iniciais: string; destacado: boolean }[]
+  pecas: Peca[]
   emChoque: Set<string>
   selecionado: string | null
+  /** Ocupa a altura que sobrar em vez de guardar a proporção 4:3. */
+  preencher?: boolean
   aoEscolherComodo: (comodo: string) => void
+  /** Cômodo sob o ponteiro enquanto se carrega alguém, para acender o alvo. */
+  alvo?: string | null
+  /** Pegar quem já está na planta, para levar a outro cômodo ou para fora. */
+  aoPegarPeca?: (suspeito: string, comodo: string, evento: PointerEvent) => void
+  /** Por onde quem carrega alguém pergunta em que cômodo o ponteiro está. */
+  bussola?: RefObject<Bussola | null>
 }) {
   const comodos = useMemo(() => plan.rooms.map((r) => r.id), [plan])
   const assento = useMemo(() => assentar(comodos), [comodos])
@@ -178,67 +448,147 @@ export default function Planta({
     () => new Map(plan.rooms.map((r) => [r.id, r.name])),
     [plan],
   )
-  const [rotulos, setRotulos] = useState<
-    { id: string; nome: string; x: number; y: number }[]
-  >([])
-  const medido = useRef(false)
+  const [medidas, setMedidas] = useState<Medida[]>([])
+  // Identidade estável: o efeito que mede depende dela, e uma função nova a
+  // cada render faria a medida rodar em laço. E medida igual não vira estado
+  // novo — se o palco oscilar meio pixel por qualquer motivo, o React não
+  // entra na dança junto.
+  const guardarMedidas = useCallback(
+    (novas: Medida[]) =>
+      setMedidas((antigas) => (mesmasMedidas(antigas, novas) ? antigas : novas)),
+    [],
+  )
+  const palco = useRef<HTMLDivElement>(null)
+
+  /** Em que cômodo o ponteiro está, na hora de largar alguém. */
+  const comodoSob = useCallback(
+    (evento: { clientX: number; clientY: number }): string | null => {
+      const caixa = palco.current?.getBoundingClientRect()
+      if (!caixa) return null
+      const ponto: [number, number] = [
+        evento.clientX - caixa.left,
+        evento.clientY - caixa.top,
+      ]
+      // De trás para a frente: os cômodos da frente desenham por cima, então
+      // ganham o empate onde os ladrilhos se encostam.
+      for (let i = medidas.length - 1; i >= 0; i--) {
+        const medida = medidas[i]!
+        if (dentro(ponto, medida.quadro)) return medida.id
+      }
+      return null
+    },
+    [medidas],
+  )
+
+  const porComodo = useMemo(() => {
+    const mapa = new Map<string, Peca[]>()
+    for (const peca of pecas) {
+      const lista = mapa.get(peca.comodo) ?? []
+      lista.push(peca)
+      mapa.set(peca.comodo, lista)
+    }
+    return mapa
+  }, [pecas])
+
+  // A geometria mora aqui e o gesto mora em quem tem o caderno. Esta é a
+  // ponte: quem carrega alguém pergunta, a planta responde.
+  useImperativeHandle(bussola, () => ({ comodoSob }), [comodoSob])
+
+  const naHoraDoCrime = hora === plan.crime_interval
+  const giz = useGiz()
 
   return (
-    <div className={styles.palco}>
+    <div ref={palco} className={preencher ? styles.palcoCheio : styles.palco}>
+      {/* `shadows` sozinho pede PCFSoftShadowMap, que o three 185 depreciou —
+          e o aviso sai *por quadro*, não uma vez. Pior: o r3f reaplica o tipo
+          a cada render, então cada render devolve o aviso à vida. Arrastar um
+          retrato dispara dezenas de renders por segundo, o console inunda e a
+          aba trava. `percentage` é o mesmo algoritmo sem a versão aposentada. */}
       <Canvas
         orthographic
-        shadows
-        camera={{ position: [9, 9, 9], zoom: 62, near: -50, far: 100 }}
-        style={{ background: NOITE }}
+        shadows="percentage"
+        camera={{ position: [9, 9, 9], zoom: 58, near: -50, far: 100 }}
+        // Fora do fluxo: ver o comentário de `.palco`. Um canvas que ocupa
+        // espaço no layout que o mede é um laço de redimensionamento.
+        style={{ background: NOITE, position: 'absolute', inset: 0 }}
       >
-        <ambientLight intensity={1.1} />
+        <ambientLight intensity={1.05} />
         {/* Uma luz só, vinda de onde vem a luz nos retratos: da esquerda. */}
-        <directionalLight position={[-6, 10, 4]} intensity={2.2} castShadow />
+        <directionalLight position={[-6, 10, 4]} intensity={2.1} castShadow />
 
         {[...assento].map(([id, posicao]) => (
           <Comodo
             key={id}
+            comodo={id}
             posicao={posicao}
-            aceso={selecionado === id}
+            aceso={selecionado === id || alvo === id}
             emChoque={emChoque.has(id)}
+            doCrime={id === plan.crime_room}
+            naHoraDoCrime={naHoraDoCrime}
+            giz={giz}
             aoClicar={() => aoEscolherComodo(id)}
           />
         ))}
 
-        {pecas.map((peca, i) => {
-          const base = assento.get(peca.comodo)
+        {[...porComodo].map(([comodo, lista]) => {
+          const base = assento.get(comodo)
           if (!base) return null
-          // Duas pessoas no mesmo cômodo não podem ficar uma dentro da outra —
-          // é justamente o caso que interessa ver.
-          const desvio = (i % 3) * 0.5 - 0.5
-          return (
-            <Peca
-              key={`${peca.comodo}-${peca.iniciais}-${hora}`}
-              posicao={[base[0] + desvio, base[1] + desvio * 0.4]}
-              iniciais={peca.iniciais}
-              destacado={peca.destacado}
-            />
-          )
+          const { grade, escala } = arrumar(lista.length)
+          const passo = (LADO - 0.6) / grade
+          // Gente na frente, mobília no fundo. Sem isso a primeira peça de um
+          // cômodo nasce dentro da mesa, e o retrato — que é o que identifica
+          // alguém — fica atrás do móvel.
+          // Encolhe junto com a grade: com muita gente nao sobra frente para
+          // onde empurrar, e o que importa e nao estourar a parede.
+          const frente = (LADO * 0.2) / grade
+          return lista.map((peca, i) => {
+            const coluna = i % grade
+            const linha = Math.floor(i / grade)
+            return (
+              <PecaNaPlanta
+                key={`${comodo}-${peca.suspeito}`}
+                posicao={[
+                  base[0] + (coluna - (grade - 1) / 2) * passo,
+                  base[1] + frente + (linha - (grade - 1) / 2) * passo,
+                ]}
+                andar={degrauDe(comodo) * DEGRAU_ALTURA}
+                nome={peca.nome}
+                destacado={peca.destacado}
+                escala={escala}
+                aoPegar={
+                  aoPegarPeca
+                    ? (evento) => aoPegarPeca(peca.suspeito, comodo, evento)
+                    : undefined
+                }
+              />
+            )
+          })
         })}
 
-        <Rotulos
-          assento={assento}
-          nomes={nomes}
-          aoMedir={(pontos) => {
-            if (medido.current) return
-            medido.current = true
-            setRotulos(pontos)
-          }}
-        />
+        <Medir assento={assento} nomes={nomes} aoMedir={guardarMedidas} />
       </Canvas>
 
-      {rotulos.map((rotulo) => (
+      {medidas.map((rotulo) => (
         <span
           key={rotulo.id}
-          className={emChoque.has(rotulo.id) ? styles.rotuloAceso : styles.rotulo}
+          className={[
+            styles.rotulo,
+            emChoque.has(rotulo.id) ? styles.rotuloChoque : '',
+            rotulo.id === plan.crime_room ? styles.rotuloCrime : '',
+            rotulo.id === plan.crime_room && naHoraDoCrime
+              ? styles.rotuloCrimeAgora
+              : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
           style={{ left: rotulo.x, top: rotulo.y }}
         >
           {rotulo.nome}
+          {/* A caveira em vez da cruz: cruz é sepultura, e o corpo foi
+              encontrado ali, não enterrado ali. */}
+          {rotulo.id === plan.crime_room ? (
+            <Skull size={11} strokeWidth={1.75} aria-label="onde o corpo foi encontrado" />
+          ) : null}
         </span>
       ))}
     </div>

@@ -6,8 +6,13 @@
   padding: 2rem;
 }
 
+/* A tela ocupa a janela e não passa disso. Quem rola é a conversa, e só ela:
+   com a página inteira rolando, o campo de texto e o cabeçalho do suspeito
+   saíam de vista justamente numa conversa longa, que é quando mais se precisa
+   deles. É o arranjo do WhatsApp web, e pelo mesmo motivo. */
 .screen {
-  min-height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
@@ -59,6 +64,51 @@
   min-height: 0;
 }
 
+/* A mesa: elenco, conversa e painel. A conversa não cresce além do que se lê
+   confortavelmente — o resto da largura vale mais para a planta, que é onde
+   sobra espaço fazia falta. */
+.mesa {
+  composes: body;
+  grid-template-columns: 15rem minmax(0, 34rem) minmax(0, 1fr);
+}
+
+/* O painel de dedução, encostado na conversa. */
+.painel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border-left: 1px solid var(--night-line);
+}
+
+.abas {
+  display: flex;
+  gap: 0.25rem;
+  flex: none;
+  padding: 0.55rem 1.25rem 0;
+  border-bottom: 1px solid var(--night-line);
+}
+
+.aba,
+.abaAgora {
+  padding: 0.4rem 0.9rem;
+  border-radius: var(--radius) var(--radius) 0 0;
+  font-size: 0.8rem;
+  color: var(--paper-faint);
+  margin-bottom: -1px;
+}
+
+.aba:hover {
+  color: var(--paper);
+}
+
+.abaAgora {
+  composes: aba;
+  color: var(--paper);
+  background: var(--night-soft);
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
 /* elenco */
 
 .cast {
@@ -81,12 +131,29 @@
   transition: color 120ms ease;
 }
 
-/* O nome e a postura ficam numa coluna ao lado do retrato. */
+/* O nome e a postura ficam numa coluna ao lado do retrato, e a função embaixo. */
 .quem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.linhaNome {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   min-width: 0;
+}
+
+/* O que a pessoa faz na casa. Discreta: identifica, não compete com o nome. */
+.funcao {
+  color: var(--paper-faint);
+  font-size: 0.75rem;
+  text-transform: lowercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .name:hover {
@@ -127,16 +194,26 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  padding: 1.5rem;
-  gap: 1rem;
+  height: 100%;
   max-width: var(--column);
   width: 100%;
 }
 
+/* Cabeçalho fixo: retrato, nome, função e postura. */
 .who {
   display: flex;
   align-items: center;
   gap: 1rem;
+  flex: none;
+  padding: 0.9rem 1.5rem;
+  border-bottom: 1px solid var(--night-line);
+}
+
+.quemFala {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
 }
 
 .who h2 {
@@ -167,11 +244,37 @@
 
 .thread {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
   gap: 1.6rem;
-  padding-right: 0.5rem;
+  padding: 1.5rem;
+}
+
+/* O que cada coisa custa, embaixo do campo onde ela é gasta. */
+.custo {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--paper-faint);
+}
+
+/* Rodapé fixo: o que se tem na mão, o que deu errado, e o campo de texto. */
+.rodape {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 0.9rem 1.5rem;
+  border-top: 1px solid var(--night-line);
+}
+
+/* Modo Dedução: rola por dentro, porque a tela não rola mais. */
+.pensar {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .nothing {
@@ -311,14 +414,12 @@
 /* ajuda e acusação, sempre no topo */
 
 .help {
-  width: 1.6rem;
-  height: 1.6rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex: none;
-  border: 1px solid var(--night-line);
-  border-radius: 50%;
   color: var(--paper-faint);
-  font-size: 0.8rem;
-  line-height: 1;
+  line-height: 0;
 }
 
 .help:hover {
@@ -326,20 +427,34 @@
   border-color: var(--accent-dim);
 }
 
+/* Sólido, e não contornado: é a única jogada irreversível do jogo, e estava
+   passando por decoração no canto do topo. O botão sólido é o mesmo peso que
+   "Perguntar" tem na conversa — o que se pode fazer, se enxerga. Clicar não
+   acusa ninguém: abre a ficha, que ainda pede confirmação (RN-031). */
 .accuse {
-  padding: 0.4rem 1rem;
-  border: 1px solid var(--accent-dim);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 1.1rem;
   border-radius: var(--radius);
-  color: var(--paper);
+  background: var(--accent);
+  color: var(--night);
+  font-weight: 600;
   white-space: nowrap;
+  box-shadow: 0 2px 0 var(--accent-dim);
   transition:
-    background 120ms ease,
-    color 120ms ease;
+    transform 120ms ease,
+    box-shadow 120ms ease;
 }
 
 .accuse:hover {
-  background: var(--accent);
-  color: var(--night);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 0 var(--accent-dim);
+}
+
+.accuse:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 var(--accent-dim);
 }
 
 /* Os dois modos. O jogo alterna entre falar e pensar, e a interface nomeia
