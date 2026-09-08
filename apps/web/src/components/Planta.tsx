@@ -18,6 +18,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 
 import type { FloorPlan } from '@/lib/api'
+import { degrauDe, moveisDe, type Movel } from '@/lib/mobilia'
 import { retratoDe } from '@/lib/retratos'
 
 import styles from './Planta.module.css'
@@ -35,6 +36,8 @@ const VAO = 0.5
 const COLUNAS = 4
 const PAREDE_ALTURA = 0.34
 const PAREDE_ESPESSURA = 0.14
+const DEGRAU_ALTURA = 0.5
+const MADEIRA = new THREE.Color('#6b5b46')
 
 export type Peca = {
   suspeito: string
@@ -70,7 +73,45 @@ function arrumar(quantas: number): { grade: number; escala: number } {
   return { grade, escala: Math.min(1, 2.1 / grade) }
 }
 
+/** Um móvel. Tudo primitiva: caixa ou cilindro, e a cor sai do tom. */
+function Moveis({ comodo }: { comodo: string }) {
+  const moveis = useMemo(() => moveisDe(comodo), [comodo])
+
+  return (
+    <>
+      {moveis.map((movel: Movel, i) => {
+        const [largura, altura, fundo] = movel.tamanho.map((v) => v * LADO) as [
+          number,
+          number,
+          number,
+        ]
+        const cor = MADEIRA.clone().multiplyScalar(0.5 + movel.tom * 0.9)
+        return (
+          <mesh
+            key={i}
+            position={[
+              movel.em[0] * LADO,
+              0.11 + altura / 2,
+              movel.em[1] * LADO,
+            ]}
+            castShadow
+            receiveShadow
+          >
+            {movel.forma === 'caixa' ? (
+              <boxGeometry args={[largura, altura, fundo]} />
+            ) : (
+              <cylinderGeometry args={[largura / 2, largura / 2, altura, 14]} />
+            )}
+            <meshLambertMaterial color={cor} />
+          </mesh>
+        )
+      })}
+    </>
+  )
+}
+
 function Comodo({
+  comodo,
   posicao,
   aceso,
   emChoque,
@@ -78,6 +119,7 @@ function Comodo({
   naHoraDoCrime,
   aoClicar,
 }: {
+  comodo: string
   posicao: [number, number]
   aceso: boolean
   emChoque: boolean
@@ -94,7 +136,7 @@ function Comodo({
 
   return (
     <group
-      position={[posicao[0], 0, posicao[1]]}
+      position={[posicao[0], degrauDe(comodo) * DEGRAU_ALTURA, posicao[1]]}
       onClick={(evento: ThreeEvent<MouseEvent>) => {
         evento.stopPropagation()
         aoClicar()
@@ -121,6 +163,8 @@ function Comodo({
           <meshLambertMaterial color={corParede} />
         </mesh>
       ))}
+
+      <Moveis comodo={comodo} />
 
       {/* Onde o corpo foi encontrado. O briefing já diz em prosa; aqui é a
           mesma coisa dita de um jeito que não exige reler a frase. */}
@@ -172,11 +216,13 @@ function useRetratoTextura(nome: string): THREE.Texture | null {
  */
 function PecaNaPlanta({
   posicao,
+  andar,
   nome,
   destacado,
   escala,
 }: {
   posicao: [number, number]
+  andar: number
   nome: string
   destacado: boolean
   escala: number
@@ -193,7 +239,7 @@ function PecaNaPlanta({
   const altura = largura * 1.28
 
   return (
-    <group position={[posicao[0], 0.12, posicao[1]]} scale={escala}>
+    <group position={[posicao[0], andar + 0.12, posicao[1]]} scale={escala}>
       <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <circleGeometry args={[0.34, 20]} />
         <meshBasicMaterial color={destacado ? OSSO : '#575263'} />
@@ -229,7 +275,11 @@ function Rotulos({
     const pontos = [...assento].map(([id, [x, z]]) => {
       // Na quina da frente, fora do ladrilho: em cima do cômodo o rótulo
       // atravessava as peças e ficava ilegível.
-      const v = new THREE.Vector3(x, 0, z + LADO / 2 + VAO * 0.45).project(camera)
+      const v = new THREE.Vector3(
+        x,
+        degrauDe(id) * DEGRAU_ALTURA,
+        z + LADO / 2 + VAO * 0.45,
+      ).project(camera)
       return {
         id,
         nome: nomes.get(id) ?? id,
@@ -296,6 +346,7 @@ export default function Planta({
         {[...assento].map(([id, posicao]) => (
           <Comodo
             key={id}
+            comodo={id}
             posicao={posicao}
             aceso={selecionado === id}
             emChoque={emChoque.has(id)}
@@ -309,7 +360,13 @@ export default function Planta({
           const base = assento.get(comodo)
           if (!base) return null
           const { grade, escala } = arrumar(lista.length)
-          const passo = (LADO - 0.5) / grade
+          const passo = (LADO - 0.6) / grade
+          // Gente na frente, mobília no fundo. Sem isso a primeira peça de um
+          // cômodo nasce dentro da mesa, e o retrato — que é o que identifica
+          // alguém — fica atrás do móvel.
+          // Encolhe junto com a grade: com muita gente nao sobra frente para
+          // onde empurrar, e o que importa e nao estourar a parede.
+          const frente = (LADO * 0.2) / grade
           return lista.map((peca, i) => {
             const coluna = i % grade
             const linha = Math.floor(i / grade)
@@ -318,8 +375,9 @@ export default function Planta({
                 key={`${comodo}-${peca.suspeito}`}
                 posicao={[
                   base[0] + (coluna - (grade - 1) / 2) * passo,
-                  base[1] + (linha - (grade - 1) / 2) * passo,
+                  base[1] + frente + (linha - (grade - 1) / 2) * passo,
                 ]}
+                andar={degrauDe(comodo) * DEGRAU_ALTURA}
                 nome={peca.nome}
                 destacado={peca.destacado}
                 escala={escala}
