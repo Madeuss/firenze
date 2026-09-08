@@ -12,6 +12,7 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
+from sqlalchemy.engine import Connection
 
 from conftest import needs_database
 from firenze.api import classifier_port, connection, model_port
@@ -47,22 +48,31 @@ class Scripted:
 
 @pytest.fixture
 def client(database_url: str) -> Iterator[TestClient]:
-    """One transaction for the whole test, shared by every request in it.
+    """A connection per request, committed for real, like in production.
 
-    A connection per request would roll back the match before the next call
-    could see it — the requests in one test are one story, not three.
+    It used to be one shared transaction rolled back at the end of the test —
+    cheaper, and it hid the bug it was hiding: with every request on the same
+    open transaction, a handler that never committed still looked fine to the
+    next call. In a browser it was not fine, because the front end asks for the
+    match on its own connection the moment a turn returns.
+
+    So the requests here commit, against a database that is dropped when the
+    run ends. A write that is not committed now fails the next read, in the
+    same test, for the same reason it would fail in front of a player.
     """
     engine = create_engine(database_url)
 
-    with engine.connect() as open_connection:
-        transaction = open_connection.begin()
-        app.dependency_overrides[connection] = lambda: open_connection
-        app.dependency_overrides[model_port] = FakeModel
-        app.dependency_overrides[classifier_port] = FakeModel
-        with TestClient(app) as test_client:
-            yield test_client
-        app.dependency_overrides.clear()
-        transaction.rollback()
+    def por_requisicao() -> Iterator[Connection]:
+        with engine.connect() as open_connection:
+            yield open_connection
+
+    app.dependency_overrides[connection] = por_requisicao
+    app.dependency_overrides[model_port] = FakeModel
+    app.dependency_overrides[classifier_port] = FakeModel
+    with TestClient(app) as test_client:
+        yield test_client
+    app.dependency_overrides.clear()
+    engine.dispose()
 
 
 def _start(client: TestClient, seed: int = 42) -> dict[str, Any]:
