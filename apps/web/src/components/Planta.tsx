@@ -39,7 +39,7 @@ const VAO = 0.5
 const COLUNAS = 4
 const PAREDE_ALTURA = 0.34
 const PAREDE_ESPESSURA = 0.14
-const DEGRAU_ALTURA = 0.5
+const DEGRAU_ALTURA = 0.6
 
 export type Peca = {
   suspeito: string
@@ -241,7 +241,9 @@ function Rotulos({
 }: {
   assento: Map<string, [number, number]>
   nomes: Map<string, string>
-  aoMedir: (pontos: { id: string; nome: string; x: number; y: number }[]) => void
+  aoMedir: (
+    pontos: { id: string; nome: string; x: number; y: number }[],
+  ) => void
 }) {
   const { camera, size } = useThree()
 

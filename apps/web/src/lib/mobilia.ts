@@ -7,10 +7,14 @@
  * não o desenho dela. Cômodo sem entrada aqui simplesmente aparece vazio, que
  * é o comportamento certo para um cenário que ainda não foi mobiliado.
  *
- * A tabela diz **o que** o móvel é; quem sabe como ele se parece é o
+ * A tabela diz **o que** o móvel é e onde ele fica; como ele se parece é com o
  * componente que desenha. A primeira versão guardava caixas com medidas, e o
- * resultado foi um cômodo cheio de blocos que não pareciam nada — mesa é tampo
- * com quatro pernas, e isso é conhecimento de desenho, não de dados.
+ * resultado foi um cômodo cheio de blocos que não pareciam nada — hoje quase
+ * tudo vem de modelo, e o que sobrou de primitiva é o que o pacote não tinha.
+ *
+ * O `VULTO` continua sendo medida de dado, e não de desenho: é o espaço que a
+ * espécie tem direito de ocupar. O modelo é encolhido até caber nele, e é isso
+ * que garante que nada atravesse parede por mais que o arquivo mude.
  *
  * As posições são frações do lado do cômodo, então mudar a escala da planta
  * não desarruma nada.
@@ -27,6 +31,7 @@ export type Especie =
   | 'bancada'
   | 'fogao'
   | 'escrivaninha'
+  | 'lareira'
 
 export type Movel = {
   especie: Especie
@@ -55,6 +60,7 @@ export const VULTO: Record<Especie, { largura: number; altura: number; fundo: nu
   bancada: { largura: 0.55, altura: 0.2, fundo: 0.18 },
   fogao: { largura: 0.24, altura: 0.26, fundo: 0.22 },
   escrivaninha: { largura: 0.44, altura: 0.18, fundo: 0.24 },
+  lareira: { largura: 0.4, altura: 0.34, fundo: 0.16 },
 }
 
 export const MOBILIA: Record<string, Movel[]> = {
@@ -69,6 +75,7 @@ export const MOBILIA: Record<string, Movel[]> = {
     { especie: 'poltrona', em: [0.22, -0.24] },
     { especie: 'mesa', em: [0, 0.06], escala: 0.55 },
     { especie: 'vaso', em: [0.28, 0.3] },
+    { especie: 'lareira', em: [0, -0.33] },
   ],
   dining_room: [
     { especie: 'mesa', em: [0, 0] },
