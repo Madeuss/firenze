@@ -32,17 +32,30 @@ services:
 
   api:
     build:
-      context: ../../apps/api
+      # Contexto na raiz: a imagem precisa de `prompts/`, que fica fora de
+      # apps/api e não pode ser copiado de fora do contexto de build.
+      context: ../..
+      dockerfile: apps/api/Dockerfile
     environment:
       FIRENZE_ENVIRONMENT: dev
       FIRENZE_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-firenze}:${POSTGRES_PASSWORD:-firenze}@db:5432/${POSTGRES_DB:-firenze}
       FIRENZE_REDIS_URL: redis://redis:6379/0
+      # `fake` por padrão, e não `none` como no .env.example: o compose existe
+      # para dar uma pilha jogável sem credencial nenhuma. Quem tem chave do
+      # Prosa passa FIRENZE_MODEL_PROVIDER=prosa no ambiente (ADR-0008).
+      FIRENZE_MODEL_PROVIDER: ${FIRENZE_MODEL_PROVIDER:-fake}
+      FIRENZE_MODEL_NAME: ${FIRENZE_MODEL_NAME:-}
+      FIRENZE_CLASSIFIER_MODEL_NAME: ${FIRENZE_CLASSIFIER_MODEL_NAME:-}
+      FIRENZE_MODEL_BASE_URL: ${FIRENZE_MODEL_BASE_URL:-}
+      FIRENZE_MODEL_API_KEY: ${FIRENZE_MODEL_API_KEY:-}
     ports:
       - "8000:8000"
     volumes:
       # bind mount para reload; o venv da imagem não é sobrescrito porque o
       # pacote é instalado em modo editável a partir de /app/src
       - ../../apps/api/src:/app/src:ro
+      # editar um prompt não deveria exigir rebuild
+      - ../../prompts:/app/prompts:ro
     depends_on:
       db:
         condition: service_healthy

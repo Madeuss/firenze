@@ -473,6 +473,30 @@ O de cima carrega os commits originais, a main carrega a versão achatada, e tod
 arquivo em comum conflita falsamente. Saída: rebase logo após o merge, ou merge
 `-s ours` quando a árvore de cima já contém tudo que a main tem.
 
+### 2026-09-08 — O compose respondia `/health` e morria no primeiro turno
+
+Ir escrever o front foi o que descobriu: `make dev` subia uma pilha que nunca
+tinha servido um turno. Quatro coisas empilhadas, nenhuma delas código.
+
+O `CMD` do Dockerfile ainda dizia `mansao.main:app` — nome de antes da
+renomeação, então o container morria no boot. Corrigido isso, o turno dava 503:
+o compose não passava `FIRENZE_MODEL_PROVIDER`, e o padrão é `none`. Corrigido
+isso, dava 500: `prompts/` não estava na imagem, e `repo_root()` conta quatro
+diretórios acima do arquivo — conta que só fecha dentro de um checkout, não em
+`/app/src`. E o banco não tinha tabela, porque ninguém rodava migration.
+
+**Por que importa:** `/health` respondia 200 esse tempo todo, e o README
+prometia a pilha. Nada disso é código, então nada disso tinha teste — o CI
+verde media só o que estava dentro do processo Python.
+
+Agora tem um job que sobe o compose e joga uma partida inteira a cada PR. É o
+único formato de teste que pega esta classe de defeito, e ele achou os quatro
+de uma vez quando rodou local pela primeira vez.
+
+Sobrou uma lição de desenho: `repo_root()` levantava `IndexError` do
+`parents[4]`, que não explica nada para quem esbarra. Agora levanta erro
+próprio dizendo para usar `FIRENZE_PROMPTS_DIR`.
+
 ---
 
 ## Infra

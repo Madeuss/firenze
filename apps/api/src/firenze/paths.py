@@ -12,5 +12,19 @@ from pathlib import Path
 _DEPTH_FROM_ROOT = 4
 
 
+class OutsideTheRepository(RuntimeError):
+    """There is no repository root above this file.
+
+    Happens in a container, where the package is installed at `/app/src` and
+    counting four directories up runs out of path. The fix is never to count
+    differently — it is to say where the files are: `FIRENZE_PROMPTS_DIR`.
+    """
+
+
 def repo_root() -> Path:
-    return Path(__file__).resolve().parents[_DEPTH_FROM_ROOT]
+    here = Path(__file__).resolve()
+    if len(here.parents) <= _DEPTH_FROM_ROOT:
+        raise OutsideTheRepository(
+            f"{here} is not inside a checkout — set FIRENZE_PROMPTS_DIR instead"
+        )
+    return here.parents[_DEPTH_FROM_ROOT]
