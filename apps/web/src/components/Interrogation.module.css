@@ -42,7 +42,7 @@
 }
 
 .turns strong {
-  color: var(--amber);
+  color: var(--accent);
   font-size: 1.15rem;
   font-weight: 500;
 }
@@ -82,7 +82,7 @@
   composes: name;
   color: var(--paper);
   background: var(--night-soft);
-  box-shadow: inset 2px 0 0 var(--amber);
+  box-shadow: inset 2px 0 0 var(--accent);
 }
 
 .dot {
@@ -228,7 +228,7 @@
   justify-content: space-between;
   gap: 1rem;
   padding: 0.7rem 0.9rem;
-  border: 1px solid var(--amber-dim);
+  border: 1px solid var(--accent-dim);
   border-radius: var(--radius);
   background: var(--night-soft);
 }
@@ -242,10 +242,16 @@
 .send {
   padding: 0 1.2rem;
   border-radius: var(--radius);
-  background: var(--amber);
+  background: var(--accent);
   color: var(--night);
-  font-weight: 500;
+  font-weight: 600;
   white-space: nowrap;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.send:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 0 var(--accent-dim);
 }
 
 .failure {
@@ -277,12 +283,46 @@
 }
 
 .card:hover {
-  border-color: var(--amber-dim);
+  border-color: var(--accent-dim);
   color: var(--paper);
 }
 
 .pickedCard {
   composes: card;
-  border-color: var(--amber);
-  color: var(--amber);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ajuda e acusação, sempre no topo */
+
+.help {
+  width: 1.6rem;
+  height: 1.6rem;
+  flex: none;
+  border: 1px solid var(--night-line);
+  border-radius: 50%;
+  color: var(--paper-faint);
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+.help:hover {
+  color: var(--paper);
+  border-color: var(--accent-dim);
+}
+
+.accuse {
+  padding: 0.4rem 1rem;
+  border: 1px solid var(--accent-dim);
+  border-radius: var(--radius);
+  color: var(--paper);
+  white-space: nowrap;
+  transition:
+    background 120ms ease,
+    color 120ms ease;
+}
+
+.accuse:hover {
+  background: var(--accent);
+  color: var(--night);
 }
