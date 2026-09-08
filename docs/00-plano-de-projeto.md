@@ -85,7 +85,7 @@ docs desatualizados em três semanas.
 
 ---
 
-## 2. Documentação de produto (`docs/03-casos-de-uso.md`)
+## 2. Documentação de produto — [`03-casos-de-uso.md`](03-casos-de-uso.md) ✅
 
 Formato enxuto: user story + critérios de aceite em Gherkin. Nada de caso de uso
 UML com fluxo alternativo numerado.
