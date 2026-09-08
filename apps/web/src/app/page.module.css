@@ -1,0 +1,78 @@
+.page {
+  min-height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+}
+
+.card {
+  max-width: 34rem;
+}
+
+.title {
+  font-family: var(--font-prose), Georgia, serif;
+  font-size: 3.4rem;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  margin: 0 0 1.5rem;
+  color: var(--paper);
+}
+
+.pitch {
+  margin: 0 0 1rem;
+  color: var(--paper);
+}
+
+.rules {
+  margin: 0 0 2.5rem;
+  font-size: 0.9rem;
+}
+
+.actions {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+}
+
+.seed {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.seed span {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.seed input {
+  width: 7rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--night-line);
+  border-radius: var(--radius);
+  background: var(--night-soft);
+}
+
+.seed input::placeholder {
+  color: var(--paper-faint);
+}
+
+.begin {
+  padding: 0.62rem 1.4rem;
+  border-radius: var(--radius);
+  background: var(--amber);
+  color: var(--night);
+  font-weight: 500;
+  transition: background 120ms ease;
+}
+
+.begin:hover:not(:disabled) {
+  background: #f0b25a;
+}
+
+.failure {
+  margin-top: 1.5rem;
+  color: var(--alarm);
+  font-size: 0.9rem;
+}

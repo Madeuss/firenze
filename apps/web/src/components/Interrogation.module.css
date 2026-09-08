@@ -1,0 +1,288 @@
+.empty {
+  min-height: 100%;
+  display: grid;
+  place-items: center;
+  color: var(--paper-dim);
+  padding: 2rem;
+}
+
+.screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* topo: o caso, o que se sabe, e o que resta */
+
+.top {
+  display: flex;
+  align-items: baseline;
+  gap: 1.5rem;
+  padding: 0.9rem 1.5rem;
+  border-bottom: 1px solid var(--night-line);
+}
+
+.case {
+  color: var(--paper-dim);
+  white-space: nowrap;
+}
+
+.briefing {
+  flex: 1;
+  color: var(--paper-dim);
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.turns {
+  color: var(--paper-dim);
+  white-space: nowrap;
+}
+
+.turns strong {
+  color: var(--amber);
+  font-size: 1.15rem;
+  font-weight: 500;
+}
+
+.body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 15rem 1fr;
+  min-height: 0;
+}
+
+/* elenco */
+
+.cast {
+  border-right: 1px solid var(--night-line);
+  padding: 1rem 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.name,
+.pickedName {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.6rem 1.5rem;
+  text-align: left;
+  color: var(--paper-dim);
+  transition: color 120ms ease;
+}
+
+.name:hover {
+  color: var(--paper);
+}
+
+.pickedName {
+  composes: name;
+  color: var(--paper);
+  background: var(--night-soft);
+  box-shadow: inset 2px 0 0 var(--amber);
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--night-line);
+}
+
+.dot[data-stance="cooperative"] {
+  background: var(--cooperative);
+}
+.dot[data-stance="evasive"] {
+  background: var(--evasive);
+}
+.dot[data-stance="hostile"] {
+  background: var(--hostile);
+}
+.dot[data-stance="broken"] {
+  background: var(--broken);
+}
+
+/* conversa */
+
+.conversation {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 1.5rem;
+  gap: 1rem;
+  max-width: var(--column);
+  width: 100%;
+}
+
+.who {
+  display: flex;
+  align-items: baseline;
+  gap: 0.8rem;
+}
+
+.who h2 {
+  margin: 0;
+  font-family: var(--font-prose), Georgia, serif;
+  font-size: 1.4rem;
+  font-weight: 400;
+}
+
+.stance {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.stance[data-stance="cooperative"] {
+  color: var(--cooperative);
+}
+.stance[data-stance="evasive"] {
+  color: var(--evasive);
+}
+.stance[data-stance="hostile"] {
+  color: var(--hostile);
+}
+.stance[data-stance="broken"] {
+  color: var(--broken);
+}
+
+.thread {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.6rem;
+  padding-right: 0.5rem;
+}
+
+.nothing {
+  color: var(--paper-faint);
+}
+
+.exchange {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.asked {
+  margin: 0;
+  color: var(--paper-faint);
+  font-size: 0.85rem;
+}
+
+.asked::before {
+  content: "você — ";
+}
+
+.line {
+  margin: 0;
+}
+
+/* um turno que não produziu fala. Sem desculpa em personagem. */
+.silence {
+  border-left: 2px solid var(--night-line);
+  padding-left: 0.8rem;
+}
+
+.silence p {
+  margin: 0;
+  color: var(--paper-faint);
+  font-size: 0.85rem;
+}
+
+.waiting {
+  color: var(--paper-faint);
+  margin: 0;
+}
+
+/* o único campo de texto do jogo */
+
+.compose {
+  display: flex;
+  gap: 0.8rem;
+  align-items: stretch;
+}
+
+.input {
+  flex: 1;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--night-line);
+  border-radius: var(--radius);
+  background: var(--night-soft);
+  resize: none;
+}
+
+.input::placeholder {
+  color: var(--paper-faint);
+}
+
+.armed {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--amber-dim);
+  border-radius: var(--radius);
+  background: var(--night-soft);
+}
+
+.disarm {
+  color: var(--paper-faint);
+  font-size: 0.8rem;
+  text-decoration: underline;
+}
+
+.send {
+  padding: 0 1.2rem;
+  border-radius: var(--radius);
+  background: var(--amber);
+  color: var(--night);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.failure {
+  margin: 0;
+  color: var(--alarm);
+  font-size: 0.85rem;
+}
+
+/* bandeja de provas */
+
+.evidence {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.card,
+.pickedCard {
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--night-line);
+  border-radius: var(--radius);
+  color: var(--paper-dim);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.card:hover {
+  border-color: var(--amber-dim);
+  color: var(--paper);
+}
+
+.pickedCard {
+  composes: card;
+  border-color: var(--amber);
+  color: var(--amber);
+}

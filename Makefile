@@ -1,8 +1,9 @@
 COMPOSE := docker compose -f infra/compose/docker-compose.yml
 API     := apps/api
+WEB     := apps/web
 
 .DEFAULT_GOAL := help
-.PHONY: help dev down logs psql install api case ask openapi lint fmt typecheck test check migrate migration evals
+.PHONY: help dev down logs psql install api case ask openapi lint fmt typecheck test check migrate migration evals \n        web web-install contracts web-lint web-typecheck web-check
 
 help: ## lista os alvos
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t/' | expand -t 14
@@ -22,6 +23,9 @@ psql: ## abre psql no banco local
 
 install: ## sincroniza o venv de apps/api a partir do uv.lock
 	cd $(API) && uv sync --extra dev
+
+web-install: ## instala as dependencias do front
+	cd $(WEB) && yarn install --frozen-lockfile
 
 api: ## roda a API local com reload (sem container)
 	cd $(API) && uv run uvicorn firenze.main:app --reload --port 8000
@@ -49,7 +53,21 @@ typecheck: ## mypy
 test: ## pytest
 	cd $(API) && uv run pytest
 
-check: lint typecheck test ## tudo que o CI cobra
+web: ## roda o front em modo dev (precisa da API de pe)
+	cd $(WEB) && yarn dev
+
+contracts: ## regera os tipos do front a partir do openapi.json
+	cd $(WEB) && yarn contracts
+
+web-lint: ## eslint no front
+	cd $(WEB) && yarn lint
+
+web-typecheck: ## tsc no front
+	cd $(WEB) && yarn typecheck
+
+web-check: web-lint web-typecheck ## o que o CI cobra do front
+
+check: lint typecheck test ## tudo que o CI cobra da API
 
 migrate: ## aplica as migrations (alembic)
 	cd $(API) && uv run alembic upgrade head
