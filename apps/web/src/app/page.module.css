@@ -121,15 +121,20 @@
   gap: 0.4rem;
 }
 
+/* O círculo era desenhado aqui e o "?" era texto dentro dele — duas coisas com
+   alinhamentos próprios, e a linha de base do texto nunca caía no centro do
+   círculo. O ícone já é o círculo e o ponto de interrogação juntos; aqui só
+   resta não atrapalhar. */
 .about {
-  width: 1.1rem;
-  height: 1.1rem;
-  border: 1px solid var(--night-line);
-  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   color: var(--paper-faint);
-  font-size: 0.62rem;
-  line-height: 1;
-  letter-spacing: 0;
+  line-height: 0;
+}
+
+.about:hover {
+  color: var(--paper);
 }
 
 .about:hover {
