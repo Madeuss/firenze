@@ -27,12 +27,17 @@
   white-space: nowrap;
 }
 
+/* O `?` anda junto com o briefing: quem esta lendo o que se sabe do caso e
+   quem pode querer reler as regras. No canto da tela ele nao era encontrado. */
 .briefing {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
   color: var(--paper-dim);
   font-size: 0.85rem;
   overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 

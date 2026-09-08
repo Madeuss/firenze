@@ -40,6 +40,10 @@ export class ApiError extends Error {
 async function call<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`/api/${path}`, {
     ...init,
+    // O estado da partida muda a cada turno; resposta guardada e resposta
+    // errada. O `no-store` tambem esta no route handler, porque nenhum dos
+    // dois lados deveria depender do outro lembrar disso.
+    cache: "no-store",
     headers: { "content-type": "application/json", ...init?.headers },
   });
 

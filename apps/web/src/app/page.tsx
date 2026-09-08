@@ -1,32 +1,35 @@
-"use client";
+'use client'
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 
-import { PITCH, RULES } from "@/components/Rules";
-import { startMatch } from "@/lib/api";
+import { PITCH, RULES } from '@/components/Rules'
+import { startMatch } from '@/lib/api'
 
-import styles from "./page.module.css";
+import styles from './page.module.css'
 
 export default function Start() {
-  const router = useRouter();
-  const [seed, setSeed] = useState("");
-  const [starting, setStarting] = useState(false);
-  const [explaining, setExplaining] = useState(false);
-  const [failure, setFailure] = useState<string | null>(null);
+  const router = useRouter()
+  const [seed, setSeed] = useState('')
+  const [starting, setStarting] = useState(false)
+  const [explaining, setExplaining] = useState(false)
+  const [failure, setFailure] = useState<string | null>(null)
 
   async function begin() {
-    setStarting(true);
-    setFailure(null);
+    setStarting(true)
+    setFailure(null)
     try {
       // Semente em branco é uma noite qualquer. A mesma semente é sempre o
       // mesmo mistério (ADR-0004), então quem quiser repetir um caso pode.
-      const chosen = seed.trim() === "" ? Math.floor(Math.random() * 100_000) : Number(seed);
-      const match = await startMatch(chosen);
-      router.push(`/partida/${match.id}`);
+      const chosen =
+        seed.trim() === '' ? Math.floor(Math.random() * 100_000) : Number(seed)
+      const match = await startMatch(chosen)
+      router.push(`/partida/${match.id}`)
     } catch (error) {
-      setFailure(error instanceof Error ? error.message : "não deu para começar");
-      setStarting(false);
+      setFailure(
+        error instanceof Error ? error.message : 'não deu para começar',
+      )
+      setStarting(false)
     }
   }
 
@@ -60,27 +63,29 @@ export default function Start() {
             <input
               className="mono"
               value={seed}
-              onChange={(event) => setSeed(event.target.value.replace(/\D/g, ""))}
+              onChange={(event) =>
+                setSeed(event.target.value.replace(/\D/g, ''))
+              }
               placeholder="qualquer"
               inputMode="numeric"
               aria-label="semente do caso, opcional"
             />
           </label>
           <button className={styles.begin} onClick={begin} disabled={starting}>
-            {starting ? "abrindo a casa…" : "Começar investigação"}
+            {starting ? 'abrindo a casa…' : 'Começar investigação'}
           </button>
         </div>
 
         {explaining ? (
           <p className={styles.about_text}>
-            O mesmo número gera sempre o mesmo mistério — mesmo elenco, mesmo culpado,
-            mesma noite. Serve para repetir um caso, ou passar um bom para alguém. Em
-            branco, você recebe uma noite qualquer.
+            O mesmo número gera sempre o mesmo mistério — mesmo elenco, mesmo
+            culpado, mesma noite. Serve para repetir um caso, ou passar um bom
+            para alguém. Em branco, você recebe uma noite qualquer.
           </p>
         ) : null}
 
         {failure ? <p className={styles.failure}>{failure}</p> : null}
       </div>
     </main>
-  );
+  )
 }
