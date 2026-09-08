@@ -330,3 +330,73 @@ def test_the_review_remembers_the_motive_the_player_named(client: TestClient) ->
 
     assert reviewed["motive_points"] == 20
     assert reviewed["score"] == outcome["score"]
+
+
+# --- the floor plan -------------------------------------------------------
+
+
+def test_the_plan_is_the_house_and_the_night(client: TestClient) -> None:
+    case = generate(seed=42).case
+    plan = _start(client)["plan"]
+
+    assert [r["id"] for r in plan["rooms"]] == list(case.rooms)
+    assert [h["interval"] for h in plan["hours"]] == list(range(case.interval_count))
+    assert plan["hours"][0]["label"] == "21h00"
+
+
+def test_the_plan_is_empty_of_people(client: TestClient) -> None:
+    """A filled plan would be the server solving the game.
+
+    Reconstructing the night from what people claimed is the deduction. The
+    plan is the board; the claims stay in the answers the player has to read.
+    """
+    case = generate(seed=42).case
+    plan = _start(client)["plan"]
+
+    rendered = repr(plan)
+    for suspect in case.suspects:
+        assert suspect.id not in rendered
+        assert suspect.name not in rendered
+    assert "claimed" not in rendered
+
+
+def test_the_plan_speaks_the_match_language(client: TestClient) -> None:
+    pt = client.post("/matches", json={"seed": 42, "locale": "pt-BR"}).json()["plan"]
+    en = client.post("/matches", json={"seed": 42, "locale": "en"}).json()["plan"]
+
+    assert [r["id"] for r in pt["rooms"]] == [r["id"] for r in en["rooms"]], "ids are stable"
+    assert [r["name"] for r in pt["rooms"]] != [r["name"] for r in en["rooms"]]
+
+
+def test_the_review_says_what_each_answer_claimed(client: TestClient) -> None:
+    """How the plan fills itself in once the match is over. (RN-035)"""
+    app.dependency_overrides[model_port] = lambda: Scripted(
+        NpcReply(
+            line="Estava no escritório.",
+            stance=Stance.cooperative,
+            lied=False,
+            claimed_room="study",
+            claimed_interval=2,
+        )
+    )
+    match = _start(client)
+    client.post(f"/matches/{match['id']}/turns", json={"suspect": "sus-1", "question": "onde?"})
+    app.dependency_overrides[model_port] = FakeModel
+    _accuse(client, match["id"])
+
+    recorded = client.get(f"/matches/{match['id']}/review").json()["record"][0]
+
+    assert recorded["claimed_room"] == "study"
+    assert recorded["claimed_interval"] == 2
+
+
+def test_an_answer_mid_match_still_hides_what_it_claimed(client: TestClient) -> None:
+    """The review may show it. A turn may not, or the plan fills itself."""
+    match = _start(client)
+
+    answer = client.post(
+        f"/matches/{match['id']}/turns", json={"suspect": "sus-1", "question": "onde?"}
+    ).json()
+
+    assert "claimed_room" not in answer
+    assert "claimed_interval" not in answer

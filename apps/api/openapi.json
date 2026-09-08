@@ -217,6 +217,31 @@
         "title": "DraftAccusation",
         "type": "object"
       },
+      "FloorPlan": {
+        "description": "The empty board the player fills in, and nothing else.\n\nRooms and hours — never who was where. A server that handed over a filled\nplan would be solving the game: reconstructing the night from what people\nclaimed *is* the deduction, so the claims stay in the answers a player has\nto read, and reach the plan only in the review of a finished match (RN-035).\n\nNeither list is a secret. The rooms are the house and the hours are the\nnight; the briefing already says where the body was found.",
+        "properties": {
+          "hours": {
+            "items": {
+              "$ref": "#/components/schemas/Hour"
+            },
+            "title": "Hours",
+            "type": "array"
+          },
+          "rooms": {
+            "items": {
+              "$ref": "#/components/schemas/Room"
+            },
+            "title": "Rooms",
+            "type": "array"
+          }
+        },
+        "required": [
+          "rooms",
+          "hours"
+        ],
+        "title": "FloorPlan",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -313,6 +338,26 @@
         "title": "HeldEvidence",
         "type": "object"
       },
+      "Hour": {
+        "properties": {
+          "interval": {
+            "description": "Index into the night, 0-based.",
+            "title": "Interval",
+            "type": "integer"
+          },
+          "label": {
+            "description": "Clock time, e.g. `22h30`.",
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "interval",
+          "label"
+        ],
+        "title": "Hour",
+        "type": "object"
+      },
       "KnownFact": {
         "properties": {
           "id": {
@@ -382,6 +427,10 @@
             "title": "Notebook",
             "type": "array"
           },
+          "plan": {
+            "$ref": "#/components/schemas/FloorPlan",
+            "description": "The house and the night, empty. Constant for the match."
+          },
           "seed": {
             "title": "Seed",
             "type": "integer"
@@ -398,6 +447,7 @@
           "turns_left",
           "cast",
           "known",
+          "plan",
           "notebook"
         ],
         "title": "MatchState",
@@ -668,6 +718,30 @@
             "title": "Character Name",
             "type": "string"
           },
+          "claimed_interval": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When they said it about. An hour index from the plan.",
+            "title": "Claimed Interval"
+          },
+          "claimed_room": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Where they said they were. A room id from the plan.",
+            "title": "Claimed Room"
+          },
           "clue_revealed": {
             "anyOf": [
               {
@@ -754,6 +828,26 @@
           "stance"
         ],
         "title": "ReviewedTurn",
+        "type": "object"
+      },
+      "Room": {
+        "properties": {
+          "id": {
+            "description": "Stable id, e.g. `study`. What a claim names.",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "description": "How to write it in this match's language.",
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "Room",
         "type": "object"
       },
       "Said": {

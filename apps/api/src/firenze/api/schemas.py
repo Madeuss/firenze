@@ -37,6 +37,34 @@ class KnownFact(BaseModel):
     text: str
 
 
+class Room(BaseModel):
+    id: str = Field(description="Stable id, e.g. `study`. What a claim names.")
+    name: str = Field(description="How to write it in this match's language.")
+
+
+class Hour(BaseModel):
+    interval: int = Field(description="Index into the night, 0-based.")
+    label: str = Field(description="Clock time, e.g. `22h30`.")
+
+
+class FloorPlan(BaseModel):
+    """The empty board the player fills in, and nothing else.
+
+    Rooms and hours — never who was where. A server that handed over a filled
+    plan would be solving the game: reconstructing the night from what people
+    claimed *is* the deduction, so the claims stay in the answers a player has
+    to read, and reach the plan only in the review of a finished match (RN-035).
+
+    Neither list is a secret. The rooms are the house and the hours are the
+    night; the briefing already says where the body was found.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    rooms: tuple[Room, ...]
+    hours: tuple[Hour, ...]
+
+
 class Said(BaseModel):
     """One line in the notebook, as the player recorded it."""
 
@@ -58,6 +86,7 @@ class MatchState(BaseModel):
     turns_left: int
     cast: tuple[CastMember, ...]
     known: tuple[KnownFact, ...]
+    plan: FloorPlan = Field(description="The house and the night, empty. Constant for the match.")
     notebook: tuple[Said, ...]
     evidence: tuple[str, ...] = Field(
         default=(), description="Fact ids the player holds and may present."
@@ -205,6 +234,12 @@ class ReviewedTurn(BaseModel):
     fact_referenced: str | None = None
     clue_revealed: str | None = Field(
         default=None, description="The fact this answer gave away, if it gave one away."
+    )
+    claimed_room: str | None = Field(
+        default=None, description="Where they said they were. A room id from the plan."
+    )
+    claimed_interval: int | None = Field(
+        default=None, description="When they said it about. An hour index from the plan."
     )
 
 
