@@ -134,9 +134,9 @@ export function silhuetaDeGiz(cor = '#f5efe2', lado = 512): HTMLCanvasElement {
   // Três passadas: uma grossa e apagada por baixo, que é o pó, e duas finas
   // por cima com desvios diferentes, que é o traço.
   const passadas = [
-    { largura: 13, alfa: 0.18, folga: 5, semente: 7 },
-    { largura: 6, alfa: 0.75, folga: 2.5, semente: 101 },
-    { largura: 3.5, alfa: 0.5, folga: 4, semente: 991 },
+    { largura: 13, alfa: 0.2, folga: 5, semente: 7 },
+    { largura: 6, alfa: 0.95, folga: 2.5, semente: 101 },
+    { largura: 3.5, alfa: 0.6, folga: 4, semente: 991 },
   ]
   for (const passada of passadas) {
     ctx.globalAlpha = passada.alfa

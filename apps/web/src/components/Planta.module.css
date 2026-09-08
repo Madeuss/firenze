@@ -61,5 +61,16 @@
 
 /* Onde o corpo foi encontrado. O briefing já diz; isto só evita reler a frase. */
 .rotuloCrime {
+  color: var(--wine-ink);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+/* E na hora em que foi encontrado, o rótulo sobe de tom junto com o giz. */
+.rotuloCrimeAgora {
+  composes: rotuloCrime;
   color: var(--paper);
+  text-shadow:
+    0 0 8px var(--wine),
+    0 1px 3px var(--night);
 }

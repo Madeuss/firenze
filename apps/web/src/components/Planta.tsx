@@ -39,6 +39,10 @@ const PISO = '#262a38'
 // Chega menos luz numa adega, e a cor diz isso antes da geometria.
 const PISO_FUNDO = '#1b1e29'
 const PISO_ALVO = '#3b4257'
+// O cômodo onde o corpo foi encontrado, e ele na hora em que foi. O chão puxa
+// para o vinho o tempo todo, e clareia quando a linha do tempo chega lá.
+const PISO_CRIME = '#33202a'
+const PISO_CRIME_AGORA = '#4a2b36'
 const PAREDE = '#1c2030'
 const PAREDE_ALTA = '#39405a'
 const OSSO = '#f5efe2'
@@ -132,6 +136,15 @@ function Comodo({
   // O choque tinge a parede, não o chão inteiro: preencher o cômodo de laranja
   // gritava mais que o achado merecia e apagava tudo que estava em cima dele.
   const corParede = emChoque ? ALARME : aceso || sobre ? PAREDE_ALTA : PAREDE
+  const corPiso = doCrime
+    ? naHoraDoCrime || aceso || sobre
+      ? PISO_CRIME_AGORA
+      : PISO_CRIME
+    : aceso || sobre
+      ? PISO_ALVO
+      : afundado
+        ? PISO_FUNDO
+        : PISO
 
   return (
     <group
@@ -149,9 +162,7 @@ function Comodo({
           sobe até o nível do térreo, e é essa parede alta que se vê. */}
       <mesh position={[0, -fundura / 2, 0]} receiveShadow castShadow>
         <boxGeometry args={[LADO, 0.22 + fundura, LADO]} />
-        <meshLambertMaterial
-          color={aceso || sobre ? PISO_ALVO : afundado ? PISO_FUNDO : PISO}
-        />
+        <meshLambertMaterial color={corPiso} />
       </mesh>
 
       {/* Quatro paredes baixas. É o que separa "azulejo flutuando" de cômodo. */}
@@ -185,7 +196,11 @@ function Comodo({
             map={giz}
             transparent
             depthWrite={false}
-            opacity={naHoraDoCrime ? 1 : 0.42}
+            // Na hora da morte o giz é branco de giz mesmo; nas outras é um
+            // resto de marca no chão. A diferença é o que faz a linha do tempo
+            // valer a pena arrastar até lá.
+            color={naHoraDoCrime ? '#ffffff' : OSSO}
+            opacity={naHoraDoCrime ? 1 : 0.22}
             side={THREE.DoubleSide}
           />
         </mesh>
@@ -560,6 +575,9 @@ export default function Planta({
             styles.rotulo,
             emChoque.has(rotulo.id) ? styles.rotuloChoque : '',
             rotulo.id === plan.crime_room ? styles.rotuloCrime : '',
+            rotulo.id === plan.crime_room && naHoraDoCrime
+              ? styles.rotuloCrimeAgora
+              : '',
           ]
             .filter(Boolean)
             .join(' ')}

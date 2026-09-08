@@ -276,7 +276,7 @@ export default function Deducao({
             }
             title="por volta desta hora o corpo foi encontrado"
           >
-            <Skull size={14} strokeWidth={3} />
+            <Skull size={19} strokeWidth={2} />
           </span>
           <input
             type="range"
