@@ -851,15 +851,27 @@
         "type": "object"
       },
       "Said": {
-        "description": "One line in the notebook, as the player recorded it.",
+        "description": "One turn in the notebook, whether or not anybody said anything.\n\nA turn that produced nothing was still charged (RN-030), so it is in the\nnotebook the same as the rest. Leaving it out would make the budget\nunexplainable to the player, and would force a front end to keep its own\ncopy of what happened — which is a second source for the same truth.\n\nWhat it does *not* say is which check discarded the reply. The name of the\ncheck is information the player did not earn: `contradiction` would tell\nthem a suspect contradicted themselves. Same reason `Answer.reason` stays\ncoarse.",
         "properties": {
+          "answered": {
+            "title": "Answered",
+            "type": "boolean"
+          },
           "character": {
             "title": "Character",
             "type": "string"
           },
           "line": {
-            "title": "Line",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "What they said. Absent when nothing was.",
+            "title": "Line"
           },
           "question": {
             "title": "Question",
@@ -877,7 +889,7 @@
           "turn",
           "character",
           "question",
-          "line",
+          "answered",
           "stance"
         ],
         "title": "Said",

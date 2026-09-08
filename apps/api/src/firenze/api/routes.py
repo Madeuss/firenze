@@ -150,13 +150,14 @@ def _state(match_id: uuid.UUID, match: Match) -> MatchState:
         known_motives=known_motives(match),
         notebook=tuple(
             Said(
-                turn=said.turn,
-                character=said.character,
-                question=said.question,
-                line=said.line,
-                stance=said.stance,
+                turn=turn.turn,
+                character=turn.character,
+                question=turn.question,
+                answered=turn.answered,
+                line=turn.line or None,
+                stance=turn.stance,
             )
-            for said in match.statements
+            for turn in match.turns
         ),
     )
 

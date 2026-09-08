@@ -48,6 +48,10 @@ jogador precisa sentir que pode raciocinar sem estar sendo cobrado.
 - O elenco à esquerda mostra a **postura** de cada suspeito, que muda sozinha
   conforme a conversa (RN-023). Postura é o único estado do NPC que o jogador
   enxerga.
+- O caderno da API é a **única fonte** da conversa, e traz todo turno cobrado —
+  inclusive os que não produziram fala. O front não guarda cópia do que
+  aconteceu; se guardasse, teria duas versões da mesma verdade e elas
+  divergiriam.
 - O input embaixo é o único campo de texto do jogo.
 - As provas ficam numa bandeja logo abaixo. Arrastar uma para o input arma um
   confronto e o botão muda para **"Confrontar — custa 2 turnos"**. O custo

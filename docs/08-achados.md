@@ -473,6 +473,27 @@ O de cima carrega os commits originais, a main carrega a versão achatada, e tod
 arquivo em comum conflita falsamente. Saída: rebase logo após o merge, ou merge
 `-s ours` quando a árvore de cima já contém tudo que a main tem.
 
+### 2026-09-08 — Duas fontes para a mesma conversa, e elas divergiram
+
+O front guardava uma cópia local de cada resposta para mostrar na hora, e
+recarregava o caderno da API logo depois. Quando o recarregamento chegava, o
+turno estava nos dois lugares e aparecia duas vezes. Só nos respondidos —
+turno rejeitado não entrava no caderno, então não duplicava, e o padrão não
+fechava para quem estava jogando.
+
+A correção não foi deduplicar no cliente. Foi o caderno passar a ser o registro
+inteiro, como `Match.turns` já era (RN-030): `Said` ganhou `answered` e `line`
+opcional, e o componente virou um `filter` sobre o caderno, sem estado próprio.
+
+**Por que importa:** o mesmo argumento que fez `Match.evidence` ser derivada em
+vez de guardada, e que fez a revisão recalcular o veredito em vez de ler cópia.
+Toda vez que a mesma verdade existiu em dois lugares neste projeto, os dois
+lugares discordaram — e desta vez o sintoma chegou por print de quem estava
+jogando, não por teste.
+
+De quebra, consertou um bug que ninguém tinha visto ainda: recarregar a página
+fazia os turnos rejeitados sumirem, e o caderno parava de explicar o orçamento.
+
 ### 2026-09-08 — O compose respondia `/health` e morria no primeiro turno
 
 Ir escrever o front foi o que descobriu: `make dev` subia uma pilha que nunca

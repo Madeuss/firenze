@@ -11,7 +11,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { ask, confront, readMatch, type Answer, type MatchState } from "@/lib/api";
+import { ask, confront, readMatch, type MatchState } from "@/lib/api";
 
 import styles from "./Interrogation.module.css";
 
@@ -22,19 +22,12 @@ const STANCE_LABEL: Record<string, string> = {
   broken: "quebrado",
 };
 
-/** Um turno que não produziu fala. Nunca vira desculpa em personagem: uma
- * falha de sistema apareceria como pista, e o jogador tiraria conclusão dela. */
-type Silence = { turn: "silence"; character: string };
-type Spoken = { turn: "spoken"; character: string; question: string; line: string };
-type Entry = Spoken | Silence;
-
 export default function Interrogation({ matchId }: { matchId: string }) {
   const [match, setMatch] = useState<MatchState | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [question, setQuestion] = useState("");
   const [armed, setArmed] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
-  const [extra, setExtra] = useState<Entry[]>([]);
   const [failure, setFailure] = useState<string | null>(null);
   const foot = useRef<HTMLDivElement>(null);
 
@@ -55,37 +48,24 @@ export default function Interrogation({ matchId }: { matchId: string }) {
     [match],
   );
 
-  const thread = useMemo<Entry[]>(() => {
-    if (!match || !selected) return [];
-    const said = match.notebook
-      .filter((line) => line.character === selected)
-      .map<Entry>((line) => ({
-        turn: "spoken",
-        character: line.character,
-        question: line.question,
-        line: line.line,
-      }));
-    return [...said, ...extra.filter((entry) => entry.character === selected)];
-  }, [match, selected, extra]);
+  // Uma fonte só. A primeira versão guardava uma cópia local de cada resposta
+  // ao lado do caderno, e todo turno respondido aparecia duas vezes assim que
+  // o recarregamento chegava. O caderno da API já é o registro inteiro —
+  // inclusive os turnos que não produziram nada (RN-030).
+  const thread = useMemo(
+    () => match?.notebook.filter((entry) => entry.character === selected) ?? [],
+    [match, selected],
+  );
 
   useEffect(() => {
     foot.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [thread.length, pending]);
 
-  const record = useCallback(
-    (answer: Answer, asked: string) => {
-      setExtra((current) => [
-        ...current,
-        answer.answered && answer.line
-          ? { turn: "spoken", character: answer.character, question: asked, line: answer.line }
-          : { turn: "silence", character: answer.character },
-      ]);
-      // O caderno oficial é o da API. Recarregar depois de cada turno mantém
-      // postura, provas e turnos restantes vindo de uma fonte só.
+  const refresh = useCallback(
+    () =>
       readMatch(matchId)
         .then(setMatch)
-        .catch(() => undefined);
-    },
+        .catch(() => undefined),
     [matchId],
   );
 
@@ -95,16 +75,15 @@ export default function Interrogation({ matchId }: { matchId: string }) {
     setPending(true);
     try {
       if (armed) {
-        const answer = await confront(matchId, selected, armed);
-        record(answer, `apresentou ${armed}`);
+        await confront(matchId, selected, armed);
         setArmed(null);
       } else {
         const asked = question.trim();
         if (!asked) return;
-        const answer = await ask(matchId, selected, asked);
+        await ask(matchId, selected, asked);
         setQuestion("");
-        record(answer, asked);
       }
+      await refresh();
     } catch (error) {
       setFailure(error instanceof Error ? error.message : "não deu para perguntar");
     } finally {
@@ -169,14 +148,15 @@ export default function Interrogation({ matchId }: { matchId: string }) {
               </p>
             ) : null}
 
-            {thread.map((entry, index) =>
-              entry.turn === "spoken" ? (
-                <article key={index} className={styles.exchange}>
+            {thread.map((entry) =>
+              entry.answered ? (
+                <article key={entry.turn} className={styles.exchange}>
                   <p className={styles.asked}>{entry.question}</p>
                   <p className={`prose ${styles.line}`}>{entry.line}</p>
                 </article>
               ) : (
-                <article key={index} className={styles.silence}>
+                <article key={entry.turn} className={styles.silence}>
+                  <p className={styles.asked}>{entry.question}</p>
                   <p>Não veio resposta. O turno foi gasto.</p>
                 </article>
               ),
