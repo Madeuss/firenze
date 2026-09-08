@@ -29,7 +29,9 @@ from firenze.api.schemas import (
     CastMember,
     Confrontation,
     DraftAccusation,
+    FloorPlan,
     HeldEvidence,
+    Hour,
     KnownFact,
     MatchState,
     NewAccusation,
@@ -38,11 +40,12 @@ from firenze.api.schemas import (
     Question,
     Review,
     ReviewedTurn,
+    Room,
     Said,
     StanceMove,
 )
 from firenze.config import settings
-from firenze.domain import Match, Role, Stance
+from firenze.domain import Case, Match, Role, Stance
 from firenze.generation import UnsolvableCase, generate
 from firenze.i18n import Catalog, UnknownLocale, load
 from firenze.interrogation import ask, confront
@@ -108,6 +111,17 @@ Model = Annotated[StructuredModel, Depends(model_port)]
 Classifier = Annotated[StructuredModel, Depends(classifier_port)]
 
 
+def _plan(case: Case, catalog: Catalog) -> FloorPlan:
+    """The house and the night. Never who was in which room."""
+    return FloorPlan(
+        rooms=tuple(Room(id=room, name=catalog.room(room)) for room in case.rooms),
+        hours=tuple(
+            Hour(interval=i, label=catalog.time(case.minutes_at(i)))
+            for i in range(case.interval_count)
+        ),
+    )
+
+
 def _state(match_id: uuid.UUID, match: Match) -> MatchState:
     case = match.case
     catalog = load(match.locale)
@@ -131,6 +145,7 @@ def _state(match_id: uuid.UUID, match: Match) -> MatchState:
             for fact in case.facts
             if fact.scope.public
         ),
+        plan=_plan(case, catalog),
         evidence=tuple(sorted(match.evidence)),
         known_motives=known_motives(match),
         notebook=tuple(
@@ -217,6 +232,8 @@ def _review(match_id: uuid.UUID, match: Match) -> Review:
             lied=turn.lied,
             fact_referenced=turn.fact_referenced,
             clue_revealed=turn.clue_revealed,
+            claimed_room=turn.claimed_room,
+            claimed_interval=turn.claimed_interval,
         )
         for turn in match.turns
     )

@@ -243,6 +243,8 @@ perder:
 `test_nothing_in_the_prompt_singles_out_the_culprit`,
 `test_the_briefing_never_carries_the_solution`,
 `test_an_answer_never_carries_the_bookkeeping`,
+`test_the_plan_is_empty_of_people`,
+`test_an_answer_mid_match_still_hides_what_it_claimed`,
 `test_the_epilogue_never_sees_a_dossier`,
 `test_a_match_still_being_played_has_no_review`.
 

@@ -201,16 +201,17 @@ As duas combinações cobrem acentuação pt-BR sem cair para fonte substituta.
 Nada disto é definitivo — cor e fonte são a parte mais barata de trocar, e a
 estrutura acima não depende delas.
 
-## 7. O que a API ainda não expõe
+## 7. O que a API entrega para a planta
 
-Duas lacunas, conhecidas antes de começar:
+`MatchState.plan` traz a casa e a noite — `rooms` com id estável e nome no
+idioma da partida, `hours` com índice e rótulo de relógio. É constante durante
+a partida e **não contém pessoa nenhuma**: reconstruir a noite a partir do que
+foi alegado é a dedução, e servidor que entrega planta preenchida resolve o
+jogo.
 
-1. **A planta vazia.** `MatchState` não devolve cômodos nem horários. O modo
-   Dedução precisa dos dois — e só dos dois, nunca de quem esteve onde.
-2. **O que foi alegado, na revisão.** `ReviewedTurn` não carrega `claimed_room`
-   nem `claimed_interval`, então a planta não consegue se preencher no fim.
-
-São dois PRs pequenos, antes do front.
+Na revisão, `ReviewedTurn` carrega `claimed_room` e `claimed_interval`, e a
+planta se preenche sozinha com o que cada um alegou (RN-035). A resposta de um
+turno, durante a partida, continua sem esses campos.
 
 **Anotação do jogador fica no navegador**, por enquanto. Persistir exige decidir
 de quem é a partida, e isso esbarra em
