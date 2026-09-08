@@ -187,15 +187,15 @@ function Comodo({
  * servidor, e esta árvore é renderizada lá antes de chegar ao navegador.
  */
 function useGiz(): THREE.Texture | null {
-  const textura = useMemo(() => {
+  // Sem descarte na desmontagem de propósito: em modo estrito o React monta,
+  // limpa e monta de novo, e a limpeza liberaria uma textura que a segunda
+  // montagem ainda usa. Ela vive tanto quanto o canvas, e vai embora com ele.
+  return useMemo(() => {
     if (typeof document === 'undefined') return null
     const desenhada = new THREE.CanvasTexture(silhuetaDeGiz(OSSO))
     desenhada.colorSpace = THREE.SRGBColorSpace
     return desenhada
   }, [])
-
-  useEffect(() => () => textura?.dispose(), [textura])
-  return textura
 }
 
 /** Carrega o retrato como textura. Sem retrato, a peça fica sem face. */
@@ -443,9 +443,14 @@ export default function Planta({
           : undefined
       }
     >
+      {/* `shadows` sozinho pede PCFSoftShadowMap, que o three 185 depreciou —
+          e o aviso sai *por quadro*, não uma vez. Pior: o r3f reaplica o tipo
+          a cada render, então cada render devolve o aviso à vida. Arrastar um
+          retrato dispara dezenas de renders por segundo, o console inunda e a
+          aba trava. `percentage` é o mesmo algoritmo sem a versão aposentada. */}
       <Canvas
         orthographic
-        shadows
+        shadows="percentage"
         camera={{ position: [9, 9, 9], zoom: 58, near: -50, far: 100 }}
         style={{ background: NOITE }}
       >
