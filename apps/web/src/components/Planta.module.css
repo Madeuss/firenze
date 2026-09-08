@@ -7,6 +7,15 @@
   overflow: hidden;
 }
 
+/* Dentro do painel a proporção fixa não serve: ali quem manda é a altura que
+   sobrou da conversa, e 4:3 numa coluna larga passaria da janela. */
+.palcoCheio {
+  composes: palco;
+  aspect-ratio: auto;
+  flex: 1;
+  min-height: 12rem;
+}
+
 .palco canvas {
   display: block;
 }

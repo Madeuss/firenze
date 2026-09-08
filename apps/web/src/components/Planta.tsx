@@ -316,6 +316,7 @@ export default function Planta({
   pecas,
   emChoque,
   selecionado,
+  preencher = false,
   aoEscolherComodo,
 }: {
   plan: FloorPlan
@@ -323,6 +324,8 @@ export default function Planta({
   pecas: Peca[]
   emChoque: Set<string>
   selecionado: string | null
+  /** Ocupa a altura que sobrar em vez de guardar a proporção 4:3. */
+  preencher?: boolean
   aoEscolherComodo: (comodo: string) => void
 }) {
   const comodos = useMemo(() => plan.rooms.map((r) => r.id), [plan])
@@ -350,7 +353,7 @@ export default function Planta({
   const giz = useGiz()
 
   return (
-    <div className={styles.palco}>
+    <div className={preencher ? styles.palcoCheio : styles.palco}>
       <Canvas
         orthographic
         shadows

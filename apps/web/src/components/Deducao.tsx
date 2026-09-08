@@ -11,6 +11,11 @@
  * clica num cômodo, e a peça aparece lá quando a linha do tempo passa por
  * aquela hora. Dois no mesmo cômodo na mesma hora acendem — o jogo não impede,
  * porque o choque é justamente o achado.
+ *
+ * `vista` diz qual metade mostrar. Numa tela larga as duas viram abas do painel
+ * ao lado da conversa, e o componente continua sendo um só de propósito: a hora
+ * escolhida e a célula em aberto são estado daqui, então trocar de aba não
+ * perde o que o jogador estava fazendo.
  */
 
 import {
@@ -35,7 +40,15 @@ import {
 import Planta, { type Peca } from './Planta'
 import styles from './Deducao.module.css'
 
-export default function Deducao({ match }: { match: MatchState }) {
+export type Vista = 'planta' | 'grade' | 'ambos'
+
+export default function Deducao({
+  match,
+  vista = 'ambos',
+}: {
+  match: MatchState
+  vista?: Vista
+}) {
   const notas = useSyncExternalStore(
     assinar,
     () => instantaneo(match.id),
@@ -89,10 +102,10 @@ export default function Deducao({ match }: { match: MatchState }) {
     [match.plan],
   )
 
-  return (
-    <div className={styles.mesa}>
+  const planta = (
       <div className={styles.coluna}>
         <Planta
+          preencher={vista === 'planta'}
           plan={match.plan}
           hora={hora}
           pecas={pecas}
@@ -148,7 +161,9 @@ export default function Deducao({ match }: { match: MatchState }) {
           </div>
         </div>
       </div>
+  )
 
+  const grade = (
       <div className={styles.coluna}>
         <p className={styles.instrucao}>
           {celula
@@ -210,6 +225,12 @@ export default function Deducao({ match }: { match: MatchState }) {
           </tbody>
         </table>
       </div>
+  )
+
+  return (
+    <div className={vista === 'ambos' ? styles.mesa : styles.sozinha}>
+      {vista === 'grade' ? null : planta}
+      {vista === 'planta' ? null : grade}
     </div>
   )
 }

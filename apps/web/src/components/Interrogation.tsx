@@ -12,6 +12,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { ask, confront, readMatch, type MatchState } from '@/lib/api'
+import { useTelaLarga } from '@/lib/tela'
 
 import Accusation from './Accusation'
 import Deducao from './Deducao'
@@ -34,8 +35,12 @@ export default function Interrogation({ matchId }: { matchId: string }) {
   const [pending, setPending] = useState(false)
   const [failure, setFailure] = useState<string | null>(null)
   const [showing, setShowing] = useState<'rules' | 'accusation' | null>(null)
-  // Perguntar custa turno; pensar nao custa nada. A interface nomeia isso.
+  // Numa tela larga a conversa e o painel convivem, e o alternador nao existe:
+  // deduzir deixa de ser um lugar aonde se vai. Numa estreita nao cabem os
+  // dois, e o jogo volta a ter dois modos.
+  const largo = useTelaLarga()
   const [modo, setModo] = useState<'interrogatorio' | 'deducao'>('interrogatorio')
+  const [aba, setAba] = useState<'planta' | 'grade'>('planta')
   const rolagem = useRef<HTMLDivElement>(null)
   // `pending` e estado, e estado nao muda a tempo: dois Enter seguidos passam
   // os dois pela guarda antes do primeiro render. Este trava na hora.
@@ -147,21 +152,23 @@ export default function Interrogation({ matchId }: { matchId: string }) {
         <span className={styles.turns}>
           <strong>{match.turns_left}</strong> turnos
         </span>
-        <div className={styles.modos}>
-          <button
-            className={modo === 'interrogatorio' ? styles.modoAgora : styles.modo}
-            onClick={() => setModo('interrogatorio')}
-          >
-            Interrogatório
-          </button>
-          <button
-            className={modo === 'deducao' ? styles.modoAgora : styles.modo}
-            onClick={() => setModo('deducao')}
-            title="não gasta turno"
-          >
-            Dedução
-          </button>
-        </div>
+        {largo ? null : (
+          <div className={styles.modos}>
+            <button
+              className={modo === 'interrogatorio' ? styles.modoAgora : styles.modo}
+              onClick={() => setModo('interrogatorio')}
+            >
+              Interrogatório
+            </button>
+            <button
+              className={modo === 'deducao' ? styles.modoAgora : styles.modo}
+              onClick={() => setModo('deducao')}
+              title="não gasta turno"
+            >
+              Dedução
+            </button>
+          </div>
+        )}
         {/* Sempre visível: acusar no turno 1 é jogada legítima, e vale mais
             pontos de rapidez se der certo (RN-033). */}
         <button
@@ -172,12 +179,12 @@ export default function Interrogation({ matchId }: { matchId: string }) {
         </button>
       </header>
 
-      {modo === 'deducao' ? (
+      {!largo && modo === 'deducao' ? (
         <div className={styles.pensar}>
           <Deducao match={match} />
         </div>
       ) : (
-      <div className={styles.body}>
+      <div className={largo ? styles.mesa : styles.body}>
         <nav className={styles.cast} aria-label="elenco">
           {suspects.map((person) => (
             <button
@@ -321,8 +328,40 @@ export default function Interrogation({ matchId }: { matchId: string }) {
                 {armed ? 'Confrontar — custa 2 turnos' : 'Perguntar'}
               </button>
             </div>
+
+            {/* O par de botões dizia "perguntar custa, pensar não". Com tudo
+                numa tela só o recado perdeu a casa, e volta aqui, onde o gasto
+                acontece. */}
+            {largo ? (
+              <p className={styles.custo}>
+                perguntar gasta 1 turno, confrontar gasta 2 · o painel ao lado
+                não gasta nada
+              </p>
+            ) : null}
           </div>
         </section>
+
+        {largo ? (
+          <aside className={styles.painel} aria-label="dedução">
+            {/* As abas são o que sobrou do alternador, e agora se enxergam:
+                ocupam a coluna em vez de duas palavras no canto do topo. */}
+            <div className={styles.abas}>
+              <button
+                className={aba === 'planta' ? styles.abaAgora : styles.aba}
+                onClick={() => setAba('planta')}
+              >
+                Planta
+              </button>
+              <button
+                className={aba === 'grade' ? styles.abaAgora : styles.aba}
+                onClick={() => setAba('grade')}
+              >
+                Grade
+              </button>
+            </div>
+            <Deducao match={match} vista={aba} />
+          </aside>
+        ) : null}
       </div>
       )}
 
