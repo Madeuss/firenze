@@ -6,15 +6,14 @@ that carried a rejection detail could quote the canary token it was rejected
 for.
 """
 
-import os
 from collections.abc import Iterator
 from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
-from sqlalchemy.exc import OperationalError
 
+from conftest import needs_database
 from firenze.api import classifier_port, connection, model_port
 from firenze.config import settings
 from firenze.domain import Intent, Stance
@@ -23,27 +22,8 @@ from firenze.interrogation.models import NpcReply
 from firenze.main import app
 from firenze.model import FakeModel
 from firenze.safety import Classification
-from firenze.storage import metadata
 
-URL = os.environ.get(
-    "FIRENZE_TEST_DATABASE_URL",
-    "postgresql+psycopg://firenze:firenze@localhost:5433/firenze",
-)
-
-
-def _reachable() -> bool:
-    """A short timeout on purpose: without one, a missing database costs four
-    minutes of retries before the suite decides to skip."""
-    try:
-        create_engine(URL, connect_args={"connect_timeout": 2}).connect().close()
-    except OperationalError:
-        return False
-    return True
-
-
-pytestmark = pytest.mark.skipif(
-    not _reachable(), reason=f"no database at {URL} — start one with `make dev`"
-)
+pytestmark = needs_database
 
 
 class Scripted:
@@ -66,14 +46,13 @@ class Scripted:
 
 
 @pytest.fixture
-def client() -> Iterator[TestClient]:
+def client(database_url: str) -> Iterator[TestClient]:
     """One transaction for the whole test, shared by every request in it.
 
     A connection per request would roll back the match before the next call
     could see it — the requests in one test are one story, not three.
     """
-    engine = create_engine(URL)
-    metadata.create_all(engine)
+    engine = create_engine(database_url)
 
     with engine.connect() as open_connection:
         transaction = open_connection.begin()

@@ -2,7 +2,8 @@
 
 The URL is never written in alembic.ini: it carries a password, and a file that
 carries a password is a file somebody commits eventually. It comes from
-settings, which read the environment.
+settings, which read the environment — unless a caller set one explicitly,
+which is how the tests build their schema against a throwaway database.
 """
 
 from logging.config import fileConfig
@@ -14,9 +15,12 @@ from firenze.config import settings
 from firenze.storage import metadata
 
 config = context.config
-config.set_main_option("sqlalchemy.url", settings.database_url)
+if not config.get_main_option("sqlalchemy.url", ""):
+    config.set_main_option("sqlalchemy.url", settings.database_url)
 
-if config.config_file_name is not None:
+# A programmatic caller (the test suite) already owns logging; reconfiguring it
+# from alembic.ini underneath pytest would swallow its output.
+if config.config_file_name is not None and config.attributes.get("configure_logger", True):
     fileConfig(config.config_file_name)
 
 target_metadata = metadata
@@ -24,7 +28,7 @@ target_metadata = metadata
 
 def run_migrations_offline() -> None:
     context.configure(
-        url=settings.database_url,
+        url=config.get_main_option("sqlalchemy.url"),
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},

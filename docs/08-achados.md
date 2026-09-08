@@ -359,6 +359,16 @@ já existia. `create_all` cria tabela faltando, mas não altera tabela existente
 então o teste passou a falhar com *column does not exist* onde antes tinha
 criado a tabela sozinho. O sintoma muda, a causa é a mesma ([#43](https://github.com/Madeuss/firenze/issues/43)).
 
+Resolvido criando o schema por `alembic upgrade head` num banco descartável por
+rodada. O que ficou de sobra foi melhor que a correção: dá para comparar o que
+a migration produziu com o que `tables.py` declara
+(`alembic.autogenerate.compare_metadata`) e falhar se discordarem. Testei o
+teste plantando uma coluna sem migration — ele falha nomeando a coluna.
+
+**Por que importa:** o `create_all` não estava só mascarando a migration, estava
+mascarando a *pergunta*. Enquanto ele preenchia a diferença em silêncio, ninguém
+tinha como perguntar se as duas descrições do schema batiam.
+
 ### 2026-09-07 — Derivar o veredito exigiu guardar a acusação inteira
 
 A revisão recalcula a nota em vez de ler cópia guardada, pelo mesmo motivo que
