@@ -54,11 +54,11 @@ from firenze.model import ModelUnavailable, StructuredModel, resolve
 from firenze.narration import write as narrate
 from firenze.storage import (
     NotFound,
+    engine,
     load_match,
     record_turn,
     save_match,
     start_match,
-    transaction,
 )
 from firenze.verdict import (
     Accusation,
@@ -74,7 +74,23 @@ router = APIRouter(prefix="/matches", tags=["match"])
 
 
 def connection() -> Iterator[Connection]:
-    with transaction() as open_connection:
+    """A connection per request. **Committing is the handler's job.**
+
+    It used to be this dependency's job — `with transaction()` here, commit on
+    the way out. That reads well and is wrong, because FastAPI exits a
+    dependency with `yield` only *after* the response has been sent: the client
+    could be told the turn was taken, ask for the match, and get a connection of
+    its own that opened before the commit landed.
+
+    Which is exactly what the front end does after every question. The turn was
+    charged and the answer was written, and the conversation came back without
+    it — the question showed up only after the *next* one, together with it.
+
+    So a write commits inside the handler, before the response exists. What
+    keeps that honest is the test suite: it lets the API commit for real against
+    a throwaway database, so a handler that forgets fails the next read.
+    """
+    with engine().connect() as open_connection:
         yield open_connection
 
 
@@ -176,6 +192,7 @@ def create(body: NewMatch, db: Db) -> MatchState:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(failure)) from failure
 
     match_id = start_match(db, full, body.locale)
+    db.commit()
     return _state(match_id, load_match(db, match_id))
 
 
@@ -380,6 +397,7 @@ def accuse(match_id: uuid.UUID, body: NewAccusation, db: Db) -> Outcome:
         }
     )
     save_match(db, match_id, decided_match)
+    db.commit()
 
     catalog = load(match.locale)
     # The ending is written after the outcome is decided, and its absence
@@ -428,6 +446,7 @@ def take_confrontation(match_id: uuid.UUID, body: Confrontation, db: Db, model: 
         ) from unreachable
 
     record_turn(db, match_id, result.match, result.turn)
+    db.commit()
 
     if not result.turn.answered:
         log.warning("confrontation rejected on match %s: %s", match_id, result.rejection)
@@ -481,6 +500,7 @@ def take_turn(
         ) from unreachable
 
     record_turn(db, match_id, result.match, result.turn)
+    db.commit()
 
     if not result.turn.answered:
         # The detail can quote a canary token. It goes to the log, never the wire.
