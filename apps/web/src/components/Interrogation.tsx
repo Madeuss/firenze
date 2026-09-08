@@ -14,6 +14,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ask, confront, readMatch, type MatchState } from "@/lib/api";
 
 import Accusation from "./Accusation";
+import Retrato from "./Retrato";
 import Rules from "./Rules";
 import styles from "./Interrogation.module.css";
 
@@ -135,18 +136,22 @@ export default function Interrogation({ matchId }: { matchId: string }) {
               className={person.id === selected ? styles.pickedName : styles.name}
               onClick={() => setSelected(person.id)}
             >
-              <span
-                className={styles.dot}
-                data-stance={person.stance ?? "unasked"}
-                aria-hidden="true"
-              />
-              {person.name}
+              <Retrato nome={person.name} tamanho={44} aceso={person.id === selected} />
+              <span className={styles.quem}>
+                {person.name}
+                <span
+                  className={styles.dot}
+                  data-stance={person.stance ?? "unasked"}
+                  aria-hidden="true"
+                />
+              </span>
             </button>
           ))}
         </nav>
 
         <section className={styles.conversation}>
           <div className={styles.who}>
+            {current ? <Retrato nome={current.name} tamanho={96} /> : null}
             <h2>{current?.name}</h2>
             {stance ? (
               <span className={styles.stance} data-stance={stance}>

@@ -1,0 +1,55 @@
+/* A placa atrás do retrato existe por causa do Aurélio: o paletó dele é quase
+   preto e dissolvia no índigo da interface, deixando uma cabeça flutuando.
+   Um tom acima da noite basta para a silhueta voltar a ter contorno, e já
+   resolve de antemão o Bartolomeu e o Godofredo, que também vestem escuro. */
+.moldura {
+  position: relative;
+  display: block;
+  flex: none;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--night-soft);
+  box-shadow: inset 0 0 0 1px var(--night-line);
+}
+
+.face {
+  width: 100%;
+  height: 100%;
+  display: block;
+  /* Recorte pelo topo: a cabeça está sempre lá, e é o que sobrevive a 44px.
+     É também o que aproxima os enquadramentos, que variam muito entre os onze. */
+  object-fit: cover;
+  object-position: 50% 6%;
+  /* Aproxima as duas famílias visuais sem tocar nos arquivos. */
+  filter: saturate(0.78) brightness(0.96);
+  /* O corte reto embaixo parecia uma prateleira; some no desvanecimento. */
+  mask-image: linear-gradient(to bottom, #000 78%, transparent 100%);
+}
+
+.iniciais {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-prose), Georgia, serif;
+  font-size: 0.9em;
+  color: var(--paper-faint);
+}
+
+.aceso {
+  opacity: 1;
+}
+
+.apagado .face {
+  filter: saturate(0) brightness(0.82);
+}
+
+.apagado {
+  opacity: 0.45;
+}
+
+.moldura {
+  transition:
+    opacity 140ms ease,
+    box-shadow 140ms ease;
+}
