@@ -1,10 +1,12 @@
 /**
  * Confere a mobília da planta sem abrir um navegador.
  *
- * Três coisas que só se vê renderizando — e eu não tenho como renderizar aqui,
- * então elas viram aritmética. Todas já aconteceram de verdade: estantes
- * atravessando parede, uma lareira dentro de uma poltrona, e prateleiras três
- * vezes mais altas que a parede do cômodo.
+ * Quatro coisas que só se vê renderizando — e eu não tenho como renderizar
+ * aqui, então elas viram aritmética. As três primeiras já aconteceram de
+ * verdade: estantes atravessando parede, uma lareira dentro de uma poltrona, e
+ * prateleiras três vezes mais altas que a parede do cômodo. A quarta é a
+ * silhueta de giz: o crime cai em qualquer cômodo conforme a semente, então
+ * todo cômodo precisa de um canto vago onde a marca caiba.
  *
  *   node scripts/conferir-mobilia.mjs
  *
@@ -21,6 +23,10 @@ const LADO = 2.2
 const PAREDE_ESPESSURA = 0.14
 const PAREDE_ALTURA = 0.34
 const ALTURA_MAXIMA = PAREDE_ALTURA * 2
+
+// Precisa bater com GIZ_NUCLEO em Planta.tsx: o tronco da silhueta, que é a
+// parte que precisa de chão limpo.
+const GIZ = 0.22
 
 const util = LADO / 2 - PAREDE_ESPESSURA
 const fonte = readFileSync(new URL('../src/lib/mobilia.ts', import.meta.url), 'utf8')
@@ -102,6 +108,30 @@ for (const [comodo, moveis] of Object.entries(MOBILIA)) {
   })
 }
 
+// Espelha `lugarLivre` de mobilia.ts. O script não importa o módulo porque ele
+// é TypeScript e isto roda em node puro — então a busca é repetida aqui, e o
+// que a mantém honesta é a silhueta aparecer no cômodo errado se divergirem.
+function cabeGiz(moveis) {
+  const pegadas = moveis.map(caixa)
+  const limite = (0.5 - 0.07 - GIZ / 2) * LADO
+  const meio = (GIZ / 2) * LADO
+  for (let x = -limite; x <= limite + 1e-9; x += 0.04 * LADO) {
+    for (let z = -limite; z <= limite + 1e-9; z += 0.04 * LADO) {
+      const livre = pegadas.every(
+        (p) => x + meio <= p.x0 || p.x1 <= x - meio || z + meio <= p.z0 || p.z1 <= z - meio,
+      )
+      if (livre) return true
+    }
+  }
+  return false
+}
+
+for (const [comodo, moveis] of Object.entries(MOBILIA)) {
+  if (!cabeGiz(moveis)) {
+    queixas.push(`${comodo}: não sobra chão para a silhueta de giz do crime`)
+  }
+}
+
 const total = Object.values(MOBILIA).reduce((s, m) => s + m.length, 0)
 
 if (queixas.length) {
@@ -112,5 +142,6 @@ if (queixas.length) {
 
 console.log(
   `${total} móveis em ${Object.keys(MOBILIA).length} cômodos: nenhum atravessa` +
-    ` parede, nenhum dentro de outro, nenhum alto demais`,
+    ` parede, nenhum dentro de outro, nenhum alto demais, e em todos cabe a` +
+    ` silhueta de giz`,
 )

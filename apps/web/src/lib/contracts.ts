@@ -219,6 +219,11 @@ export interface components {
             id: string;
             /** Name */
             name: string;
+            /**
+             * Occupation
+             * @description What they do in the house, written in the match's language.
+             */
+            occupation?: string | null;
             /** Role */
             role: string;
             /** @description How they are holding up. Absent until they have been asked. */

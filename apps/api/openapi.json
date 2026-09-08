@@ -90,6 +90,18 @@
             "title": "Name",
             "type": "string"
           },
+          "occupation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "What they do in the house, written in the match's language.",
+            "title": "Occupation"
+          },
           "role": {
             "title": "Role",
             "type": "string"

@@ -137,7 +137,14 @@ export default function Deducao({ match }: { match: MatchState }) {
           <tbody>
             {suspeitos.map((pessoa) => (
               <tr key={pessoa.id}>
-                <th scope="row">{pessoa.name}</th>
+                <th scope="row">
+                  {pessoa.name}
+                  {/* A grade é lida de relance. A função é o que faz "quem é
+                      esse" caber numa linha da tabela. */}
+                  {pessoa.occupation ? (
+                    <span className={styles.funcao}>{pessoa.occupation}</span>
+                  ) : null}
+                </th>
                 {match.plan.hours.map((h) => {
                   const comodo = onde(notas, pessoa.id, h.interval)
                   const escolhida =

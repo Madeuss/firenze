@@ -39,6 +39,19 @@
       "preposition": "in"
     }
   },
+  "occupations": {
+    "host": "host",
+    "butler": "butler",
+    "housekeeper": "housekeeper",
+    "businessman": "businessman",
+    "secretary": "secretary",
+    "lawyer": "lawyer",
+    "cook": "cook",
+    "groundskeeper": "groundskeeper",
+    "companion": "lady's companion",
+    "doctor": "doctor",
+    "maid": "maid"
+  },
   "facts": {
     "body": "{victim}'s body was found {room}, around {time}.",
     "presence": "{character} was {room} at {time}, with {witness} present.",

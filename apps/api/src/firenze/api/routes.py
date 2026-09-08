@@ -138,6 +138,7 @@ def _state(match_id: uuid.UUID, match: Match) -> MatchState:
                 id=person.id,
                 name=person.name,
                 role=person.role.value,
+                occupation=catalog.occupation(person.occupation) if person.occupation else None,
                 stance=match.stances.get(person.id) if person.role is Role.suspect else None,
             )
             for person in case.cast

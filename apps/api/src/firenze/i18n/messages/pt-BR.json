@@ -39,6 +39,19 @@
       "preposition": "no"
     }
   },
+  "occupations": {
+    "host": "anfitrião",
+    "butler": "mordomo",
+    "housekeeper": "governanta",
+    "businessman": "homem de negócios",
+    "secretary": "secretária",
+    "lawyer": "advogado",
+    "cook": "cozinheira",
+    "groundskeeper": "caseiro",
+    "companion": "dama de companhia",
+    "doctor": "médico",
+    "maid": "arrumadeira"
+  },
   "facts": {
     "body": "O corpo de {victim} foi encontrado {room}, por volta das {time}.",
     "presence": "{character} estava {room} às {time}, na presença de {witness}.",

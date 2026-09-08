@@ -30,7 +30,12 @@ from firenze.generation.validation import validate
 # motive became a planted fact: without that, `save_case` matched the stored
 # case by (seed, version, setting) and handed back the old one, which is the
 # exact failure this field exists to make impossible.
-GENERATOR_VERSION = "3"
+#
+# It moved to 4 when the cast gained occupations. The mystery a seed produces is
+# byte for byte the one it produced before — the shuffle draws the same
+# permutation whether it is shuffling names or pairs — but a case stored under 3
+# has no occupation to show, and the bump is what stops it being handed back.
+GENERATOR_VERSION = "4"
 
 # The only world the generator knows how to build. Rooms, cast, means and
 # secrets below are this setting's; grouping them into a `Setting` object is
@@ -57,19 +62,25 @@ INTERVAL_COUNT = 6
 
 # Names are setting, not interface: a Brazilian manor keeps Brazilian names in
 # every locale. Translating them would read like bad dubbing.
-NAMES = (
-    "Aurélio Bastos",
-    "Ondina Vilar",
-    "Teodoro Mainz",
-    "Clarice Antunes",
-    "Bartolomeu Sá",
-    "Ilma Prado",
-    "Nazareno Cruz",
-    "Vitória Belmiro",
-    "Godofredo Alves",
-    "Marlene Tostes",
+#
+# The occupation travels with the name and never apart from it: the portraits
+# were drawn from this pairing, and a cook with a butler's face would be a
+# worse bug than a missing label. It is a key, not a word — the catalog is what
+# turns it into "mordomo" or "butler" (ADR-0005).
+CAST = (
+    ("Aurélio Bastos", "butler"),
+    ("Ondina Vilar", "housekeeper"),
+    ("Teodoro Mainz", "businessman"),
+    ("Clarice Antunes", "secretary"),
+    ("Bartolomeu Sá", "lawyer"),
+    ("Ilma Prado", "cook"),
+    ("Nazareno Cruz", "groundskeeper"),
+    ("Vitória Belmiro", "companion"),
+    ("Godofredo Alves", "doctor"),
+    ("Marlene Tostes", "maid"),
 )
 VICTIM_NAME = "Rodolfo Andrade"
+VICTIM_OCCUPATION = "host"
 
 MEANS_KEYS = ("bronze_candlestick", "poisoned_decanter", "letter_opener", "curtain_cord")
 MOTIVE_KEYS = ("inheritance", "blackmail", "dissolved_partnership", "old_forgery")
@@ -122,11 +133,19 @@ def generate(seed: int, suspects: int = 6, attempts: int = 20) -> CaseWithSoluti
 def _assemble(seed: int, effective_seed: int, suspects: int) -> CaseWithSolution:
     rng = random.Random(effective_seed)
 
-    names = list(NAMES)
-    rng.shuffle(names)
+    people = list(CAST)
+    rng.shuffle(people)
     cast = (
-        Character(id="victim", name=VICTIM_NAME, role=Role.victim),
-        *(Character(id=f"sus-{i + 1}", name=names[i], role=Role.suspect) for i in range(suspects)),
+        Character(id="victim", name=VICTIM_NAME, role=Role.victim, occupation=VICTIM_OCCUPATION),
+        *(
+            Character(
+                id=f"sus-{i + 1}",
+                name=people[i][0],
+                role=Role.suspect,
+                occupation=people[i][1],
+            )
+            for i in range(suspects)
+        ),
     )
     ids = [c.id for c in cast if c.role is Role.suspect]
 

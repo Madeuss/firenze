@@ -9,7 +9,14 @@ import pytest
 
 from firenze.domain import FactKind
 from firenze.generation import generate
-from firenze.generation.generator import MEANS_KEYS, MOTIVE_KEYS, ROOMS, SECRET_KEYS
+from firenze.generation.generator import (
+    CAST,
+    MEANS_KEYS,
+    MOTIVE_KEYS,
+    ROOMS,
+    SECRET_KEYS,
+    VICTIM_OCCUPATION,
+)
 from firenze.i18n import UnknownLocale, available_locales, load
 
 LOCALES = available_locales()
@@ -32,6 +39,9 @@ def test_every_key_the_generator_emits_exists_in_every_catalog(locale: str) -> N
         assert catalog.means(key)
     for key in MOTIVE_KEYS:
         assert catalog.motive(key)
+    for _, occupation in CAST:
+        assert catalog.occupation(occupation)
+    assert catalog.occupation(VICTIM_OCCUPATION)
 
 
 @pytest.mark.parametrize("locale", LOCALES)

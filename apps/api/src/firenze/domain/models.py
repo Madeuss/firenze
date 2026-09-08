@@ -70,6 +70,12 @@ class Character(BaseModel):
     id: str
     name: str
     role: Role
+    occupation: str | None = None
+    """What they do in the house, as a key the catalog renders (ADR-0005).
+
+    Structure, not prose: `butler` here, "mordomo" or "butler" there. Optional
+    because cases generated before occupations existed are still readable.
+    """
 
 
 class Scope(BaseModel):

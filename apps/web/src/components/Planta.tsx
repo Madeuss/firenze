@@ -18,7 +18,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 
 import type { FloorPlan } from '@/lib/api'
-import { degrauDe } from '@/lib/mobilia'
+import { silhuetaDeGiz } from '@/lib/giz'
+import { degrauDe, lugarLivre } from '@/lib/mobilia'
 import { retratoDe } from '@/lib/retratos'
 
 import Moveis from './Moveis'
@@ -40,6 +41,16 @@ const COLUNAS = 4
 const PAREDE_ALTURA = 0.34
 const PAREDE_ESPESSURA = 0.14
 const DEGRAU_ALTURA = 0.6
+// Quanto do cômodo a silhueta de giz ocupa, e quanto dela precisa de chão
+// limpo. São dois números porque o desenho é um corpo esparramado: o tronco
+// tem que cair em piso vago, mas um braço passando por baixo de uma cadeira é
+// como um corpo cai de verdade. Procurar espaço para o quadro inteiro não
+// achava lugar nenhum na sala de jantar.
+const GIZ = 0.38
+const GIZ_NUCLEO = 0.22
+// Um pouco torta: giz no chão não sai alinhado com a parede, e alinhada ela
+// parecia mais um ícone colado que uma marca feita ali.
+const GIRO_DO_GIZ = 0.55
 
 export type Peca = {
   suspeito: string
@@ -82,6 +93,7 @@ function Comodo({
   emChoque,
   doCrime,
   naHoraDoCrime,
+  giz,
   aoClicar,
 }: {
   comodo: string
@@ -90,10 +102,15 @@ function Comodo({
   emChoque: boolean
   doCrime: boolean
   naHoraDoCrime: boolean
+  giz: THREE.Texture | null
   aoClicar: () => void
 }) {
   const [sobre, setSobre] = useState(false)
   const meio = LADO / 2 - PAREDE_ESPESSURA / 2
+  const vago = useMemo<[number, number]>(
+    () => lugarLivre(comodo, GIZ_NUCLEO, GIZ_NUCLEO) ?? [0, 0],
+    [comodo],
+  )
   const degrau = degrauDe(comodo)
   const afundado = degrau < 0
   const fundura = Math.abs(degrau) * DEGRAU_ALTURA
@@ -140,21 +157,45 @@ function Comodo({
 
       <Moveis comodo={comodo} lado={LADO} />
 
-      {/* Onde o corpo foi encontrado. O briefing já diz em prosa; aqui é a
-          mesma coisa dita de um jeito que não exige reler a frase. */}
-      {doCrime ? (
-        <mesh position={[0, 0.13, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[0.52, 0.68, 4, 1, Math.PI / 4]} />
+      {/* Onde o corpo foi encontrado. Era um losango branco, que diz "aqui" e
+          nada mais; a silhueta de giz diz a mesma coisa e ainda diz o quê.
+          Fica num ponto do cômodo que a mobília deixou vago — no centro ela
+          caía dentro da mesa de jantar. */}
+      {doCrime && giz ? (
+        <mesh
+          position={[vago[0] * LADO, 0.125, vago[1] * LADO]}
+          rotation={[-Math.PI / 2, 0, GIRO_DO_GIZ]}
+        >
+          <planeGeometry args={[GIZ * LADO, GIZ * LADO]} />
           <meshBasicMaterial
-            color={OSSO}
+            map={giz}
             transparent
-            opacity={naHoraDoCrime ? 0.95 : 0.3}
+            depthWrite={false}
+            opacity={naHoraDoCrime ? 1 : 0.42}
             side={THREE.DoubleSide}
           />
         </mesh>
       ) : null}
     </group>
   )
+}
+
+/**
+ * A silhueta de giz como textura, desenhada no navegador.
+ *
+ * Num efeito e não durante a renderização porque canvas não existe no
+ * servidor, e esta árvore é renderizada lá antes de chegar ao navegador.
+ */
+function useGiz(): THREE.Texture | null {
+  const textura = useMemo(() => {
+    if (typeof document === 'undefined') return null
+    const desenhada = new THREE.CanvasTexture(silhuetaDeGiz(OSSO))
+    desenhada.colorSpace = THREE.SRGBColorSpace
+    return desenhada
+  }, [])
+
+  useEffect(() => () => textura?.dispose(), [textura])
+  return textura
 }
 
 /** Carrega o retrato como textura. Sem retrato, a peça fica sem face. */
@@ -306,6 +347,7 @@ export default function Planta({
   }, [pecas])
 
   const naHoraDoCrime = hora === plan.crime_interval
+  const giz = useGiz()
 
   return (
     <div className={styles.palco}>
@@ -328,6 +370,7 @@ export default function Planta({
             emChoque={emChoque.has(id)}
             doCrime={id === plan.crime_room}
             naHoraDoCrime={naHoraDoCrime}
+            giz={giz}
             aoClicar={() => aoEscolherComodo(id)}
           />
         ))}

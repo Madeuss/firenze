@@ -81,9 +81,20 @@
 }
 
 .grade tbody th {
-  max-width: 9rem;
+  max-width: 11rem;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.25;
+}
+
+/* A função, embaixo do nome: quem é essa pessoa na casa, sem gastar uma
+   coluna da grade. */
+.funcao {
+  display: block;
+  color: var(--paper-dim);
+  opacity: 0.7;
+  font-size: 0.68rem;
+  text-transform: lowercase;
 }
 
 .grade td {

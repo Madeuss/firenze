@@ -27,6 +27,10 @@ class CastMember(BaseModel):
     id: str
     name: str
     role: str
+    occupation: str | None = Field(
+        default=None,
+        description="What they do in the house, written in the match's language.",
+    )
     stance: Stance | None = Field(
         default=None, description="How they are holding up. Absent until they have been asked."
     )

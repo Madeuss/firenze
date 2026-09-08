@@ -136,6 +136,68 @@ export function moveisDe(comodo: string): Movel[] {
   return MOBILIA[comodo] ?? []
 }
 
+/** A pegada do móvel no chão, em frações do lado, já contando o giro. */
+export function pegadaDe(movel: Movel): {
+  x0: number
+  x1: number
+  z0: number
+  z1: number
+} {
+  const vulto = VULTO[movel.especie]
+  const escala = movel.escala ?? 1
+  const girado = ((movel.giro ?? 0) % 2) === 1
+  const largura = (girado ? vulto.fundo : vulto.largura) * escala
+  const fundo = (girado ? vulto.largura : vulto.fundo) * escala
+  return {
+    x0: movel.em[0] - largura / 2,
+    x1: movel.em[0] + largura / 2,
+    z0: movel.em[1] - fundo / 2,
+    z1: movel.em[1] + fundo / 2,
+  }
+}
+
+/**
+ * Um ponto do cômodo onde cabe algo desse tamanho sem cair em cima de um móvel.
+ *
+ * Existe por causa da silhueta de giz: o corpo foi encontrado em algum lugar do
+ * cômodo, e o centro — que era o óbvio — é exatamente onde ficam a mesa de
+ * jantar e a escrivaninha do escritório. Varre uma grade do meio para fora e
+ * devolve o primeiro lugar vago, então a marca fica o mais central que der.
+ *
+ * Devolve `null` quando o cômodo está cheio demais; quem chama decide o que
+ * fazer com isso, e `scripts/conferir-mobilia.mjs` falha se acontecer.
+ */
+export function lugarLivre(
+  comodo: string,
+  largura: number,
+  fundo: number,
+): [number, number] | null {
+  const pegadas = moveisDe(comodo).map(pegadaDe)
+  const limiteX = 0.5 - 0.07 - largura / 2
+  const limiteZ = 0.5 - 0.07 - fundo / 2
+  const passo = 0.04
+
+  const candidatos: [number, number][] = []
+  for (let x = -limiteX; x <= limiteX + 1e-9; x += passo) {
+    for (let z = -limiteZ; z <= limiteZ + 1e-9; z += passo) {
+      candidatos.push([Number(x.toFixed(3)), Number(z.toFixed(3))])
+    }
+  }
+  candidatos.sort((a, b) => a[0] ** 2 + a[1] ** 2 - (b[0] ** 2 + b[1] ** 2))
+
+  for (const [x, z] of candidatos) {
+    const livre = pegadas.every(
+      (p) =>
+        x + largura / 2 <= p.x0 ||
+        p.x1 <= x - largura / 2 ||
+        z + fundo / 2 <= p.z0 ||
+        p.z1 <= z - fundo / 2,
+    )
+    if (livre) return [x, z]
+  }
+  return null
+}
+
 export function degrauDe(comodo: string): number {
   return DEGRAU[comodo] ?? 0
 }
