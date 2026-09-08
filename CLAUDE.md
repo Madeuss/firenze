@@ -47,4 +47,5 @@ Next.js (front) + FastAPI/LangGraph (core de IA) + Postgres com pgvector.
 
 Domínio e glossário: `docs/01-dominio.md`
 Regras de negócio: `docs/02-regras-de-negocio.md`
+Ameaças e o teste que prova cada mitigação: `docs/05-threat-model.md`
 Decisões arquiteturais e o porquê delas: `docs/adr/`

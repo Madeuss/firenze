@@ -4,7 +4,7 @@
 > (`# RN-012`), nunca se transcrevem — texto duplicado diverge.
 
 Vocabulário: [`01-dominio.md`](01-dominio.md). As ameaças e os testes que provam
-cada mitigação vão para `docs/05-threat-model.md`, ainda não escrito.
+cada mitigação estão em [`05-threat-model.md`](05-threat-model.md).
 
 **Numeração.** Blocos de dez por área, com folga deliberada para crescer sem
 renumerar. Regra revogada permanece no documento com status `revogada`, data e

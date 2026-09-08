@@ -279,10 +279,15 @@ revela F-014 integralmente.
 - Nunca afirma ter visto alguém que não está em seus fatos
 ```
 
-### 5.2 Threat model (`docs/05-threat-model.md`)
+### 5.2 Threat model — [`05-threat-model.md`](05-threat-model.md) ✅
 
-Baseie no **OWASP Top 10 for LLM Applications**. Para cada ameaça: vetor,
-impacto, mitigação, e o teste automatizado que prova a mitigação.
+Escrito. Base **OWASP Top 10 for LLM Applications**; para cada ameaça: vetor,
+impacto, mitigação e o teste automatizado que prova a mitigação. Cresceu de 6
+ameaças para 12 — as seis originais mais manipulação do veredito, vazamento da
+`Solução`, farm de turno, injeção indireta pelo verniz, e as duas abertas
+(autenticação e rate limit) que bloqueiam a fase 7.
+
+O esboço original ficou abaixo, para comparação:
 
 | ID | Ameaça | Mitigação | Teste |
 |---|---|---|---|
