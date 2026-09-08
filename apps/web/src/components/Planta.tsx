@@ -14,7 +14,15 @@
  */
 
 import { Canvas, useThree, type ThreeEvent } from '@react-three/fiber'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+  type RefObject,
+} from 'react'
 import * as THREE from 'three'
 
 import type { FloorPlan } from '@/lib/api'
@@ -51,6 +59,11 @@ const GIZ_NUCLEO = 0.22
 // Um pouco torta: giz no chão não sai alinhado com a parede, e alinhada ela
 // parecia mais um ícone colado que uma marca feita ali.
 const GIRO_DO_GIZ = 0.55
+
+/** O que a planta sabe responder a quem está carregando alguém. */
+export type Bussola = {
+  comodoSob: (ponto: { clientX: number; clientY: number }) => string | null
+}
 
 export type Peca = {
   suspeito: string
@@ -235,12 +248,15 @@ function PecaNaPlanta({
   nome,
   destacado,
   escala,
+  aoPegar,
 }: {
   posicao: [number, number]
   andar: number
   nome: string
   destacado: boolean
   escala: number
+  /** Pegar a peça para levá-la a outro cômodo, ou para fora da planta. */
+  aoPegar?: (evento: PointerEvent) => void
 }) {
   const textura = useRetratoTextura(nome)
   const carta = useRef<THREE.Group>(null)
@@ -254,7 +270,17 @@ function PecaNaPlanta({
   const altura = largura * 1.28
 
   return (
-    <group position={[posicao[0], andar + 0.12, posicao[1]]} scale={escala}>
+    <group
+      position={[posicao[0], andar + 0.12, posicao[1]]}
+      scale={escala}
+      onPointerDown={(evento: ThreeEvent<PointerEvent>) => {
+        if (!aoPegar) return
+        // Sem isto o cômodo embaixo recebe o mesmo gesto e a peça é largada
+        // no lugar onde foi pega.
+        evento.stopPropagation()
+        aoPegar(evento.nativeEvent)
+      }}
+    >
       <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <circleGeometry args={[0.34, 20]} />
         <meshBasicMaterial color={destacado ? OSSO : '#575263'} />
@@ -381,7 +407,9 @@ export default function Planta({
   selecionado,
   preencher = false,
   aoEscolherComodo,
-  aoSoltarSuspeito,
+  alvo = null,
+  aoPegarPeca,
+  bussola,
 }: {
   plan: FloorPlan
   hora: number
@@ -391,8 +419,12 @@ export default function Planta({
   /** Ocupa a altura que sobrar em vez de guardar a proporção 4:3. */
   preencher?: boolean
   aoEscolherComodo: (comodo: string) => void
-  /** Alguém foi largado num cômodo. Sem isto a planta não aceita arrasto. */
-  aoSoltarSuspeito?: (comodo: string, suspeito: string) => void
+  /** Cômodo sob o ponteiro enquanto se carrega alguém, para acender o alvo. */
+  alvo?: string | null
+  /** Pegar quem já está na planta, para levar a outro cômodo ou para fora. */
+  aoPegarPeca?: (suspeito: string, comodo: string, evento: PointerEvent) => void
+  /** Por onde quem carrega alguém pergunta em que cômodo o ponteiro está. */
+  bussola?: RefObject<Bussola | null>
 }) {
   const comodos = useMemo(() => plan.rooms.map((r) => r.id), [plan])
   const assento = useMemo(() => assentar(comodos), [comodos])
@@ -411,7 +443,6 @@ export default function Planta({
     [],
   )
   const palco = useRef<HTMLDivElement>(null)
-  const [alvo, setAlvo] = useState<string | null>(null)
 
   /** Em que cômodo o ponteiro está, na hora de largar alguém. */
   const comodoSob = useCallback(
@@ -443,36 +474,15 @@ export default function Planta({
     return mapa
   }, [pecas])
 
+  // A geometria mora aqui e o gesto mora em quem tem o caderno. Esta é a
+  // ponte: quem carrega alguém pergunta, a planta responde.
+  useImperativeHandle(bussola, () => ({ comodoSob }), [comodoSob])
+
   const naHoraDoCrime = hora === plan.crime_interval
   const giz = useGiz()
 
   return (
-    <div
-      ref={palco}
-      className={preencher ? styles.palcoCheio : styles.palco}
-      onDragOver={
-        aoSoltarSuspeito
-          ? (evento) => {
-              // Sem o preventDefault o navegador recusa o alvo e não há solta.
-              evento.preventDefault()
-              evento.dataTransfer.dropEffect = 'move'
-              setAlvo(comodoSob(evento))
-            }
-          : undefined
-      }
-      onDragLeave={aoSoltarSuspeito ? () => setAlvo(null) : undefined}
-      onDrop={
-        aoSoltarSuspeito
-          ? (evento) => {
-              evento.preventDefault()
-              const quem = evento.dataTransfer.getData('text/plain')
-              const comodo = comodoSob(evento)
-              setAlvo(null)
-              if (quem && comodo) aoSoltarSuspeito(comodo, quem)
-            }
-          : undefined
-      }
-    >
+    <div ref={palco} className={preencher ? styles.palcoCheio : styles.palco}>
       {/* `shadows` sozinho pede PCFSoftShadowMap, que o three 185 depreciou —
           e o aviso sai *por quadro*, não uma vez. Pior: o r3f reaplica o tipo
           a cada render, então cada render devolve o aviso à vida. Arrastar um
@@ -529,6 +539,11 @@ export default function Planta({
                 nome={peca.nome}
                 destacado={peca.destacado}
                 escala={escala}
+                aoPegar={
+                  aoPegarPeca
+                    ? (evento) => aoPegarPeca(peca.suspeito, comodo, evento)
+                    : undefined
+                }
               />
             )
           })

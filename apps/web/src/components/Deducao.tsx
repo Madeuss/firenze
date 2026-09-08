@@ -20,7 +20,9 @@
 
 import {
   useCallback,
+  useEffect,
   useMemo,
+  useRef,
   useState,
   useSyncExternalStore,
   type CSSProperties,
@@ -38,7 +40,7 @@ import {
 } from '@/lib/notas'
 
 import EscolherComodo from './EscolherComodo'
-import Planta, { type Peca } from './Planta'
+import Planta, { type Bussola, type Peca } from './Planta'
 import Retrato from './Retrato'
 import styles from './Deducao.module.css'
 
@@ -61,9 +63,17 @@ export default function Deducao({
     suspeito: string
     hora: number
   } | null>(null)
-  // Quem foi pego na bandeja e ainda não foi colocado. Vale para o arrasto e
-  // para o toque: num celular não existe arrastar, e clicar-e-clicar existe.
-  const [naMao, setNaMao] = useState<string | null>(null)
+  // Quem está na mão: pego na bandeja ou tirado de um cômodo. Um estado só
+  // para os dois porque, para o jogador, é o mesmo gesto.
+  const [naMao, setNaMao] = useState<{ quem: string; de: string | null } | null>(
+    null,
+  )
+  const [alvo, setAlvo] = useState<string | null>(null)
+  // O gesto em curso mora numa ref, não no estado: ele muda a cada pixel do
+  // ponteiro, e um estado por pixel re-renderizaria a cena 3D inteira.
+  const gesto = useRef<{ x0: number; y0: number; andou: boolean } | null>(null)
+  const bussola = useRef<Bussola | null>(null)
+  const fantasma = useRef<HTMLDivElement>(null)
 
   const suspeitos = useMemo(
     () => match.cast.filter((p): p is CastMember => p.role === 'suspect'),
@@ -81,7 +91,7 @@ export default function Deducao({
   const escolherComodo = useCallback(
     (comodo: string) => {
       if (naMao) {
-        registrar(naMao, hora, comodo)
+        registrar(naMao.quem, hora, comodo)
         setNaMao(null)
         return
       }
@@ -95,13 +105,67 @@ export default function Deducao({
 
   const fecharCelula = useCallback(() => setCelula(null), [])
 
-  const soltarEm = useCallback(
-    (comodo: string, suspeito: string) => {
-      registrar(suspeito, hora, comodo)
-      setNaMao(null)
+  /** Pegar alguém: da bandeja (`de` vazio) ou de dentro de um cômodo. */
+  const pegar = useCallback(
+    (
+      quem: string,
+      de: string | null,
+      evento: { clientX: number; clientY: number },
+    ) => {
+      gesto.current = { x0: evento.clientX, y0: evento.clientY, andou: false }
+      setNaMao({ quem, de })
+      setAlvo(de)
     },
-    [hora, registrar],
+    [],
   )
+
+  /**
+   * O gesto, enquanto dura.
+   *
+   * Três desfechos ao soltar: em cima de um cômodo, a pessoa fica lá; fora da
+   * planta, quem veio de um cômodo volta para a bandeja; e se o ponteiro não
+   * andou, não foi arrasto e sim clique — a pessoa continua na mão, para ser
+   * colocada com um segundo clique. É esse terceiro caminho que faz o modo
+   * funcionar no toque, onde arrastar de um canvas é sofrimento.
+   */
+  useEffect(() => {
+    if (!naMao) return
+    const carregado = naMao
+
+    function mover(evento: PointerEvent) {
+      const atual = gesto.current
+      if (atual && !atual.andou) {
+        atual.andou =
+          Math.abs(evento.clientX - atual.x0) > 4 ||
+          Math.abs(evento.clientY - atual.y0) > 4
+      }
+      if (fantasma.current) {
+        fantasma.current.style.transform = `translate(${evento.clientX}px, ${evento.clientY}px)`
+      }
+      // Vira estado só quando muda de cômodo: um estado por pixel refaria a
+      // cena 3D inteira a cada movimento do ponteiro.
+      setAlvo(bussola.current?.comodoSob(evento) ?? null)
+    }
+
+    function soltar(evento: PointerEvent) {
+      const atual = gesto.current
+      gesto.current = null
+      if (!atual?.andou) return
+
+      const comodo = bussola.current?.comodoSob(evento) ?? null
+      if (comodo) registrar(carregado.quem, hora, comodo)
+      else if (carregado.de) registrar(carregado.quem, hora, null)
+      setNaMao(null)
+      setAlvo(null)
+    }
+
+    window.addEventListener('pointermove', mover)
+    window.addEventListener('pointerup', soltar)
+    return () => {
+      window.removeEventListener('pointermove', mover)
+      window.removeEventListener('pointerup', soltar)
+    }
+  }, [naMao, hora, registrar])
 
   // A bandeja é o avesso da planta: quem não está em cômodo nenhum nesta hora.
   // Mudar de hora esvazia a planta e devolve todo mundo para cá, que é o que
@@ -141,7 +205,9 @@ export default function Deducao({
             emChoque={emChoque}
             selecionado={celula ? onde(notas, celula.suspeito, celula.hora) : null}
             aoEscolherComodo={escolherComodo}
-            aoSoltarSuspeito={soltarEm}
+            alvo={alvo}
+            aoPegarPeca={(quem, de, evento) => pegar(quem, de, evento)}
+            bussola={bussola}
           />
 
           {/* Quem ainda não tem lugar nesta hora. Arraste para um cômodo — ou,
@@ -150,23 +216,23 @@ export default function Deducao({
             {naBandeja.map((pessoa) => (
               <button
                 key={pessoa.id}
-                className={naMao === pessoa.id ? styles.fichaNaMao : styles.ficha}
-                draggable
-                onDragStart={(evento) => {
-                  evento.dataTransfer.setData('text/plain', pessoa.id)
-                  evento.dataTransfer.effectAllowed = 'move'
-                  setNaMao(pessoa.id)
-                }}
-                onDragEnd={() => setNaMao(null)}
-                onClick={() =>
-                  setNaMao(naMao === pessoa.id ? null : pessoa.id)
+                className={
+                  naMao?.quem === pessoa.id ? styles.fichaNaMao : styles.ficha
                 }
+                onPointerDown={(evento) => {
+                  if (naMao?.quem === pessoa.id) {
+                    setNaMao(null)
+                    setAlvo(null)
+                    return
+                  }
+                  pegar(pessoa.id, null, evento.nativeEvent)
+                }}
                 title={`onde ${pessoa.name} disse que estava?`}
               >
                 <Retrato
                   nome={pessoa.name}
                   tamanho={38}
-                  aceso={naMao === pessoa.id}
+                  aceso={naMao?.quem === pessoa.id}
                 />
                 <span className={styles.fichaNome}>
                   {pessoa.name.split(' ')[0]}
@@ -234,8 +300,8 @@ export default function Deducao({
       <div className={styles.coluna}>
         <p className={styles.instrucao}>
           {naMao
-            ? `Clique no cômodo onde ${match.cast.find((p) => p.id === naMao)?.name} disse que estava às ${match.plan.hours[hora]?.label}.`
-            : 'Arraste um retrato para um cômodo, ou preencha a grade. Isto é seu caderno — nada aqui vem do jogo.'}
+            ? `Solte ${match.cast.find((p) => p.id === naMao.quem)?.name} num cômodo — ou fora da planta, para tirá-la de lá.`
+            : 'Arraste um retrato para um cômodo, e de um cômodo para outro. Isto é seu caderno — nada aqui vem do jogo.'}
         </p>
 
         <table className={styles.grade}>
@@ -310,6 +376,20 @@ export default function Deducao({
     <div className={vista === 'ambos' ? styles.mesa : styles.sozinha}>
       {vista === 'grade' ? null : planta}
       {vista === 'planta' ? null : grade}
+
+      {/* Quem está na mão acompanha o ponteiro. Posicionado direto no elemento,
+          sem passar pelo estado do React: são dezenas de posições por segundo,
+          e cada uma custaria um render da cena inteira. */}
+      {naMao ? (
+        <div ref={fantasma} className={styles.fantasma}>
+          <Retrato
+            nome={
+              match.cast.find((p) => p.id === naMao.quem)?.name ?? naMao.quem
+            }
+            tamanho={44}
+          />
+        </div>
+      ) : null}
     </div>
   )
 }

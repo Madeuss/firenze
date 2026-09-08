@@ -61,6 +61,9 @@
   border-radius: var(--radius);
   color: var(--paper-faint);
   cursor: grab;
+  /* O gesto é de ponteiro, e no toque o navegador rolaria a página em vez de
+     entregá-lo. */
+  touch-action: none;
 }
 
 .ficha:hover {
@@ -83,6 +86,18 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* O retrato que acompanha o ponteiro enquanto alguém está na mão. */
+.fantasma {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 40;
+  margin: -22px 0 0 -22px;
+  pointer-events: none;
+  opacity: 0.9;
+  filter: drop-shadow(0 6px 10px rgb(0 0 0 / 55%));
 }
 
 .bandejaVazia {
