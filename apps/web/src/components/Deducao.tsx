@@ -13,7 +13,13 @@
  * porque o choque é justamente o achado.
  */
 
-import { useCallback, useMemo, useState, useSyncExternalStore } from 'react'
+import {
+  useCallback,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+  type CSSProperties,
+} from 'react'
 
 import type { CastMember, MatchState } from '@/lib/api'
 import {
@@ -96,19 +102,44 @@ export default function Deducao({ match }: { match: MatchState }) {
         />
 
         <div className={styles.relogio}>
-          <input
-            type="range"
-            min={0}
-            max={match.plan.hours.length - 1}
-            value={hora}
-            onChange={(e) => setHora(Number(e.target.value))}
-            aria-label="hora da noite"
-          />
+          {/* A hora da morte marcada no trilho, na mesma cruz que marca o
+              cômodo na planta. Sem ela o jogador tinha que guardar de cabeça
+              qual intervalo importava enquanto arrastava. */}
+          <div className={styles.trilho}>
+            <span
+              className={styles.marcaCrime}
+              style={
+                {
+                  '--fracao': String(
+                    match.plan.hours.length > 1
+                      ? match.plan.crime_interval / (match.plan.hours.length - 1)
+                      : 0,
+                  ),
+                } as CSSProperties
+              }
+              title="por volta desta hora o corpo foi encontrado"
+            >
+              ✝
+            </span>
+            <input
+              type="range"
+              min={0}
+              max={match.plan.hours.length - 1}
+              value={hora}
+              onChange={(e) => setHora(Number(e.target.value))}
+              aria-label="hora da noite"
+            />
+          </div>
           <div className={styles.horas}>
             {match.plan.hours.map((h) => (
               <button
                 key={h.interval}
-                className={h.interval === hora ? styles.horaAgora : styles.hora}
+                className={[
+                  h.interval === hora ? styles.horaAgora : styles.hora,
+                  h.interval === match.plan.crime_interval ? styles.horaCrime : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
                 onClick={() => setHora(h.interval)}
               >
                 {h.label}
