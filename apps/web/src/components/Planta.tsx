@@ -291,6 +291,12 @@ type Medida = {
  * A câmera é fixa, então isto não precisa acontecer a cada quadro — mas
  * precisa acontecer de novo quando o palco muda de tamanho, senão o rótulo
  * fica torto e, pior, largar um retrato acerta o cômodo errado.
+ *
+ * As dependências são a **largura e a altura**, não o `size`: o objeto que o
+ * react-three-fiber guarda troca de identidade a cada render, mesmo com as
+ * mesmas medidas. Depender dele faz este efeito rodar de novo sempre, e como
+ * ele produz estado, cada volta pede a próxima — foi assim que arrastar um
+ * retrato travava a aba.
  */
 function Medir({
   assento,
@@ -329,9 +335,27 @@ function Medir({
       }
     })
     aoMedir(medidas)
-  }, [assento, nomes, camera, size, aoMedir])
+  }, [assento, nomes, camera, size.width, size.height, aoMedir])
 
   return null
+}
+
+/** Duas medidas iguais o bastante para não valerem uma renderização. */
+function mesmasMedidas(a: Medida[], b: Medida[]): boolean {
+  if (a.length !== b.length) return false
+  return a.every((antiga, i) => {
+    const nova = b[i]!
+    return (
+      antiga.id === nova.id &&
+      Math.abs(antiga.x - nova.x) < 0.5 &&
+      Math.abs(antiga.y - nova.y) < 0.5 &&
+      antiga.quadro.every(
+        (canto, j) =>
+          Math.abs(canto[0] - nova.quadro[j]![0]) < 0.5 &&
+          Math.abs(canto[1] - nova.quadro[j]![1]) < 0.5,
+      )
+    )
+  })
 }
 
 /** Ponto dentro do quadrilátero convexo: mesmo lado de todas as arestas. */
@@ -378,8 +402,14 @@ export default function Planta({
   )
   const [medidas, setMedidas] = useState<Medida[]>([])
   // Identidade estável: o efeito que mede depende dela, e uma função nova a
-  // cada render faria a medida rodar em laço.
-  const guardarMedidas = useCallback((novas: Medida[]) => setMedidas(novas), [])
+  // cada render faria a medida rodar em laço. E medida igual não vira estado
+  // novo — se o palco oscilar meio pixel por qualquer motivo, o React não
+  // entra na dança junto.
+  const guardarMedidas = useCallback(
+    (novas: Medida[]) =>
+      setMedidas((antigas) => (mesmasMedidas(antigas, novas) ? antigas : novas)),
+    [],
+  )
   const palco = useRef<HTMLDivElement>(null)
   const [alvo, setAlvo] = useState<string | null>(null)
 
@@ -452,7 +482,9 @@ export default function Planta({
         orthographic
         shadows="percentage"
         camera={{ position: [9, 9, 9], zoom: 58, near: -50, far: 100 }}
-        style={{ background: NOITE }}
+        // Fora do fluxo: ver o comentário de `.palco`. Um canvas que ocupa
+        // espaço no layout que o mede é um laço de redimensionamento.
+        style={{ background: NOITE, position: 'absolute', inset: 0 }}
       >
         <ambientLight intensity={1.05} />
         {/* Uma luz só, vinda de onde vem a luz nos retratos: da esquerda. */}

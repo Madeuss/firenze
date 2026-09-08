@@ -6,6 +6,10 @@
   gap: 1.5rem;
   padding: 1.5rem;
   overflow-y: auto;
+  /* A barra de rolagem tem lugar guardado mesmo quando não existe. Sem isso
+     ela aparece, tira largura, a planta encolhe pela proporção, a barra deixa
+     de ser necessária e some — e o ciclo recomeça. */
+  scrollbar-gutter: stable;
 }
 
 /* Uma metade só, dentro do painel: ali a largura já é a coluna, e a planta
@@ -17,6 +21,7 @@
   flex-direction: column;
   padding: 1rem 1.25rem 1.25rem;
   overflow-y: auto;
+  scrollbar-gutter: stable;
 }
 
 .coluna {

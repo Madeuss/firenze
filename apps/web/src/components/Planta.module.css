@@ -1,7 +1,19 @@
+/*
+ * O palco define o tamanho; o canvas obedece.
+ *
+ * Isto não é preciosismo de CSS. O canvas se mede pelo elemento que o contém,
+ * e se ele também *empurra* esse elemento — largura de 100% dentro de uma
+ * linha flex, ou proporção fixa dentro de um contêiner que rola — a coisa
+ * oscila: o canvas cresce, aparece barra de rolagem, a barra tira largura, o
+ * canvas encolhe, a barra some. O navegador fica nesse vai e vem para sempre e
+ * a aba trava, sem erro nenhum no console.
+ *
+ * Por isso o palco é `position: relative` e o canvas dentro dele é absoluto:
+ * o que o canvas faz não pode mais mudar o que ele mede.
+ */
 .palco {
   position: relative;
-  width: 100%;
-  flex: 1;
+  flex: 1 1 0;
   min-width: 0;
   aspect-ratio: 4 / 3;
   border: 1px solid var(--night-line);
@@ -14,8 +26,7 @@
 .palcoCheio {
   composes: palco;
   aspect-ratio: auto;
-  flex: 1;
-  min-height: 12rem;
+  min-height: 10rem;
 }
 
 .palco canvas {
