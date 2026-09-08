@@ -25,9 +25,8 @@ import {
   instantaneoDoServidor,
   onde,
 } from '@/lib/notas'
-import { iniciais } from '@/lib/retratos'
 
-import Planta from './Planta'
+import Planta, { type Peca } from './Planta'
 import styles from './Deducao.module.css'
 
 export default function Deducao({ match }: { match: MatchState }) {
@@ -65,14 +64,15 @@ export default function Deducao({ match }: { match: MatchState }) {
     [celula, notas, registrar],
   )
 
-  const pecas = useMemo(
+  const pecas = useMemo<Peca[]>(
     () =>
       suspeitos
         .map((pessoa) => ({ pessoa, comodo: onde(notas, pessoa.id, hora) }))
         .filter((p): p is { pessoa: CastMember; comodo: string } => !!p.comodo)
         .map(({ pessoa, comodo }) => ({
+          suspeito: pessoa.id,
+          nome: pessoa.name,
           comodo,
-          iniciais: iniciais(pessoa.name),
           destacado: celula?.suspeito === pessoa.id,
         })),
     [suspeitos, notas, hora, celula],

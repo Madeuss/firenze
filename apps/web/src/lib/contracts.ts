@@ -285,9 +285,22 @@ export interface components {
          *     to read, and reach the plan only in the review of a finished match (RN-035).
          *
          *     Neither list is a secret. The rooms are the house and the hours are the
-         *     night; the briefing already says where the body was found.
+         *     night; the briefing already says where the body was found — and since it
+         *     does, saying it again in fields the front end can read is the same
+         *     information, not more of it. Prose a player has to parse by eye is not a
+         *     security boundary.
          */
         FloorPlan: {
+            /**
+             * Crime Interval
+             * @description When it was found. Already in the briefing.
+             */
+            crime_interval: number;
+            /**
+             * Crime Room
+             * @description Where the body was found. Already in the briefing.
+             */
+            crime_room: string;
             /** Hours */
             hours: components["schemas"]["Hour"][];
             /** Rooms */

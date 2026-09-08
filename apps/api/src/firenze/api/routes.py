@@ -119,6 +119,8 @@ def _plan(case: Case, catalog: Catalog) -> FloorPlan:
             Hour(interval=i, label=catalog.time(case.minutes_at(i)))
             for i in range(case.interval_count)
         ),
+        crime_room=case.crime_room,
+        crime_interval=case.crime_interval,
     )
 
 

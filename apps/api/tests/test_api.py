@@ -446,3 +446,23 @@ def test_the_notebook_never_says_why_a_turn_was_discarded(client: TestClient) ->
 
     assert "rejected_by" not in response.text
     assert "canary" not in response.text
+
+
+def test_the_plan_marks_where_the_body_was_found(client: TestClient) -> None:
+    """Not a leak: the briefing says it in prose, in the same words.
+
+    Prose a player has to parse by eye is not a security boundary. What the
+    plan must not carry is who was where, and that is a different test.
+    """
+    full = generate(seed=42)
+    state = _start(client)
+    plan = state["plan"]
+
+    assert plan["crime_room"] == full.case.crime_room
+    assert plan["crime_interval"] == full.case.crime_interval
+    # e o briefing ja dizia os dois
+    briefing = state["known"][0]["text"]
+    nome = next(r["name"] for r in plan["rooms"] if r["id"] == plan["crime_room"])
+    hora = next(h["label"] for h in plan["hours"] if h["interval"] == plan["crime_interval"])
+    assert nome in briefing
+    assert hora in briefing

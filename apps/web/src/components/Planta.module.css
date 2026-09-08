@@ -12,24 +12,33 @@
 }
 
 /* Os rótulos são DOM, não texto 3D: a câmera é fixa, então a posição é
-   calculada uma vez, e texto do navegador sai nítido em qualquer zoom. */
-.rotulo,
-.rotuloAceso {
+   calculada uma vez, e texto do navegador sai nítido em qualquer zoom. Ficam
+   na quina da frente do cômodo, fora do ladrilho — por cima dele atravessavam
+   as peças. */
+.rotulo {
   position: absolute;
-  transform: translate(-50%, 0);
+  transform: translate(-50%, -0.2rem);
   pointer-events: none;
   font-size: 0.68rem;
   letter-spacing: 0.04em;
   text-transform: lowercase;
   white-space: nowrap;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  color: var(--paper-faint);
+  text-shadow:
+    0 1px 3px var(--night),
+    0 0 6px var(--night);
 }
 
-.rotulo {
-  color: var(--paper-dim);
-}
-
-.rotuloAceso {
-  composes: rotulo;
+.rotuloChoque {
   color: var(--alarm);
+}
+
+/* Onde o corpo foi encontrado. O briefing já diz; isto só evita reler a frase. */
+.rotuloCrime {
+  color: var(--paper);
+}
+
+.rotuloCrime::after {
+  content: ' ✝';
+  opacity: 0.7;
 }
