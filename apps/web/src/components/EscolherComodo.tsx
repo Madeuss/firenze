@@ -15,6 +15,8 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 
+import { useTextos } from '@/lib/idioma'
+
 import styles from './EscolherComodo.module.css'
 
 export type Comodo = { id: string; name: string }
@@ -39,6 +41,7 @@ export default function EscolherComodo({
   aoEscolher: (comodo: string | null) => void
   aoFechar: () => void
 }) {
+  const t = useTextos()
   const [filtro, setFiltro] = useState('')
   const caixa = useRef<HTMLDivElement>(null)
 
@@ -65,7 +68,7 @@ export default function EscolherComodo({
   }, [comodos, filtro])
 
   return (
-    <div ref={caixa} className={styles.caixa} role="dialog" aria-label="onde ele disse que estava">
+    <div ref={caixa} className={styles.caixa} role="dialog" aria-label={t['comodo.dialogo']}>
       <input
         className={styles.filtro}
         value={filtro}
@@ -81,8 +84,8 @@ export default function EscolherComodo({
             if (primeiro) aoEscolher(primeiro.id)
           }
         }}
-        placeholder="cômodo…"
-        aria-label="filtrar cômodos"
+        placeholder={t['comodo.filtro']}
+        aria-label={t['comodo.filtro.rotulo']}
         autoFocus
       />
 
@@ -98,13 +101,13 @@ export default function EscolherComodo({
           </li>
         ))}
         {achados.length === 0 ? (
-          <li className={styles.nada}>nenhum cômodo com esse nome</li>
+          <li className={styles.nada}>{t['comodo.nenhum']}</li>
         ) : null}
       </ul>
 
       {atual ? (
         <button className={styles.limpar} onClick={() => aoEscolher(null)}>
-          apagar esta anotação
+          {t['comodo.apagar']}
         </button>
       ) : null}
     </div>

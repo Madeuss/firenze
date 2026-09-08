@@ -8,38 +8,37 @@
  * confronto.
  */
 
+import type { Textos } from '@/lib/textos'
+import { useTextos } from '@/lib/idioma'
+
 import styles from './Rules.module.css'
 
-export const PITCH =
-  'Um homem foi encontrado morto na própria casa. Seis pessoas estavam lá, e ' +
-  'todas têm o que esconder — só uma esconde o assassinato.'
-
-export const RULES: readonly string[] = [
-  'Trinta turnos para perguntar. Cada pergunta gasta um.',
-  'Confrontar alguém com uma prova custa dois, e só vale com prova que você tem.',
-  'Pensar não custa nada. Trocar de suspeito e reler o caderno são de graça.',
-  'Uma acusação por partida, e ela não volta atrás.',
-]
+/** As quatro regras, na ordem em que doem. */
+export function regras(t: Textos): readonly string[] {
+  return [t['regras.turnos'], t['regras.confronto'], t['regras.pensar'], t['regras.acusacao']]
+}
 
 export default function Rules({ onClose }: { onClose: () => void }) {
+  const t = useTextos()
+
   return (
     <div
       className={styles.backdrop}
       role="dialog"
       aria-modal="true"
-      aria-label="como se joga"
+      aria-label={t['regras.como']}
     >
       <div className={styles.sheet}>
-        <h2 className={styles.title}>Como se joga</h2>
-        <p className={`prose ${styles.pitch}`}>{PITCH}</p>
+        <h2 className={styles.title}>{t['regras.titulo']}</h2>
+        <p className={`prose ${styles.pitch}`}>{t['regras.pitch']}</p>
         <ul className={styles.rules}>
-          {RULES.map((rule) => (
-            <li key={rule}>{rule}</li>
+          {regras(t).map((regra) => (
+            <li key={regra}>{regra}</li>
           ))}
         </ul>
         <div className={styles.actions}>
           <button className={styles.primary} onClick={onClose} autoFocus>
-            Entendi
+            {t['regras.entendi']}
           </button>
         </div>
       </div>

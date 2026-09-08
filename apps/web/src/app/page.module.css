@@ -63,6 +63,30 @@
   color: var(--paper-faint);
 }
 
+/* O idioma ao lado da semente: as duas coisas que se decidem antes de haver
+   partida, e nenhuma delas muda depois. */
+.idioma {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.idioma span {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  cursor: help;
+}
+
+.idioma select {
+  height: var(--altura-controle);
+  padding: 0 0.6rem;
+  border: 1px solid var(--night-line);
+  border-radius: var(--radius);
+  background: var(--night-soft);
+  color: var(--paper);
+}
+
 .begin {
   display: inline-flex;
   align-items: center;
