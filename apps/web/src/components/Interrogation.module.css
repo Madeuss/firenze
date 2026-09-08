@@ -341,3 +341,32 @@
   background: var(--accent);
   color: var(--night);
 }
+
+/* Os dois modos. O jogo alterna entre falar e pensar, e a interface nomeia
+   isso: perguntar gasta turno, deduzir não. */
+
+.modos {
+  display: flex;
+  gap: 0.25rem;
+  flex: none;
+}
+
+.modo,
+.modoAgora {
+  padding: 0.3rem 0.7rem;
+  border-radius: var(--radius);
+  font-size: 0.8rem;
+  color: var(--paper-faint);
+  white-space: nowrap;
+}
+
+.modo:hover {
+  color: var(--paper);
+}
+
+.modoAgora {
+  composes: modo;
+  color: var(--paper);
+  background: var(--night-soft);
+  box-shadow: inset 0 -2px 0 var(--accent);
+}

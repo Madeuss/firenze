@@ -1,0 +1,35 @@
+.palco {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--night-line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.palco canvas {
+  display: block;
+}
+
+/* Os rótulos são DOM, não texto 3D: a câmera é fixa, então a posição é
+   calculada uma vez, e texto do navegador sai nítido em qualquer zoom. */
+.rotulo,
+.rotuloAceso {
+  position: absolute;
+  transform: translate(-50%, 0);
+  pointer-events: none;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.rotulo {
+  color: var(--paper-dim);
+}
+
+.rotuloAceso {
+  composes: rotulo;
+  color: var(--alarm);
+}

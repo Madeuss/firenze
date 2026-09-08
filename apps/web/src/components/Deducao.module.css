@@ -1,0 +1,125 @@
+.mesa {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1.5rem;
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+.coluna {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+/* a linha do tempo */
+
+.relogio {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.relogio input[type='range'] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.horas {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.25rem;
+}
+
+.hora,
+.horaAgora {
+  padding: 0.2rem 0.4rem;
+  border-radius: var(--radius);
+  font-size: 0.72rem;
+  color: var(--paper-faint);
+}
+
+.hora:hover {
+  color: var(--paper);
+}
+
+.horaAgora {
+  composes: hora;
+  color: var(--night);
+  background: var(--accent);
+}
+
+/* a grade */
+
+.instrucao {
+  margin: 0;
+  min-height: 2.4rem;
+  font-size: 0.85rem;
+  color: var(--paper-dim);
+}
+
+.grade {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.78rem;
+}
+
+.grade th {
+  font-weight: 400;
+  color: var(--paper-faint);
+  text-align: left;
+  padding: 0.3rem 0.4rem;
+  white-space: nowrap;
+}
+
+.grade thead th {
+  text-align: center;
+  font-size: 0.7rem;
+}
+
+.grade tbody th {
+  max-width: 9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.grade td {
+  padding: 1px;
+}
+
+.celula {
+  width: 100%;
+  min-width: 2.6rem;
+  padding: 0.35rem 0.2rem;
+  border: 1px solid var(--night-line);
+  border-radius: var(--radius);
+  color: var(--paper-dim);
+  font-size: 0.72rem;
+  text-align: center;
+}
+
+.celula:hover {
+  border-color: var(--accent-dim);
+  color: var(--paper);
+}
+
+.celulaEscolhida {
+  border-color: var(--accent);
+  color: var(--night);
+  background: var(--accent);
+}
+
+/* Choque não é erro: é o achado. Por isso acende em vez de ser impedido. */
+.celulaChoque {
+  border-color: var(--alarm);
+  color: var(--alarm);
+}
+
+@media (max-width: 60rem) {
+  .mesa {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
