@@ -30,6 +30,7 @@ Regras que operam sobre estas entidades: [`02-regras-de-negocio.md`](02-regras-d
 | **Quebra de álibi** | `alibi_broken` | Evento de jogo em que um confronto invalida declaração anterior do NPC. É progresso, não bug. |
 | **Acusação** | `Accusation` | Escolha final do jogador: um culpado e as provas de apoio. Uma por partida, irreversível. |
 | **Veredito** | `Verdict` | Resultado calculado por código comparando a `Acusação` com a `Solução`. O LLM só narra o desfecho já decidido. |
+| **Revisão** | `Review` | Registro completo de uma partida terminada: turnos em ordem, como cada postura andou, quando cada prova entrou na mão do jogador e o veredito recalculado. Só existe depois da acusação (RN-035). |
 | **Canary** | `canary` | Token único inserido em dado secreto, usado para detectar vazamento. Presença na saída é falha crítica. |
 | **Solver** | `solve()` | Verificador automático que prova que o caso é dedutível a partir dos fatos públicos. Portão de publicação do caso. |
 | **Agent card** | — | Ficha versionada de um NPC em `docs/agents/<id>.md`: personalidade, objetivo oculto, fatos conhecidos, condição de quebra. |

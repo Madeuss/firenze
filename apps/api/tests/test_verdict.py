@@ -18,7 +18,9 @@ from firenze.verdict import (
     Accusation,
     AlreadyAccused,
     NotASuspect,
+    NotDecided,
     judge,
+    verdict_of,
 )
 
 
@@ -204,3 +206,28 @@ def test_nothing_in_this_module_can_reach_a_model() -> None:
 
     assert not re.search(r"^\s*(?:import|from)\s+firenze\.model", text, re.MULTILINE)
     assert "StructuredModel" not in text
+
+
+def test_a_decided_match_can_be_judged_again_and_gives_the_same_answer() -> None:
+    """What makes a review possible without storing a second copy of the score."""
+    match = _match()
+    accusation = Accusation(
+        culprit=match.full_case.solution.culprit,
+        motive_key=match.full_case.solution.motive_key,
+    )
+    ending = judge(match, accusation)
+
+    decided = match.model_copy(
+        update={
+            "accused_culprit": accusation.culprit,
+            "accused_motive_key": accusation.motive_key,
+            "accused_evidence": accusation.evidence,
+        }
+    )
+
+    assert verdict_of(decided) == ending
+
+
+def test_a_match_still_being_played_has_no_verdict_to_recompute() -> None:
+    with pytest.raises(NotDecided):
+        verdict_of(_match())

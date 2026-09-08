@@ -354,6 +354,38 @@ comita. Foi preciso derrubar a tabela órfã à mão para exercitar a migration.
 se falam. Vale rodar os testes contra um banco descartável, ou criar o schema
 por migration também no teste — senão a migration só é testada em produção.
 
+Dois dias depois a mesma coisa mordeu de outro jeito: coluna nova em tabela que
+já existia. `create_all` cria tabela faltando, mas não altera tabela existente —
+então o teste passou a falhar com *column does not exist* onde antes tinha
+criado a tabela sozinho. O sintoma muda, a causa é a mesma ([#43](https://github.com/Madeuss/firenze/issues/43)).
+
+### 2026-09-07 — Derivar o veredito exigiu guardar a acusação inteira
+
+A revisão recalcula a nota em vez de ler cópia guardada, pelo mesmo motivo que
+`Match.evidence` é derivada: cópia é lugar onde a verdade diverge. Só que a
+partida guardava culpado e provas e **não** guardava o motivo acusado — a
+revisão pontuaria como "não reivindicado" um motivo que o jogador acertou, e
+mostraria vinte pontos a menos do que ele viu no fim.
+
+**Por que importa:** derivar em vez de guardar não é de graça. O preço é que
+toda entrada do cálculo precisa estar no registro, e a que faltava só apareceu
+quando alguém tentou refazer a conta. O teste que segura isso compara o
+`Outcome` do fim com o da revisão.
+
+### 2026-09-07 — A revisão pode mostrar o que o turno esconde, e só por ser o fim
+
+`mentiu`, `fato_referenciado` e o motivo da rejeição são contabilidade que a
+resposta de turno nunca devolve (RN-022) — devolver seria dar um detector de
+mentiras ao jogador. Na revisão eles aparecem, pelo mesmo argumento que deixa o
+`Veredito` carregar a solução: a partida acabou.
+
+Isso vira regra em vez de bom senso porque o payload é o mesmo; o que muda é
+*quando*. Partida em andamento responde `409` (RN-035).
+
+**Por que importa:** duas telas quase iguais, uma segura e outra não, separadas
+só pelo estado da partida. Se a diferença ficasse na cabeça de quem escreve o
+front, um dia a revisão apareceria num botão de "ver detalhes" no meio do jogo.
+
 ---
 
 ## Idioma

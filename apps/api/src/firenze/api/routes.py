@@ -1,8 +1,9 @@
 """The three endpoints a single-NPC interrogation needs.
 
-    POST /matches              start one
-    GET  /matches/{id}         the notebook
-    POST /matches/{id}/turns   ask a question
+    POST /matches               start one
+    GET  /matches/{id}          the notebook
+    POST /matches/{id}/turns    ask a question
+    GET  /matches/{id}/review   the whole record, once it is over
 
 Every response is built from `MatchState` and friends rather than from the
 domain objects, so the solution and the per-turn bookkeeping cannot reach a
@@ -28,18 +29,22 @@ from firenze.api.schemas import (
     CastMember,
     Confrontation,
     DraftAccusation,
+    HeldEvidence,
     KnownFact,
     MatchState,
     NewAccusation,
     NewMatch,
     Outcome,
     Question,
+    Review,
+    ReviewedTurn,
     Said,
+    StanceMove,
 )
 from firenze.config import settings
-from firenze.domain import Match, Role
+from firenze.domain import Match, Role, Stance
 from firenze.generation import UnsolvableCase, generate
-from firenze.i18n import UnknownLocale, load
+from firenze.i18n import Catalog, UnknownLocale, load
 from firenze.interrogation import ask, confront
 from firenze.interrogation.turn import MatchIsOver, NoTurnsLeft, UnknownEvidence
 from firenze.model import ModelUnavailable, StructuredModel, resolve
@@ -52,7 +57,14 @@ from firenze.storage import (
     start_match,
     transaction,
 )
-from firenze.verdict import Accusation, AlreadyAccused, NotASuspect, judge
+from firenze.verdict import (
+    Accusation,
+    AlreadyAccused,
+    NotASuspect,
+    Verdict,
+    judge,
+    verdict_of,
+)
 
 log = logging.getLogger(__name__)
 router = APIRouter(prefix="/matches", tags=["match"])
@@ -156,6 +168,127 @@ def read(match_id: uuid.UUID, db: Db) -> MatchState:
         raise HTTPException(status.HTTP_404_NOT_FOUND, str(missing)) from missing
 
 
+def _outcome(
+    verdict: Verdict,
+    accused: str,
+    catalog: Catalog,
+    turns_left: int,
+    *,
+    epilogue: str | None = None,
+) -> Outcome:
+    """The scoreboard, built in one place so a review cannot disagree with the
+    ending the player was shown."""
+    return Outcome(
+        correct=verdict.correct,
+        motive_correct=verdict.motive_correct,
+        accused=accused,
+        culprit=verdict.culprit,
+        means=catalog.means(verdict.means_key),
+        motive=catalog.motive(verdict.motive_key),
+        score=verdict.score,
+        culprit_points=verdict.culprit_points,
+        motive_points=verdict.motive_points,
+        evidence_points=verdict.evidence_points,
+        speed_points=verdict.speed_points,
+        evidence_expected=verdict.evidence_expected,
+        evidence_hit=verdict.evidence_hit,
+        turns_left=turns_left,
+        epilogue=epilogue,
+    )
+
+
+def _review(match_id: uuid.UUID, match: Match) -> Review:
+    """Build the review of a decided match. Reads the record, decides nothing."""
+    case = match.case
+    catalog = load(match.locale)
+
+    record = tuple(
+        ReviewedTurn(
+            turn=turn.turn,
+            cost=turn.cost,
+            character=turn.character,
+            character_name=case.name_of(turn.character),
+            question=turn.question,
+            intent=turn.intent.value,
+            answered=turn.answered,
+            line=turn.line or None,
+            stance=turn.stance,
+            rejected_by=turn.rejected_by,
+            lied=turn.lied,
+            fact_referenced=turn.fact_referenced,
+            clue_revealed=turn.clue_revealed,
+        )
+        for turn in match.turns
+    )
+
+    # Walked rather than stored. A rejected turn records the stance the suspect
+    # was already in, so it can never invent a move that did not happen.
+    standing: dict[str, Stance] = {}
+    trail: list[StanceMove] = []
+    for turn in match.turns:
+        before = standing.get(turn.character, Stance.cooperative)
+        if turn.stance is not before:
+            trail.append(
+                StanceMove(
+                    turn=turn.turn,
+                    character=turn.character,
+                    character_name=case.name_of(turn.character),
+                    was=before,
+                    became=turn.stance,
+                )
+            )
+        standing[turn.character] = turn.stance
+
+    given = {t.clue_revealed: t for t in match.statements if t.clue_revealed}
+    held = tuple(
+        HeldEvidence(
+            id=fact.id,
+            text=catalog.fact(case, fact),
+            turn=given[fact.id].turn if fact.id in given else None,
+            given_by=given[fact.id].character if fact.id in given else None,
+            given_by_name=(case.name_of(given[fact.id].character) if fact.id in given else None),
+        )
+        for fact in case.facts
+        if fact.id in match.evidence
+    )
+
+    verdict = verdict_of(match)
+    budget = sum(turn.cost for turn in match.turns) + match.turns_left
+    return Review(
+        id=match_id,
+        seed=case.seed,
+        locale=match.locale,
+        budget=budget,
+        turns_left=match.turns_left,
+        turns_spent=budget - match.turns_left,
+        record=record,
+        stance_trail=tuple(trail),
+        evidence_trail=tuple(sorted(held, key=lambda e: (e.turn is not None, e.turn or 0, e.id))),
+        outcome=_outcome(verdict, match.accused_culprit or "", catalog, match.turns_left),
+    )
+
+
+@router.get("/{match_id}/review", summary="The whole record of a finished match")
+def review(match_id: uuid.UUID, db: Db) -> Review:
+    """Every turn in order, the stances, the evidence, and the verdict.
+
+    Only once the match is over, and that is the whole reason it may show the
+    bookkeeping — `lied`, which fact an answer leaned on, what a rejected turn
+    was rejected for. Offered mid-match the same payload would be a lie
+    detector and end the game on turn one, so it is a 409 until there is
+    nothing left to spoil (RN-035).
+    """
+    try:
+        match = load_match(db, match_id)
+    except NotFound as missing:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(missing)) from missing
+
+    if not match.is_over:
+        raise HTTPException(status.HTTP_409_CONFLICT, "this match is still being played")
+
+    return _review(match_id, match)
+
+
 @router.post("/{match_id}/accusation/draft", summary="Read an accusation out of prose")
 def draft_accusation(
     match_id: uuid.UUID, body: AccusationText, db: Db, model: Model
@@ -219,7 +352,11 @@ def accuse(match_id: uuid.UUID, body: NewAccusation, db: Db) -> Outcome:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(unknown)) from unknown
 
     decided_match = match.model_copy(
-        update={"accused_culprit": body.culprit, "accused_evidence": tuple(body.evidence)}
+        update={
+            "accused_culprit": body.culprit,
+            "accused_motive_key": body.motive_key,
+            "accused_evidence": tuple(body.evidence),
+        }
     )
     save_match(db, match_id, decided_match)
 
@@ -238,23 +375,7 @@ def accuse(match_id: uuid.UUID, body: NewAccusation, db: Db) -> Outcome:
     except HTTPException:
         log.info("no model configured; the match ends without an epilogue")
 
-    return Outcome(
-        correct=verdict.correct,
-        motive_correct=verdict.motive_correct,
-        accused=body.culprit,
-        culprit=verdict.culprit,
-        means=catalog.means(verdict.means_key),
-        motive=catalog.motive(verdict.motive_key),
-        score=verdict.score,
-        culprit_points=verdict.culprit_points,
-        motive_points=verdict.motive_points,
-        evidence_points=verdict.evidence_points,
-        speed_points=verdict.speed_points,
-        evidence_expected=verdict.evidence_expected,
-        evidence_hit=verdict.evidence_hit,
-        turns_left=match.turns_left,
-        epilogue=epilogue,
-    )
+    return _outcome(verdict, body.culprit, catalog, match.turns_left, epilogue=epilogue)
 
 
 @router.post("/{match_id}/confrontations", summary="Show a suspect a piece of evidence")

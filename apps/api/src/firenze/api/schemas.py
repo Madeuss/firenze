@@ -173,3 +173,88 @@ class Answer(BaseModel):
         description="The evidence caught them out. A game event, not a fault (RN-021).",
     )
     turns_left: int
+
+
+class ReviewedTurn(BaseModel):
+    """One turn as the review shows it: what was asked, and what became of it.
+
+    This carries the bookkeeping `Said` withholds — `lied`, `fact_referenced`,
+    `clue_revealed`. It is safe here and nowhere else, for the same reason
+    `Outcome` may carry the solution: the match is over. A review of a match
+    still being played would be a lie detector, so there is no such thing
+    (RN-035).
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    turn: int
+    cost: int = Field(description="Turns this one cost. A confrontation costs two (RN-030).")
+    character: str
+    character_name: str
+    question: str
+    intent: str = Field(description="How it was classified before anybody answered (RN-040).")
+    answered: bool
+    line: str | None = Field(default=None, description="What they said. Absent when nothing was.")
+    stance: Stance = Field(description="The stance the turn left them in.")
+    rejected_by: str | None = Field(
+        default=None,
+        description="Which check discarded the reply: `canary`, `scope`, `contradiction`, "
+        "`refusal`. A name, never the offending text.",
+    )
+    lied: bool = False
+    fact_referenced: str | None = None
+    clue_revealed: str | None = Field(
+        default=None, description="The fact this answer gave away, if it gave one away."
+    )
+
+
+class StanceMove(BaseModel):
+    """A suspect changing footing, and the turn that did it."""
+
+    model_config = ConfigDict(frozen=True)
+
+    turn: int
+    character: str
+    character_name: str
+    was: Stance
+    became: Stance
+
+
+class HeldEvidence(BaseModel):
+    """A fact the player was holding by the end, and how it got there."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    text: str
+    turn: int | None = Field(
+        default=None, description="Absent when it was public from the briefing."
+    )
+    given_by: str | None = None
+    given_by_name: str | None = None
+
+
+class Review(BaseModel):
+    """A finished match, in order, with the budget reconciled.
+
+    `budget`, `turns_left` and the costs in `record` add up, by construction:
+    every turn that was charged is a row here, including the ones that produced
+    nothing.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    id: uuid.UUID
+    seed: int
+    locale: str
+    budget: int
+    turns_left: int
+    turns_spent: int
+    record: tuple[ReviewedTurn, ...]
+    stance_trail: tuple[StanceMove, ...]
+    evidence_trail: tuple[HeldEvidence, ...]
+    outcome: Outcome = Field(
+        description="Recomputed from the record, not read from a stored copy (RN-036). "
+        "The epilogue is not part of it: prose was never persisted, and its absence "
+        "changes nothing about the score."
+    )

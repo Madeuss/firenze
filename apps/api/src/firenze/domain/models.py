@@ -219,13 +219,12 @@ class Turn(BaseModel):
     clue_revealed: str | None = None
     """A fact this answer gave away. How the player comes to hold evidence."""
     intent: Intent = Intent.question
+    """How the question was labelled. An `injection` turn is a canned
+    deflection: no model was asked, and the record says so."""
 
     @property
     def answered(self) -> bool:
         return bool(self.line) and self.rejected_by is None
-
-    """How the question was labelled. An `injection` statement is a canned
-    deflection: no model was asked, and the record says so."""
 
 
 class Match(BaseModel):
@@ -247,6 +246,10 @@ class Match(BaseModel):
     """Set once, never unset. RN-031 makes an accusation irreversible, and the
     cheapest way to keep a rule like that is to have nowhere to put a second
     one."""
+    accused_motive_key: str | None = None
+    """Why the player said they did it. Kept because the verdict is derived
+    rather than stored: without it a review could not reproduce the score it
+    already showed."""
     accused_evidence: tuple[str, ...] = ()
 
     @property
