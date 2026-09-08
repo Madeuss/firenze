@@ -7,92 +7,103 @@
  * não o desenho dela. Cômodo sem entrada aqui simplesmente aparece vazio, que
  * é o comportamento certo para um cenário que ainda não foi mobiliado.
  *
+ * A tabela diz **o que** o móvel é; quem sabe como ele se parece é o
+ * componente que desenha. A primeira versão guardava caixas com medidas, e o
+ * resultado foi um cômodo cheio de blocos que não pareciam nada — mesa é tampo
+ * com quatro pernas, e isso é conhecimento de desenho, não de dados.
+ *
  * As posições são frações do lado do cômodo, então mudar a escala da planta
  * não desarruma nada.
  */
 
+export type Especie =
+  | 'mesa'
+  | 'cadeira'
+  | 'estante'
+  | 'poltrona'
+  | 'barril'
+  | 'caixote'
+  | 'vaso'
+  | 'bancada'
+  | 'fogao'
+  | 'escrivaninha'
+
 export type Movel = {
-  forma: 'caixa' | 'cilindro'
+  especie: Especie
   /** Fração do lado do cômodo, a partir do centro. */
   em: [number, number]
-  /** Largura, altura e fundo, também em frações do lado. */
-  tamanho: [number, number, number]
-  /** Quanto mais alto, mais claro. Madeira velha à luz de vela. */
-  tom: number
+  /** Quartos de volta. Uma cadeira encostada na mesa olha para ela. */
+  giro?: number
+  /** Multiplica o tamanho padrão da espécie. */
+  escala?: number
 }
 
-// Larga o bastante para ler como estante, estreita o bastante para caber entre
-// as paredes: o limite util e 0.436 do lado, descontada a espessura delas.
-const ESTANTE = (x: number, z: number): Movel => ({
-  forma: 'caixa',
-  em: [x, z],
-  tamanho: [0.34, 0.5, 0.12],
-  tom: 0.5,
-})
-
-const BARRIL = (x: number, z: number): Movel => ({
-  forma: 'cilindro',
-  em: [x, z],
-  tamanho: [0.15, 0.26, 0.15],
-  tom: 0.42,
-})
-
-const CAIXOTE = (x: number, z: number, alto: number): Movel => ({
-  forma: 'caixa',
-  em: [x, z],
-  tamanho: [0.22, alto, 0.22],
-  tom: 0.38,
-})
-
 /**
- * Móveis por cômodo. Dois ou três bastam: o objetivo é a silhueta ser
- * reconhecível antes de alguém ler o rótulo, não decorar a casa.
+ * Quanto cada espécie ocupa no chão e quanto sobe, em frações do lado.
+ *
+ * Serve para o desenho e para a conferência: nada pode atravessar parede, e o
+ * limite útil é metade do lado menos a espessura dela.
  */
+export const VULTO: Record<Especie, { largura: number; altura: number; fundo: number }> = {
+  mesa: { largura: 0.62, altura: 0.17, fundo: 0.3 },
+  cadeira: { largura: 0.16, altura: 0.3, fundo: 0.16 },
+  estante: { largura: 0.34, altura: 0.5, fundo: 0.12 },
+  poltrona: { largura: 0.3, altura: 0.22, fundo: 0.24 },
+  barril: { largura: 0.17, altura: 0.24, fundo: 0.17 },
+  caixote: { largura: 0.2, altura: 0.2, fundo: 0.2 },
+  vaso: { largura: 0.16, altura: 0.3, fundo: 0.16 },
+  bancada: { largura: 0.55, altura: 0.2, fundo: 0.18 },
+  fogao: { largura: 0.24, altura: 0.26, fundo: 0.22 },
+  escrivaninha: { largura: 0.44, altura: 0.18, fundo: 0.24 },
+}
+
 export const MOBILIA: Record<string, Movel[]> = {
   library: [
-    ESTANTE(-0.2, -0.35),
-    ESTANTE(0.2, -0.35),
-    { forma: 'caixa', em: [0, 0.15], tamanho: [0.34, 0.13, 0.34], tom: 0.46 },
+    { especie: 'estante', em: [-0.2, -0.34] },
+    { especie: 'estante', em: [0.2, -0.34] },
+    { especie: 'poltrona', em: [-0.16, 0.2], giro: 2 },
+    { especie: 'mesa', em: [0.18, 0.22], escala: 0.5 },
   ],
   parlour: [
-    { forma: 'caixa', em: [-0.02, -0.3], tamanho: [0.6, 0.17, 0.2], tom: 0.5 },
-    { forma: 'caixa', em: [0, 0.08], tamanho: [0.3, 0.08, 0.18], tom: 0.44 },
-    { forma: 'cilindro', em: [0.34, 0.3], tamanho: [0.09, 0.3, 0.09], tom: 0.6 },
+    { especie: 'poltrona', em: [-0.22, -0.24] },
+    { especie: 'poltrona', em: [0.22, -0.24] },
+    { especie: 'mesa', em: [0, 0.06], escala: 0.55 },
+    { especie: 'vaso', em: [0.28, 0.3] },
   ],
   dining_room: [
-    { forma: 'caixa', em: [0, 0], tamanho: [0.66, 0.14, 0.26], tom: 0.5 },
-    CAIXOTE(-0.24, -0.28, 0.16),
-    CAIXOTE(0.24, -0.28, 0.16),
-    CAIXOTE(-0.24, 0.28, 0.16),
-    CAIXOTE(0.24, 0.28, 0.16),
+    { especie: 'mesa', em: [0, 0] },
+    { especie: 'cadeira', em: [-0.2, -0.28] },
+    { especie: 'cadeira', em: [0.2, -0.28] },
+    { especie: 'cadeira', em: [-0.2, 0.28], giro: 2 },
+    { especie: 'cadeira', em: [0.2, 0.28], giro: 2 },
   ],
   kitchen: [
-    { forma: 'caixa', em: [0, -0.34], tamanho: [0.7, 0.2, 0.18], tom: 0.46 },
-    { forma: 'caixa', em: [-0.3, 0.22], tamanho: [0.24, 0.26, 0.24], tom: 0.36 },
-    { forma: 'caixa', em: [0.2, 0.24], tamanho: [0.38, 0.12, 0.24], tom: 0.5 },
+    { especie: 'bancada', em: [0, -0.3] },
+    { especie: 'fogao', em: [-0.28, 0.24] },
+    { especie: 'mesa', em: [0.16, 0.24], escala: 0.6 },
   ],
   cellar: [
-    BARRIL(-0.3, -0.28),
-    BARRIL(-0.3, 0.04),
-    BARRIL(0.02, -0.28),
-    ESTANTE(0.24, 0.32),
+    { especie: 'barril', em: [-0.28, -0.26] },
+    { especie: 'barril', em: [-0.28, 0.06] },
+    { especie: 'barril', em: [0.02, -0.28] },
+    { especie: 'estante', em: [0.22, 0.3], giro: 2 },
   ],
   study: [
-    { forma: 'caixa', em: [0, -0.16], tamanho: [0.5, 0.16, 0.26], tom: 0.5 },
-    CAIXOTE(0, 0.18, 0.18),
-    ESTANTE(-0.22, -0.35),
+    { especie: 'escrivaninha', em: [0, -0.14] },
+    { especie: 'cadeira', em: [0, 0.18], giro: 2 },
+    { especie: 'estante', em: [-0.22, -0.34] },
   ],
   conservatory: [
-    { forma: 'cilindro', em: [-0.32, -0.3], tamanho: [0.13, 0.2, 0.13], tom: 0.44 },
-    { forma: 'cilindro', em: [0.3, -0.3], tamanho: [0.13, 0.2, 0.13], tom: 0.44 },
-    { forma: 'cilindro', em: [-0.3, 0.3], tamanho: [0.13, 0.2, 0.13], tom: 0.44 },
-    { forma: 'caixa', em: [0.1, 0.24], tamanho: [0.4, 0.09, 0.15], tom: 0.54 },
+    { especie: 'vaso', em: [-0.3, -0.28] },
+    { especie: 'vaso', em: [0.3, -0.28] },
+    { especie: 'vaso', em: [-0.28, 0.28] },
+    { especie: 'poltrona', em: [0.14, 0.24], giro: 2 },
   ],
   basement: [
-    CAIXOTE(-0.26, -0.24, 0.3),
-    CAIXOTE(-0.26, -0.24, 0.12),
-    CAIXOTE(0.24, 0.1, 0.24),
-    CAIXOTE(-0.02, 0.32, 0.18),
+    { especie: 'caixote', em: [-0.26, -0.24] },
+    { especie: 'caixote', em: [-0.26, -0.24], escala: 0.6 },
+    { especie: 'caixote', em: [0.24, 0.08] },
+    { especie: 'caixote', em: [-0.02, 0.3], escala: 0.8 },
   ],
 }
 

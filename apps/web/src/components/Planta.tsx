@@ -18,13 +18,16 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 
 import type { FloorPlan } from '@/lib/api'
-import { degrauDe, moveisDe, type Movel } from '@/lib/mobilia'
+import { degrauDe } from '@/lib/mobilia'
 import { retratoDe } from '@/lib/retratos'
 
+import Moveis from './Moveis'
 import styles from './Planta.module.css'
 
 const NOITE = '#14161f'
 const PISO = '#262a38'
+// Chega menos luz numa adega, e a cor diz isso antes da geometria.
+const PISO_FUNDO = '#1b1e29'
 const PISO_ALVO = '#3b4257'
 const PAREDE = '#1c2030'
 const PAREDE_ALTA = '#39405a'
@@ -37,7 +40,6 @@ const COLUNAS = 4
 const PAREDE_ALTURA = 0.34
 const PAREDE_ESPESSURA = 0.14
 const DEGRAU_ALTURA = 0.5
-const MADEIRA = new THREE.Color('#6b5b46')
 
 export type Peca = {
   suspeito: string
@@ -73,43 +75,6 @@ function arrumar(quantas: number): { grade: number; escala: number } {
   return { grade, escala: Math.min(1, 2.1 / grade) }
 }
 
-/** Um móvel. Tudo primitiva: caixa ou cilindro, e a cor sai do tom. */
-function Moveis({ comodo }: { comodo: string }) {
-  const moveis = useMemo(() => moveisDe(comodo), [comodo])
-
-  return (
-    <>
-      {moveis.map((movel: Movel, i) => {
-        const [largura, altura, fundo] = movel.tamanho.map((v) => v * LADO) as [
-          number,
-          number,
-          number,
-        ]
-        const cor = MADEIRA.clone().multiplyScalar(0.5 + movel.tom * 0.9)
-        return (
-          <mesh
-            key={i}
-            position={[
-              movel.em[0] * LADO,
-              0.11 + altura / 2,
-              movel.em[1] * LADO,
-            ]}
-            castShadow
-            receiveShadow
-          >
-            {movel.forma === 'caixa' ? (
-              <boxGeometry args={[largura, altura, fundo]} />
-            ) : (
-              <cylinderGeometry args={[largura / 2, largura / 2, altura, 14]} />
-            )}
-            <meshLambertMaterial color={cor} />
-          </mesh>
-        )
-      })}
-    </>
-  )
-}
-
 function Comodo({
   comodo,
   posicao,
@@ -129,6 +94,9 @@ function Comodo({
 }) {
   const [sobre, setSobre] = useState(false)
   const meio = LADO / 2 - PAREDE_ESPESSURA / 2
+  const degrau = degrauDe(comodo)
+  const afundado = degrau < 0
+  const fundura = Math.abs(degrau) * DEGRAU_ALTURA
 
   // O choque tinge a parede, não o chão inteiro: preencher o cômodo de laranja
   // gritava mais que o achado merecia e apagava tudo que estava em cima dele.
@@ -144,9 +112,15 @@ function Comodo({
       onPointerOver={() => setSobre(true)}
       onPointerOut={() => setSobre(false)}
     >
-      <mesh receiveShadow>
-        <boxGeometry args={[LADO, 0.22, LADO]} />
-        <meshLambertMaterial color={aceso || sobre ? PISO_ALVO : PISO} />
+      {/* Em isométrico, descer no eixo Y é indistinguível de andar para o sul
+          na grade — foi por isso que o degrau não aparecia. Quem diz
+          "profundidade" é a face lateral: o cômodo afundado ganha uma laje que
+          sobe até o nível do térreo, e é essa parede alta que se vê. */}
+      <mesh position={[0, -fundura / 2, 0]} receiveShadow castShadow>
+        <boxGeometry args={[LADO, 0.22 + fundura, LADO]} />
+        <meshLambertMaterial
+          color={aceso || sobre ? PISO_ALVO : afundado ? PISO_FUNDO : PISO}
+        />
       </mesh>
 
       {/* Quatro paredes baixas. É o que separa "azulejo flutuando" de cômodo. */}
@@ -164,7 +138,7 @@ function Comodo({
         </mesh>
       ))}
 
-      <Moveis comodo={comodo} />
+      <Moveis comodo={comodo} lado={LADO} />
 
       {/* Onde o corpo foi encontrado. O briefing já diz em prosa; aqui é a
           mesma coisa dita de um jeito que não exige reler a frase. */}
