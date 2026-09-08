@@ -45,6 +45,7 @@ Next.js (front) + FastAPI/LangGraph (core de IA) + Postgres com pgvector.
 
 ## Onde procurar
 
+O que o jogador vê e clica: `docs/03-casos-de-uso.md`
 Domínio e glossário: `docs/01-dominio.md`
 Regras de negócio: `docs/02-regras-de-negocio.md`
 Ameaças e o teste que prova cada mitigação: `docs/05-threat-model.md`
