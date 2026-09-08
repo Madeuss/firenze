@@ -98,6 +98,36 @@ jobs:
           yarn contracts
           git diff --exit-code src/lib/contracts.ts             || { echo "::error::contracts.ts desatualizado — rode 'make contracts' e commite"; exit 1; }
 
+  compose:
+    runs-on: ubuntu-latest
+    # A pilha do compose passou meses respondendo /health e morrendo no
+    # primeiro turno: nome de modulo antigo no CMD, prompts fora da imagem,
+    # nenhum provedor de modelo, nenhuma migration. Nada disso aparece em
+    # teste unitario, porque nada disso e codigo — e a unica forma de nao
+    # apodrecer de novo e jogar um turno de verdade a cada PR.
+    steps:
+      - uses: actions/checkout@v4
+      - name: sobe a pilha como um clone novo
+        run: docker compose -f infra/compose/docker-compose.yml up -d --build
+      - name: espera a API responder
+        run: |
+          for _ in $(seq 1 60); do
+            curl -sf localhost:8000/health && exit 0
+            sleep 2
+          done
+          docker compose -f infra/compose/docker-compose.yml logs api
+          echo "::error::a API nao subiu"; exit 1
+      - name: uma partida inteira, sem chave nenhuma
+        run: |
+          set -euo pipefail
+          id=$(curl -sf -X POST localhost:8000/matches                  -H 'content-type: application/json'                  -d '{"seed":42,"locale":"pt-BR"}' | jq -r .id)
+          turn=$(curl -sf -X POST "localhost:8000/matches/$id/turns"                    -H 'content-type: application/json'                    -d '{"suspect":"sus-1","question":"onde estava as 22h?"}')
+          echo "$turn" | jq -e '.answered == true' > /dev/null             || { echo "::error::o suspeito nao respondeu: $turn"; exit 1; }
+          curl -sf -X POST "localhost:8000/matches/$id/accusation"             -H 'content-type: application/json' -d '{"culprit":"sus-1"}'             | jq -e 'has("score")' > /dev/null
+      - name: logs quando quebra
+        if: failure()
+        run: docker compose -f infra/compose/docker-compose.yml logs
+
   pr-title:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest

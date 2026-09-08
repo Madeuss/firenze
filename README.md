@@ -145,6 +145,11 @@ make dev                          # Postgres 16 + pgvector, Redis, the API
 curl localhost:8000/health
 ```
 
+`make dev` is meant to be enough: the container migrates on boot and defaults
+to the fake model, so a fresh clone gets a stack you can play against without a
+key. CI plays a turn through it on every pull request, because none of that is
+code and none of it shows up in a unit test.
+
 Or over HTTP, with the stack up:
 
 ```console
