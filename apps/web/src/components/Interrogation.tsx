@@ -14,6 +14,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ask, confront, readMatch, type MatchState } from '@/lib/api'
 
 import Accusation from './Accusation'
+import Deducao from './Deducao'
 import Retrato from './Retrato'
 import Rules from './Rules'
 import styles from './Interrogation.module.css'
@@ -33,6 +34,8 @@ export default function Interrogation({ matchId }: { matchId: string }) {
   const [pending, setPending] = useState(false)
   const [failure, setFailure] = useState<string | null>(null)
   const [showing, setShowing] = useState<'rules' | 'accusation' | null>(null)
+  // Perguntar custa turno; pensar nao custa nada. A interface nomeia isso.
+  const [modo, setModo] = useState<'interrogatorio' | 'deducao'>('interrogatorio')
   const foot = useRef<HTMLDivElement>(null)
   // `pending` e estado, e estado nao muda a tempo: dois Enter seguidos passam
   // os dois pela guarda antes do primeiro render. Este trava na hora.
@@ -141,6 +144,21 @@ export default function Interrogation({ matchId }: { matchId: string }) {
         <span className={styles.turns}>
           <strong>{match.turns_left}</strong> turnos
         </span>
+        <div className={styles.modos}>
+          <button
+            className={modo === 'interrogatorio' ? styles.modoAgora : styles.modo}
+            onClick={() => setModo('interrogatorio')}
+          >
+            Interrogatório
+          </button>
+          <button
+            className={modo === 'deducao' ? styles.modoAgora : styles.modo}
+            onClick={() => setModo('deducao')}
+            title="não gasta turno"
+          >
+            Dedução
+          </button>
+        </div>
         {/* Sempre visível: acusar no turno 1 é jogada legítima, e vale mais
             pontos de rapidez se der certo (RN-033). */}
         <button
@@ -151,6 +169,9 @@ export default function Interrogation({ matchId }: { matchId: string }) {
         </button>
       </header>
 
+      {modo === 'deducao' ? (
+        <Deducao match={match} />
+      ) : (
       <div className={styles.body}>
         <nav className={styles.cast} aria-label="elenco">
           {suspects.map((person) => (
@@ -281,6 +302,7 @@ export default function Interrogation({ matchId }: { matchId: string }) {
           </div>
         </section>
       </div>
+      )}
 
       {showing === 'rules' ? <Rules onClose={() => setShowing(null)} /> : null}
       {showing === 'accusation' ? (
