@@ -400,3 +400,49 @@ def test_an_answer_mid_match_still_hides_what_it_claimed(client: TestClient) -> 
 
     assert "claimed_room" not in answer
     assert "claimed_interval" not in answer
+
+
+# --- the notebook is the only record the front needs ----------------------
+
+
+def test_the_notebook_carries_the_turns_that_produced_nothing(client: TestClient) -> None:
+    """A front that had to remember rejections would be a second source.
+
+    The first version of the web client kept its own copy of each answer next
+    to the notebook, and every answered turn rendered twice. The fix is not to
+    dedupe on the client: it is for the notebook to be the whole record, the
+    way `Match.turns` already is (RN-030).
+    """
+    case = generate(seed=42).case
+    canary = next(f.canary for f in case.facts if f.canary)
+    match = _start(client)
+
+    client.post(f"/matches/{match['id']}/turns", json={"suspect": "sus-1", "question": "onde?"})
+    app.dependency_overrides[model_port] = lambda: Scripted(
+        NpcReply(line=f"Ora, {canary}...", stance=Stance.cooperative, lied=False)
+    )
+    client.post(f"/matches/{match['id']}/turns", json={"suspect": "sus-1", "question": "e então?"})
+
+    notebook = client.get(f"/matches/{match['id']}").json()["notebook"]
+
+    assert [entry["turn"] for entry in notebook] == [1, 2]
+    assert notebook[0]["answered"] is True
+    assert notebook[1]["answered"] is False
+    assert notebook[1]["line"] is None
+    assert notebook[1]["question"] == "e então?", "the question is the player's own"
+
+
+def test_the_notebook_never_says_why_a_turn_was_discarded(client: TestClient) -> None:
+    """`contradiction` would tell the player something they did not earn."""
+    case = generate(seed=42).case
+    canary = next(f.canary for f in case.facts if f.canary)
+    app.dependency_overrides[model_port] = lambda: Scripted(
+        NpcReply(line=f"Ora, {canary}...", stance=Stance.cooperative, lied=False)
+    )
+    match = _start(client)
+
+    client.post(f"/matches/{match['id']}/turns", json={"suspect": "sus-1", "question": "onde?"})
+    response = client.get(f"/matches/{match['id']}")
+
+    assert "rejected_by" not in response.text
+    assert "canary" not in response.text

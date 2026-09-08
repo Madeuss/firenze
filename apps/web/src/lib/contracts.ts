@@ -600,13 +600,28 @@ export interface components {
         };
         /**
          * Said
-         * @description One line in the notebook, as the player recorded it.
+         * @description One turn in the notebook, whether or not anybody said anything.
+         *
+         *     A turn that produced nothing was still charged (RN-030), so it is in the
+         *     notebook the same as the rest. Leaving it out would make the budget
+         *     unexplainable to the player, and would force a front end to keep its own
+         *     copy of what happened — which is a second source for the same truth.
+         *
+         *     What it does *not* say is which check discarded the reply. The name of the
+         *     check is information the player did not earn: `contradiction` would tell
+         *     them a suspect contradicted themselves. Same reason `Answer.reason` stays
+         *     coarse.
          */
         Said: {
+            /** Answered */
+            answered: boolean;
             /** Character */
             character: string;
-            /** Line */
-            line: string;
+            /**
+             * Line
+             * @description What they said. Absent when nothing was.
+             */
+            line?: string | null;
             /** Question */
             question: string;
             stance: components["schemas"]["Stance"];
