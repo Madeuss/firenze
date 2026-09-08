@@ -2,16 +2,16 @@
 
 Not against SQLite. The schema uses JSONB and a composite unique constraint, and
 a test that passes on a database the application will never run on proves that
-the test passes. `make dev` starts the one these expect.
+the test passes. `make dev` starts the server these expect; `conftest.py`
+creates the database and migrates it.
 """
 
-import os
 import uuid
 
 import pytest
 from sqlalchemy import create_engine, text
-from sqlalchemy.exc import OperationalError
 
+from conftest import needs_database
 from firenze.domain import Match, Stance, Turn
 from firenze.generation import generate
 from firenze.i18n import load
@@ -28,33 +28,13 @@ from firenze.storage import (
     start_match,
 )
 
-URL = os.environ.get(
-    "FIRENZE_TEST_DATABASE_URL",
-    "postgresql+psycopg://firenze:firenze@localhost:5433/firenze",
-)
-
-
-def _reachable() -> bool:
-    """A short timeout on purpose: without one, a missing database costs four
-    minutes of retries before the suite decides to skip."""
-    try:
-        create_engine(URL, connect_args={"connect_timeout": 2}).connect().close()
-    except OperationalError:
-        return False
-    return True
-
-
-pytestmark = pytest.mark.skipif(
-    not _reachable(),
-    reason=f"no database at {URL} — start one with `make dev`",
-)
+pytestmark = needs_database
 
 
 @pytest.fixture
-def connection():  # type: ignore[no-untyped-def]
+def connection(database_url: str):  # type: ignore[no-untyped-def]
     """A transaction rolled back at the end, so tests never see each other."""
-    engine = create_engine(URL)
-    metadata.create_all(engine)
+    engine = create_engine(database_url)
     with engine.connect() as connection:
         transaction = connection.begin()
         yield connection
@@ -225,3 +205,25 @@ def test_a_match_in_memory_and_a_match_from_the_database_behave_the_same(connect
     match_id = start_match(connection, full, "pt-BR")
 
     assert load_match(connection, match_id) == Match(full_case=full, locale="pt-BR")
+
+
+def test_the_migrations_produce_the_schema_the_code_expects(database_url: str) -> None:
+    """The guard the suite was missing. (#43)
+
+    Every other test here runs against whatever the migrations built, so a
+    migration that forgot a column would fail them loudly — but only for the
+    columns some test happens to touch. This compares the whole thing: what
+    `alembic upgrade head` produced against what `tables.py` declares.
+
+    It is the check that `create_all` used to hide, by quietly making up the
+    difference at test time.
+    """
+    from alembic.autogenerate import compare_metadata
+    from alembic.migration import MigrationContext
+
+    engine = create_engine(database_url)
+    with engine.connect() as open_connection:
+        context = MigrationContext.configure(open_connection)
+        difference = compare_metadata(context, metadata)
+
+    assert difference == [], f"the migrations and the model disagree: {difference}"

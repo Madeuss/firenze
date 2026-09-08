@@ -43,6 +43,8 @@ jobs:
         working-directory: apps/api
     # The storage tests run against the database the application actually uses.
     # Passing on SQLite would prove the tests pass, not that the schema works.
+    # The suite creates its own database on this server and builds the schema
+    # with `alembic upgrade head`, so every run exercises the migrations (#43).
     services:
       db:
         image: pgvector/pgvector:pg16
