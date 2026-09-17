@@ -79,6 +79,11 @@ function Mesa({
   const [question, setQuestion] = useState('')
   const [armed, setArmed] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
+  // A pergunta que já saiu do campo de texto e ainda não voltou no caderno.
+  const [emVoo, setEmVoo] = useState<{
+    suspeito: string
+    pergunta: string
+  } | null>(null)
   const [failure, setFailure] = useState<string | null>(null)
   const [showing, setShowing] = useState<'rules' | 'accusation' | null>(null)
   // Numa tela larga a conversa e o painel convivem, e o alternador nao existe:
@@ -110,29 +115,45 @@ function Mesa({
   useEffect(() => {
     const caixa = rolagem.current
     if (caixa) caixa.scrollTop = caixa.scrollHeight
-  }, [thread.length, pending, selected])
+  }, [thread.length, pending, selected, emVoo])
 
   async function send() {
     if (!selected || enviando.current) return
+    const apresentando = armed
+    const perguntado = question.trim()
+    if (!apresentando && !perguntado) return
+
     enviando.current = true
     setFailure(null)
     setPending(true)
+    // A pergunta entra na conversa agora, e não quando o servidor responde.
+    // O caderno continua sendo a única fonte do que aconteceu — isto aqui não
+    // é registro, é o que está a caminho, e some no instante em que o caderno
+    // volta com o turno dentro. Uma confrontação aparece como o id da prova,
+    // que é exatamente como o caderno vai gravá-la.
+    setEmVoo({
+      suspeito: selected,
+      pergunta: apresentando ? `[${apresentando}]` : perguntado,
+    })
+    setQuestion('')
+
     try {
-      if (armed) {
-        await confront(match.id, selected, armed)
+      if (apresentando) {
+        await confront(match.id, selected, apresentando)
         setArmed(null)
       } else {
-        const asked = question.trim()
-        if (!asked) return
-        await ask(match.id, selected, asked)
-        setQuestion('')
+        await ask(match.id, selected, perguntado)
       }
       await recarregar()
     } catch (error) {
       setFailure(
         error instanceof Error ? error.message : t['jogo.falha.pergunta'],
       )
+      // O turno não aconteceu: devolve o texto em vez de fazer o jogador
+      // digitar de novo.
+      if (!apresentando) setQuestion(perguntado)
     } finally {
+      setEmVoo(null)
       enviando.current = false
       setPending(false)
     }
@@ -255,7 +276,7 @@ function Mesa({
           </header>
 
           <div className={styles.thread} ref={rolagem}>
-            {thread.length === 0 ? (
+            {thread.length === 0 && !emVoo ? (
               <p className={`prose ${styles.nothing}`}>
                 {t['jogo.silencio.nada']}
               </p>
@@ -281,7 +302,15 @@ function Mesa({
               ),
             )}
 
-            {pending ? <p className={styles.waiting}>…</p> : null}
+            {emVoo && emVoo.suspeito === selected ? (
+              <article className={styles.exchange}>
+                <p className={styles.asked}>
+                  <span className={styles.autor}>{t['jogo.voce']}</span>
+                  {emVoo.pergunta}
+                </p>
+                <p className={styles.waiting}>…</p>
+              </article>
+            ) : null}
           </div>
 
           <div className={styles.rodape}>

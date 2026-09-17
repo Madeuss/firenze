@@ -316,9 +316,28 @@
   font-size: 0.85rem;
 }
 
+/* A espera pela resposta. Pisca devagar porque o modelo leva segundos, e um
+   "…" parado é indistinguível de uma tela travada. */
 .waiting {
   color: var(--paper-faint);
   margin: 0;
+  animation: respirar 1.4s ease-in-out infinite;
+}
+
+@keyframes respirar {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .waiting {
+    animation: none;
+  }
 }
 
 /* o único campo de texto do jogo */
