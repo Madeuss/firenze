@@ -1,4 +1,9 @@
-COMPOSE := docker compose -f infra/compose/docker-compose.yml
+# O compose procura o `.env` ao lado do arquivo dele, não na raiz — então a
+# chave configurada na raiz não chegava nos contêineres e `make dev` subia com
+# o modelo `fake` sem dizer por quê. Passado só quando o arquivo existe: num
+# clone novo ele não existe, e `--env-file` inexistente é erro.
+ENVFILE := $(wildcard .env)
+COMPOSE := docker compose $(if $(ENVFILE),--env-file .env,) -f infra/compose/docker-compose.yml
 API     := apps/api
 WEB     := apps/web
 

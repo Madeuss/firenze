@@ -11,7 +11,7 @@ character has no way of knowing.
 
 > **Status: a match runs end to end.** Generate a case, question six suspects,
 > break an alibi with evidence, accuse once, and read a verdict computed by
-> code. The words are still synthetic — the model provider (Magalu Prosa) is in
+> code. The words are still synthetic — the model provider (Magalu's AI Hub) is in
 > pilot — so the mechanics are playable and the prose is not yet worth reading.
 
 ## See it work

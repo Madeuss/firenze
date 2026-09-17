@@ -184,7 +184,7 @@ ADR escrita para convencer, não para decidir.
   inglês, produto em português
 - [`0007`](adr/0007-one-port-for-any-model-provider.md) — uma porta para
   qualquer fornecedor de modelo
-- [`0008`](adr/0008-magalu-prosa-as-the-model-provider.md) — Magalu Prosa como
+- [`0008`](adr/0008-magalu-prosa-as-the-model-provider.md) — o AI Hub da Magalu como
   fornecedor, com adaptador OpenAI-compatible
 - [`0009`](adr/0009-a-case-is-a-document-a-match-is-rows.md) — caso é documento,
   partida é linhas; solução em tabela própria

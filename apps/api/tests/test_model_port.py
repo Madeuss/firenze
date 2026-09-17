@@ -86,12 +86,12 @@ def test_an_unknown_provider_says_so() -> None:
 
 def test_resolve_builds_what_it_was_asked_for() -> None:
     assert resolve("fake").name == "fake"
-    assert resolve("prosa", model="qwen-whatever", base_url="https://x").name == "qwen-whatever"
+    assert resolve("aihub", model="qwen-whatever", base_url="https://x").name == "qwen-whatever"
 
 
-def test_prosa_without_a_model_name_fails_loudly() -> None:
+def test_aihub_without_a_model_name_fails_loudly() -> None:
     with pytest.raises(ModelUnavailable, match="needs FIRENZE_MODEL_NAME"):
-        resolve("prosa")
+        resolve("aihub")
 
 
 class Reply:
@@ -148,7 +148,7 @@ def test_it_uses_a_server_enforced_schema_when_the_gateway_supports_one() -> Non
 
 
 def test_it_falls_back_to_json_mode_when_schemas_are_rejected() -> None:
-    """Prosa's documentation does not say which modes it implements."""
+    """The AI Hub's documentation does not say which modes it implements."""
     gateway = Gateway(supports={"json_object"})
 
     answer = _model(gateway).complete(system="s", user="u", schema=Answer, max_tokens=10)

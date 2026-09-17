@@ -23,15 +23,16 @@ def resolve(
     """
     if provider == "none":
         raise ModelUnavailable(
-            "no model provider configured; set FIRENZE_MODEL_PROVIDER to one of: prosa, fake"
+            "no model provider configured; set FIRENZE_MODEL_PROVIDER to one of: aihub, fake"
         )
     if provider == "fake":
         return FakeModel()
-    if provider == "prosa":
-        # Prosa speaks the OpenAI dialect (ADR-0008), so the adapter is generic
-        # and the provider name is only a label over a base URL.
+    if provider == "aihub":
+        # AI Hub speaks the OpenAI dialect (ADR-0008), so the adapter is generic
+        # and the provider name is only a label over a base URL. The product was
+        # called Prosa when that ADR was written; Magalu renamed it.
         if not model:
-            raise ModelUnavailable("provider 'prosa' needs FIRENZE_MODEL_NAME set")
+            raise ModelUnavailable("provider 'aihub' needs FIRENZE_MODEL_NAME set")
         return OpenAICompatibleModel(model=model, base_url=base_url, api_key=api_key)
     raise ModelUnavailable(f"unknown model provider {provider!r}")
 

@@ -93,5 +93,5 @@ Honestidade sobre o estado: hoje só a suíte de injeção existe, e ela nunca
 rodou contra um modelo real. Persona, consistência, latência e custo estão na
 tabela porque são o alvo, não porque há número.
 
-O primeiro contato com o endpoint da Prosa vai produzir os primeiros números
+O primeiro contato com o endpoint do AI Hub vai produzir os primeiros números
 reais deste documento — e provavelmente uma entrada em `08-achados.md`.

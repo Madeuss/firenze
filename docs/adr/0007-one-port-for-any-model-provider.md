@@ -43,7 +43,7 @@ Adapters live in the same package and nowhere else. Two exist:
 
 - **`OpenAICompatibleModel`** — any endpoint speaking the OpenAI
   chat-completions dialect, which is one base URL away from being a different
-  provider. ADR-0008 points it at Magalu Prosa.
+  provider. ADR-0008 points it at Magalu's AI Hub.
 - **`FakeModel`** — no network, no key, no money. Deterministic, and it names
   itself `fake` so anything it wrote is traceable to it.
 

@@ -1,15 +1,17 @@
 """Adapter for any endpoint that speaks the OpenAI chat-completions dialect.
 
-Written for Magalu Prosa (ADR-0008), which exposes exactly that. It is not a
-Prosa adapter, though: the only thing that ties it to one provider is a base
+Written for Magalu's AI Hub (ADR-0008), which exposes exactly that. It is not
+an AI Hub adapter, though: the only thing that ties it to one provider is a base
 URL, so pointing it at another compatible endpoint — or at a vLLM of your own —
 is configuration rather than code.
 
 ## Getting a schema back from a gateway that may not support schemas
 
 The port promises a validated instance or a failure. OpenAI-compatible gateways
-vary in how much of that they help with, and Prosa's documentation does not say
-which parts it implements. So this tries, in order:
+vary in how much of that they help with, and the AI Hub's documentation does
+not say which parts it implements. Measured on the real endpoint, it turned out
+to differ per model: gemma takes `json_schema`, llama-3.3-70b falls back to
+`json_object` (docs/08-achados.md). So this tries, in order:
 
 1. `response_format` with a JSON schema — the server enforces the shape;
 2. `response_format: json_object` plus the schema in the prompt — the server

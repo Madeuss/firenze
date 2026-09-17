@@ -42,7 +42,7 @@ services:
       FIRENZE_REDIS_URL: redis://redis:6379/0
       # `fake` por padrão, e não `none` como no .env.example: o compose existe
       # para dar uma pilha jogável sem credencial nenhuma. Quem tem chave do
-      # Prosa passa FIRENZE_MODEL_PROVIDER=prosa no ambiente (ADR-0008).
+      # AI Hub passa FIRENZE_MODEL_PROVIDER=aihub no ambiente (ADR-0008).
       FIRENZE_MODEL_PROVIDER: ${FIRENZE_MODEL_PROVIDER:-fake}
       FIRENZE_MODEL_NAME: ${FIRENZE_MODEL_NAME:-}
       FIRENZE_CLASSIFIER_MODEL_NAME: ${FIRENZE_CLASSIFIER_MODEL_NAME:-}
