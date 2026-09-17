@@ -156,6 +156,7 @@ def _state(match_id: uuid.UUID, match: Match) -> MatchState:
                 id=person.id,
                 name=person.name,
                 role=person.role.value,
+                gender=person.gender,
                 occupation=catalog.occupation(person.occupation) if person.occupation else None,
                 stance=match.stances.get(person.id) if person.role is Role.suspect else None,
             )
@@ -216,16 +217,26 @@ def _outcome(
     accused: str,
     catalog: Catalog,
     turns_left: int,
+    case: Case,
     *,
     epilogue: str | None = None,
 ) -> Outcome:
     """The scoreboard, built in one place so a review cannot disagree with the
-    ending the player was shown."""
+    ending the player was shown.
+
+    Ids travel next to names rather than instead of them. `sus-1` is how the
+    game refers to a person and how an accusation names one; it is not how a
+    verdict tells a player who did it.
+    """
+    quem = next((c for c in case.cast if c.id == verdict.culprit), None)
     return Outcome(
         correct=verdict.correct,
         motive_correct=verdict.motive_correct,
         accused=accused,
+        accused_name=case.name_of(accused) if accused else "",
         culprit=verdict.culprit,
+        culprit_name=quem.name if quem else verdict.culprit,
+        culprit_gender=quem.gender if quem else None,
         means=catalog.means(verdict.means_key),
         motive=catalog.motive(verdict.motive_key),
         score=verdict.score,
@@ -309,7 +320,9 @@ def _review(match_id: uuid.UUID, match: Match) -> Review:
         record=record,
         stance_trail=tuple(trail),
         evidence_trail=tuple(sorted(held, key=lambda e: (e.turn is not None, e.turn or 0, e.id))),
-        outcome=_outcome(verdict, match.accused_culprit or "", catalog, match.turns_left),
+        outcome=_outcome(
+            verdict, match.accused_culprit or "", catalog, match.turns_left, match.case
+        ),
     )
 
 
@@ -421,7 +434,7 @@ def accuse(match_id: uuid.UUID, body: NewAccusation, db: Db) -> Outcome:
     except HTTPException:
         log.info("no model configured; the match ends without an epilogue")
 
-    return _outcome(verdict, body.culprit, catalog, match.turns_left, epilogue=epilogue)
+    return _outcome(verdict, body.culprit, catalog, match.turns_left, match.case, epilogue=epilogue)
 
 
 @router.post("/{match_id}/confrontations", summary="Show a suspect a piece of evidence")

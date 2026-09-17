@@ -228,13 +228,19 @@ function Verdict({ outcome, t }: { outcome: Outcome; t: Textos }) {
   return (
     <>
       <h2 className={styles.title}>
-        {outcome.correct ? t["veredito.certo"] : t["veredito.errado"]}
+        {outcome.correct
+          ? t[
+              outcome.culprit_gender === "feminine"
+                ? "veredito.certo.ela"
+                : "veredito.certo.ele"
+            ]
+          : t["veredito.errado"]}
       </h2>
       {/* A frase inteira vem do catálogo, e não montada em pedaços: a ordem
           das palavras é do idioma, não nossa. */}
       <p className={`prose ${styles.truth}`}>
         {com(t["veredito.frase"], {
-          culpado: outcome.culprit,
+          culpado: outcome.culprit_name || outcome.culprit,
           meio: outcome.means,
           motivo: outcome.motive,
         })}

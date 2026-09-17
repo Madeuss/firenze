@@ -14,7 +14,7 @@ import uuid
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from firenze.domain import Stance
+from firenze.domain import Gender, Stance
 
 
 class NewMatch(BaseModel):
@@ -27,6 +27,10 @@ class CastMember(BaseModel):
     id: str
     name: str
     role: str
+    gender: Gender | None = Field(
+        default=None,
+        description="Grammatical gender, for languages that need agreement.",
+    )
     occupation: str | None = Field(
         default=None,
         description="What they do in the house, written in the match's language.",
@@ -207,7 +211,10 @@ class Outcome(BaseModel):
     correct: bool
     motive_correct: bool
     accused: str
+    accused_name: str = Field(default="", description="Who the player named, in words.")
     culprit: str
+    culprit_name: str = Field(default="", description="Who did it, in words.")
+    culprit_gender: Gender | None = None
     means: str
     motive: str
     score: int

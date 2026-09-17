@@ -82,6 +82,17 @@
       },
       "CastMember": {
         "properties": {
+          "gender": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Gender"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Grammatical gender, for languages that need agreement."
+          },
           "id": {
             "title": "Id",
             "type": "string"
@@ -284,6 +295,15 @@
         ],
         "title": "FloorPlan",
         "type": "object"
+      },
+      "Gender": {
+        "description": "Grammatical gender, for languages that need agreement.\n\nNot prose and not a catalog key: an attribute of the person, like the name\nit travels with. Portuguese cannot write \"era ela mesma\" without it, and\nEnglish never needs it — which is exactly why it belongs in the structure\nand not in one locale's catalog (ADR-0005).",
+        "enum": [
+          "feminine",
+          "masculine"
+        ],
+        "title": "Gender",
+        "type": "string"
       },
       "HTTPValidationError": {
         "properties": {
@@ -585,12 +605,34 @@
             "title": "Accused",
             "type": "string"
           },
+          "accused_name": {
+            "default": "",
+            "description": "Who the player named, in words.",
+            "title": "Accused Name",
+            "type": "string"
+          },
           "correct": {
             "title": "Correct",
             "type": "boolean"
           },
           "culprit": {
             "title": "Culprit",
+            "type": "string"
+          },
+          "culprit_gender": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Gender"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "culprit_name": {
+            "default": "",
+            "description": "Who did it, in words.",
+            "title": "Culprit Name",
             "type": "string"
           },
           "culprit_points": {
