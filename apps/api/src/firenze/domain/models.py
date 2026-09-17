@@ -23,6 +23,19 @@ class Role(StrEnum):
     suspect = "suspect"
 
 
+class Gender(StrEnum):
+    """Grammatical gender, for languages that need agreement.
+
+    Not prose and not a catalog key: an attribute of the person, like the name
+    it travels with. Portuguese cannot write "era ela mesma" without it, and
+    English never needs it — which is exactly why it belongs in the structure
+    and not in one locale's catalog (ADR-0005).
+    """
+
+    feminine = "feminine"
+    masculine = "masculine"
+
+
 class FactKind(StrEnum):
     body = "body"
     """Where and when the body was found. Always public."""
@@ -70,6 +83,7 @@ class Character(BaseModel):
     id: str
     name: str
     role: Role
+    gender: Gender | None = None
     occupation: str | None = None
     """What they do in the house, as a key the catalog renders (ADR-0005).
 

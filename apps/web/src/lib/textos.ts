@@ -85,6 +85,10 @@ const PT = {
 
   // dedução
   'deducao.planta': 'Planta',
+  'deducao.provas': 'Provas',
+  'provas.sabidas': 'o que se sabe do caso',
+  'provas.arrancadas': 'o que você arrancou',
+  'provas.nenhuma': 'Nada ainda. Provas saem das respostas — pergunte.',
   'deducao.grade': 'Grade',
   'deducao.hora': 'hora da noite',
   'deducao.hora.crime': 'por volta desta hora o corpo foi encontrado',
@@ -133,7 +137,11 @@ const PT = {
   'acusacao.falha.acusar': 'não deu para acusar',
 
   // veredito
-  'veredito.certo': 'Era ele mesmo.',
+  // Português concorda com quem fez, então são duas frases e não uma com um
+  // buraco: "Era ele mesmo" numa partida cuja culpada é mulher está errado, e
+  // remendar com "(a)" é pior que errar.
+  'veredito.certo.ele': 'Era ele mesmo.',
+  'veredito.certo.ela': 'Era ela mesma.',
   'veredito.errado': 'Não era.',
   'veredito.frase': 'Foi {culpado}, com {meio}, por {motivo}.',
   'veredito.culpado': 'culpado',
@@ -204,6 +212,10 @@ const EN: Textos = {
   'postura.broken': 'broken',
 
   'deducao.planta': 'Plan',
+  'deducao.provas': 'Evidence',
+  'provas.sabidas': 'what the case gives you',
+  'provas.arrancadas': 'what you got out of them',
+  'provas.nenhuma': 'Nothing yet. Evidence comes out of answers — ask.',
   'deducao.grade': 'Grid',
   'deducao.hora': 'hour of the night',
   'deducao.hora.crime': 'around this hour the body was found',
@@ -249,7 +261,8 @@ const EN: Textos = {
   'acusacao.falha.leitura': 'could not read the accusation',
   'acusacao.falha.acusar': 'could not accuse',
 
-  'veredito.certo': 'It was him after all.',
+  'veredito.certo.ele': 'It was him after all.',
+  'veredito.certo.ela': 'It was her after all.',
   'veredito.errado': 'It was not.',
   'veredito.frase': 'It was {culpado}, with {meio}, over {motivo}.',
   'veredito.culpado': 'culprit',

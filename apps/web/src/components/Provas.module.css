@@ -1,0 +1,50 @@
+.dossie {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.1rem 1.25rem 1.5rem;
+}
+
+.titulo {
+  margin: 0 0 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--paper-faint);
+}
+
+.lista {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+/* O id na frente, como etiqueta de arquivo: é por ele que o jogo chama o fato
+   e é ele que uma confrontação nomeia. O que se lê é a frase ao lado. */
+.fato {
+  display: grid;
+  grid-template-columns: 3.4rem 1fr;
+  gap: 0.6rem;
+  align-items: baseline;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: var(--paper-dim);
+}
+
+.fato span:first-child {
+  color: var(--paper-faint);
+}
+
+.vazio {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--paper-faint);
+}

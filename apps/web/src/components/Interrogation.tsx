@@ -19,6 +19,7 @@ import { useTelaLarga } from '@/lib/tela'
 
 import Accusation from './Accusation'
 import Deducao from './Deducao'
+import Provas from './Provas'
 import Retrato from './Retrato'
 import Rules from './Rules'
 import styles from './Interrogation.module.css'
@@ -91,7 +92,7 @@ function Mesa({
   // dois, e o jogo volta a ter dois modos.
   const largo = useTelaLarga()
   const [modo, setModo] = useState<'interrogatorio' | 'deducao'>('interrogatorio')
-  const [aba, setAba] = useState<'planta' | 'grade'>('planta')
+  const [aba, setAba] = useState<'planta' | 'grade' | 'provas'>('planta')
   const rolagem = useRef<HTMLDivElement>(null)
   // `pending` e estado, e estado nao muda a tempo: dois Enter seguidos passam
   // os dois pela guarda antes do primeiro render. Este trava na hora.
@@ -216,7 +217,10 @@ function Mesa({
 
       {!largo && modo === 'deducao' ? (
         <div className={styles.pensar}>
+          {/* Numa tela estreita não há painel com abas, e o dossiê não pode
+              ficar só atrás do botão de acusar — desce aqui, depois da grade. */}
           <Deducao match={match} />
+          <Provas match={match} />
         </div>
       ) : (
       <div className={largo ? styles.mesa : styles.body}>
@@ -408,8 +412,18 @@ function Mesa({
               >
                 {t['deducao.grade']}
               </button>
+              <button
+                className={aba === 'provas' ? styles.abaAgora : styles.aba}
+                onClick={() => setAba('provas')}
+              >
+                {t['deducao.provas']}
+              </button>
             </div>
-            <Deducao match={match} vista={aba} />
+            {aba === 'provas' ? (
+              <Provas match={match} />
+            ) : (
+              <Deducao match={match} vista={aba} />
+            )}
           </aside>
         ) : null}
       </div>

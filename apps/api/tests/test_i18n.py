@@ -39,7 +39,7 @@ def test_every_key_the_generator_emits_exists_in_every_catalog(locale: str) -> N
         assert catalog.means(key)
     for key in MOTIVE_KEYS:
         assert catalog.motive(key)
-    for _, occupation in CAST:
+    for _, occupation, _gender in CAST:
         assert catalog.occupation(occupation)
     assert catalog.occupation(VICTIM_OCCUPATION)
 

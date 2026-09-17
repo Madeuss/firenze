@@ -215,6 +215,8 @@ export interface components {
         };
         /** CastMember */
         CastMember: {
+            /** @description Grammatical gender, for languages that need agreement. */
+            gender?: components["schemas"]["Gender"] | null;
             /** Id */
             id: string;
             /** Name */
@@ -326,6 +328,17 @@ export interface components {
             /** Rooms */
             rooms: components["schemas"]["Room"][];
         };
+        /**
+         * Gender
+         * @description Grammatical gender, for languages that need agreement.
+         *
+         *     Not prose and not a catalog key: an attribute of the person, like the name
+         *     it travels with. Portuguese cannot write "era ela mesma" without it, and
+         *     English never needs it — which is exactly why it belongs in the structure
+         *     and not in one locale's catalog (ADR-0005).
+         * @enum {string}
+         */
+        Gender: "feminine" | "masculine";
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -491,10 +504,23 @@ export interface components {
         Outcome: {
             /** Accused */
             accused: string;
+            /**
+             * Accused Name
+             * @description Who the player named, in words.
+             * @default
+             */
+            accused_name: string;
             /** Correct */
             correct: boolean;
             /** Culprit */
             culprit: string;
+            culprit_gender?: components["schemas"]["Gender"] | null;
+            /**
+             * Culprit Name
+             * @description Who did it, in words.
+             * @default
+             */
+            culprit_name: string;
             /** Culprit Points */
             culprit_points: number;
             /**
