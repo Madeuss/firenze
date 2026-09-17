@@ -1,8 +1,14 @@
-# ADR-0008: Magalu Prosa as the model provider
+# ADR-0008: Magalu's AI Hub as the model provider
 
 ## Status
 
 Accepted — 2026-08-31. Blocked on the product leaving pilot.
+
+Amended — 2026-09-17: Magalu renamed the product from **Prosa** to **AI Hub**.
+Nothing about the decision changed; the provider value in configuration went
+from `prosa` to `aihub`. The file keeps its name because it is an identifier,
+and because the ADR was written when the product was called Prosa — the quote
+in Context is reproduced as it was published.
 
 ## Context
 
@@ -23,8 +29,8 @@ The grounds that do exist:
 - **The infrastructure is already there.** ADR-0002 puts Postgres with pgvector
   on Magalu, and phase 7 puts the application there. Inference in the same place
   means one account, one bill, one network.
-- **Prosa speaks the OpenAI dialect.** Its documentation is explicit: *"uma API
-  compatível com o padrão OpenAI"*. So the adapter is not a Prosa adapter — it
+- **It speaks the OpenAI dialect.** Its documentation is explicit: *"uma API
+  compatível com o padrão OpenAI"*. So the adapter is not an AI Hub adapter — it
   is an OpenAI-compatible adapter with a base URL, and every other compatible
   endpoint is reachable by configuration.
 - **A monthly budget in R$ that pauses consumption at the limit.** The eval plan
@@ -35,7 +41,7 @@ The grounds that do exist:
 
 ## Decision
 
-Magalu Prosa, through a generic OpenAI-compatible adapter in
+Magalu's AI Hub, through a generic OpenAI-compatible adapter in
 `firenze.model.openai_compatible`, configured by `FIRENZE_MODEL_BASE_URL`,
 `FIRENZE_MODEL_NAME` and `FIRENZE_MODEL_API_KEY`.
 

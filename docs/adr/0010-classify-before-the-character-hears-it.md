@@ -69,7 +69,7 @@ them.
   a query rather than a log search.
 + Fail-safe without punishing: an unreachable classifier stops the turn and
   costs nothing.
-− **Two model calls per turn.** At Prosa's catalogue prices this is small, and it
+− **Two model calls per turn.** At the AI Hub's catalogue prices this is small, and it
   is still the largest single cost increase the turn has taken. A separate,
   cheaper classifier model is the lever; measuring it is phase 6 work.
 − A wrong `injection` label costs a player a turn and gives them a canned line —

@@ -75,6 +75,60 @@ regressão do modelo.
 
 ## Modelos e IA
 
+### 2026-09-17 — Metade do catálogo do AI Hub não serve, e o motivo é invisível no console
+
+Primeiro contato com o endpoint real da Magalu. O console lista dezesseis
+modelos com preço e contexto, e **nada ali diz quais devolvem resposta**.
+
+A família **qwen3 inteira** (`qwen3.5-9b`, `qwen3.6-27b`, e pelo nome os
+`qwen3-*-fp8`) vem com raciocínio ligado por padrão: gasta o orçamento de
+tokens pensando, devolve `finish_reason: length`, `content: None` e o
+pensamento em `reasoning_content` — um campo que nem existe no dialeto OpenAI
+padrão. Para uma porta que espera JSON validado, isso é falha total, e o
+diagnóstico do adaptador (*"the response carried no content"*) está certo sem
+ser útil.
+
+Os que responderam limpo: `nvidia-llama-3.3-70b-instruct-fp8` (o maior do
+catálogo), `google-gemma-4-12b-it` e `meta-llama-llama-3.1-8b-instruct`.
+
+**Como ficou:** 70B para o suspeito, gemma-12b para o classificador (RN-040
+pede o mais barato que dê conta; o gemma respondeu a mesma coisa em 12 tokens
+contra 37 do llama-8b).
+
+**O que a medição ensinou sobre o adaptador.** A degradação em três modos
+(`json_schema` → `json_object` → extrair JSON do texto) não é paranoia: o mesmo
+gateway aceita `json_schema` nativo no gemma e recusa no llama-70b, que cai
+para `json_object`. Um adaptador que assumisse um modo só funcionaria com
+metade do catálogo.
+
+**Latência:** a primeira chamada levou 70s (partida fria) e as seguintes ficaram
+abaixo de um segundo. Quem medir uma vez e desistir vai concluir a coisa errada.
+
+### 2026-09-17 — O suspeito foi cobrado por um vocabulário que nunca recebeu
+
+Com modelo de verdade, **toda resposta que dizia onde a pessoa estava era
+descartada**:
+
+    rejeitado_por=claim  claim: 'sala de jantar' is not a room in this case
+
+O prompt do NPC pede `claimed_room` com o **id** do cômodo (`dining_room`) e
+`claimed_interval` com o **índice** da hora (0 a 5). Mas os fatos chegam a ele
+em prosa renderizada pelo catálogo — *"estava na biblioteca às 21h30"* — e id
+nenhum aparece em lugar nenhum do prompt. O modelo devolve o que viu:
+`"sala de jantar"` e `2130`. O guarda rejeita a resposta inteira, o turno é
+cobrado, e o jogador lê *"não veio resposta"* justamente nas perguntas de
+álibi, que são as que movem o jogo.
+
+**Por que só apareceu agora:** o provedor `fake` não inventa alegação. Nenhum
+teste pegou porque todos rodam contra ele — o defeito mora exatamente na
+fronteira entre o que o prompt pede e o que o prompt mostra, e essa fronteira só
+existe quando alguém do outro lado tenta responder.
+
+**A lição maior:** um campo estruturado só pode ser pedido no vocabulário que o
+contexto ofereceu. Pedir id para quem só viu nome é pedir adivinhação, e o
+guarda — fazendo o trabalho certo — transforma adivinhação em turno perdido.
+
+
 ### 2026-08-29 — Quem escreve sabendo o culpado entrega o culpado
 
 O verniz recebe `Case`, nunca `CaseWithSolution` — mesma disciplina do solver,
@@ -548,5 +602,5 @@ modelo local da fase 8 não é só "depois" — precisa de pedido de quota antes
   é dedutível *estruturalmente*. São garantias diferentes, e a segunda é mais
   convincente. Seria o primeiro lugar onde MCP faria trabalho de verdade neste
   projeto.
-- **Comparar modelos abertos servidos pela Prosa contra a suíte adversarial, em
+- **Comparar modelos abertos servidos pelo AI Hub contra a suíte adversarial, em
   português.** Ninguém publicou esse número.
