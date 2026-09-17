@@ -29,11 +29,13 @@ from firenze.api.schemas import (
     CastMember,
     Confrontation,
     DraftAccusation,
+    Evidence,
     FloorPlan,
     HeldEvidence,
     Hour,
     KnownFact,
     MatchState,
+    Motive,
     NewAccusation,
     NewMatch,
     Outcome,
@@ -165,8 +167,13 @@ def _state(match_id: uuid.UUID, match: Match) -> MatchState:
             if fact.scope.public
         ),
         plan=_plan(case, catalog),
-        evidence=tuple(sorted(match.evidence)),
-        known_motives=known_motives(match),
+        evidence=tuple(
+            Evidence(id=fact_id, text=catalog.fact(case, case.fact(fact_id)))
+            for fact_id in sorted(match.evidence)
+        ),
+        known_motives=tuple(
+            Motive(key=key, text=catalog.motive(key)) for key in known_motives(match)
+        ),
         notebook=tuple(
             Said(
                 turn=turn.turn,

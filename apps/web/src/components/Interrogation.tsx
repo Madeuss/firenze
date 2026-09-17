@@ -326,14 +326,18 @@ function Mesa({
               {match.evidence.length === 0 ? (
                 <span className="faint">{t['jogo.provas.vazio']}</span>
               ) : (
-                match.evidence.map((id) => (
+                match.evidence.map((prova) => (
                   <button
-                    key={id}
-                    className={id === armed ? styles.pickedCard : styles.card}
-                    onClick={() => setArmed(id === armed ? null : id)}
-                    title={textOf(match, id)}
+                    key={prova.id}
+                    className={
+                      prova.id === armed ? styles.pickedCard : styles.card
+                    }
+                    onClick={() =>
+                      setArmed(prova.id === armed ? null : prova.id)
+                    }
+                    title={prova.text}
                   >
-                    <span className="mono">{id}</span>
+                    <span className="mono">{prova.id}</span>
                   </button>
                 ))
               )}
@@ -417,8 +421,4 @@ function Mesa({
       ) : null}
     </main>
   )
-}
-
-function textOf(match: MatchState, id: string): string {
-  return match.known.find((fact) => fact.id === id)?.text ?? id
 }

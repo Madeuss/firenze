@@ -96,6 +96,35 @@ class Said(BaseModel):
     stance: Stance
 
 
+class Evidence(BaseModel):
+    """A fact the player holds, and what it says.
+
+    The id alone is a handle, not information: a player holding `F-009` with no
+    text has to remember which answer gave it away, and is asked to tick it on
+    the accusation form on faith. The text is not a leak — it is the sentence
+    they already read when it was revealed.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    text: str
+
+
+class Motive(BaseModel):
+    """A motive the player found out about, and may therefore name.
+
+    Carries the key because that is what `POST /accusation` takes back, and the
+    text because `blackmail` is a database row, not something to show a player
+    (ADR-0005).
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    key: str
+    text: str
+
+
 class MatchState(BaseModel):
     """Everything a player may see. No solution, no bookkeeping."""
 
@@ -109,10 +138,10 @@ class MatchState(BaseModel):
     known: tuple[KnownFact, ...]
     plan: FloorPlan = Field(description="The house and the night, empty. Constant for the match.")
     notebook: tuple[Said, ...]
-    evidence: tuple[str, ...] = Field(
-        default=(), description="Fact ids the player holds and may present."
+    evidence: tuple[Evidence, ...] = Field(
+        default=(), description="Facts the player holds and may present."
     )
-    known_motives: tuple[str, ...] = Field(
+    known_motives: tuple[Motive, ...] = Field(
         default=(),
         description="Motives the player found out about, and may therefore name.",
     )
