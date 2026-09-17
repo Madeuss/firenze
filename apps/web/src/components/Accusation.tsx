@@ -156,9 +156,9 @@ export default function Accusation({
                     ? t["acusacao.motivo.nenhum"]
                     : t["acusacao.motivo.livre"]}
                 </option>
-                {match.known_motives.map((key) => (
-                  <option key={key} value={key}>
-                    {key}
+                {match.known_motives.map((motivo) => (
+                  <option key={motivo.key} value={motivo.key}>
+                    {motivo.text}
                   </option>
                 ))}
               </select>
@@ -167,20 +167,25 @@ export default function Accusation({
             <fieldset className={styles.field}>
               <legend className="faint">{t["acusacao.provas"]}</legend>
               <div className={styles.checks}>
-                {match.evidence.map((id) => (
-                  <label key={id} className={styles.check}>
+                {/* O id sozinho obrigava a marcar de memória. A prova diz o que
+                    é, e o id fica ao lado porque é por ele que o jogo a chama. */}
+                {match.evidence.map((prova) => (
+                  <label key={prova.id} className={styles.check}>
                     <input
                       type="checkbox"
-                      checked={evidence.includes(id)}
+                      checked={evidence.includes(prova.id)}
                       onChange={(event) =>
                         setEvidence((current) =>
                           event.target.checked
-                            ? [...current, id]
-                            : current.filter((held) => held !== id),
+                            ? [...current, prova.id]
+                            : current.filter((held) => held !== prova.id),
                         )
                       }
                     />
-                    <span className="mono">{id}</span>
+                    <span className={styles.prova}>
+                      <span className="mono">{prova.id}</span>
+                      {prova.text}
+                    </span>
                   </label>
                 ))}
               </div>

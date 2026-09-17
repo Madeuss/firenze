@@ -281,6 +281,21 @@ export interface components {
             unresolved: string[];
         };
         /**
+         * Evidence
+         * @description A fact the player holds, and what it says.
+         *
+         *     The id alone is a handle, not information: a player holding `F-009` with no
+         *     text has to remember which answer gave it away, and is asked to tick it on
+         *     the accusation form on faith. The text is not a leak — it is the sentence
+         *     they already read when it was revealed.
+         */
+        Evidence: {
+            /** Id */
+            id: string;
+            /** Text */
+            text: string;
+        };
+        /**
          * FloorPlan
          * @description The empty board the player fills in, and nothing else.
          *
@@ -383,10 +398,10 @@ export interface components {
             cast: components["schemas"]["CastMember"][];
             /**
              * Evidence
-             * @description Fact ids the player holds and may present.
+             * @description Facts the player holds and may present.
              * @default []
              */
-            evidence: string[];
+            evidence: components["schemas"]["Evidence"][];
             /**
              * Id
              * Format: uuid
@@ -399,7 +414,7 @@ export interface components {
              * @description Motives the player found out about, and may therefore name.
              * @default []
              */
-            known_motives: string[];
+            known_motives: components["schemas"]["Motive"][];
             /** Locale */
             locale: string;
             /** Notebook */
@@ -410,6 +425,20 @@ export interface components {
             seed: number;
             /** Turns Left */
             turns_left: number;
+        };
+        /**
+         * Motive
+         * @description A motive the player found out about, and may therefore name.
+         *
+         *     Carries the key because that is what `POST /accusation` takes back, and the
+         *     text because `blackmail` is a database row, not something to show a player
+         *     (ADR-0005).
+         */
+        Motive: {
+            /** Key */
+            key: string;
+            /** Text */
+            text: string;
         };
         /**
          * NewAccusation

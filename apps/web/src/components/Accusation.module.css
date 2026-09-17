@@ -70,15 +70,28 @@
   color: var(--paper);
 }
 
+/* Uma prova por linha: elas eram etiquetas de id lado a lado, e agora cada uma
+   é uma frase. Lado a lado, frases viram parede de texto. */
 .checks {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-height: 14rem;
+  overflow-y: auto;
+}
+
+/* A prova inteira, id e texto, numa linha que pode quebrar. */
+.prova {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.85rem;
+  line-height: 1.35;
 }
 
 .check {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.4rem;
   padding: 0.3rem 0.55rem;
   border: 1px solid var(--night-line);
