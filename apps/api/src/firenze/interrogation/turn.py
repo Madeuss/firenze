@@ -33,11 +33,12 @@ from firenze.interrogation.contradictions import contradicts
 from firenze.interrogation.dossier import Dossier, build
 from firenze.interrogation.guard import ReplyRejected, check
 from firenze.interrogation.models import NpcReply
+from firenze.interrogation.vocabulary import normalise
 from firenze.model import ModelRefused, StructuredModel
 from firenze.prompts import prompts_dir
 from firenze.safety import classify, is_hostile
 
-PROMPT_VERSION = "v2"
+PROMPT_VERSION = "v3"
 MAX_TOKENS = 1000
 
 
@@ -138,6 +139,13 @@ def render(
     case = match.case
 
     facts = "\n".join(f"- [{fact.id}] {catalog.fact(case, fact)}" for fact in dossier.facts)
+    # O vocabulário que os campos estruturados cobram. Sem ele o suspeito só via
+    # os nomes em prosa — devolvia "sala de jantar" e 2130, e o guarda jogava a
+    # resposta inteira fora (docs/08-achados.md).
+    rooms = "\n".join(f"- `{room}` — {catalog.room(room)}" for room in case.rooms)
+    hours = "\n".join(
+        f"- `{i}` — {catalog.time(case.minutes_at(i))}" for i in range(case.interval_count)
+    )
     history = (
         "\n".join(_recall(said, catalog, case) for said in dossier.said_before)
         or "- Nada ainda. Esta é a primeira pergunta que lhe fazem."
@@ -162,6 +170,8 @@ def render(
         system.format(
             name=dossier.name,
             language=catalog.label("language_name"),
+            rooms=rooms,
+            hours=hours,
             facts=facts,
             guilt=guilt,
             stance=dossier.stance.value,
@@ -226,6 +236,10 @@ def ask(
         return TurnResult(
             match=_record(spent, turn), turn=turn, rejection=str(refusal), intent=intent
         )
+
+    # Antes de qualquer checagem: o que o modelo escreveu, escrito do jeito que
+    # a casa escreve. Nada aqui inventa alegação — ver o módulo.
+    reply = normalise(reply, match.case, catalog)
 
     conflict = contradicts(reply.claimed_room, reply.claimed_interval, dossier.said_before)
     if conflict is not None:
