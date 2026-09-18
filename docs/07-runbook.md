@@ -8,11 +8,14 @@ infraestrutura deixou de ser plano.
 
 ## O que está de pé
 
+Tudo em **`br-se1`** (sudeste). Nasceu por engano no nordeste e foi refeito:
+ver "Trocar de região" no fim.
+
 | Recurso | Nome | Onde | Detalhe |
 |---|---|---|---|
-| Banco gerenciado | `firenze-db` | `172.30.0.55:5432`, privado | PostgreSQL 16.14, BV1-4-10 (1 vCPU, 4 GB), 10 GiB criptografado |
-| VM bastião | `firenze-bastion` | `201.23.2.157` público, `172.30.0.11` privado | Ubuntu 24.04 LTS, BV1-2-10 (1 vCPU, 2 GB, 10 GB) |
-| Rede | `vpc_default` | `br-ne1-a` | Os dois na mesma sub-rede `172.30.0.0/25` |
+| Banco gerenciado | `firenze-db` | `172.40.0.12:5432` | PostgreSQL 16, BV1-4-10 (1 vCPU, 4 GB), 10 GiB criptografado |
+| VM bastião | `firenze-bastion` | `201.23.64.197` público, `172.40.0.27` privado | Ubuntu 24.04 LTS, BV1-2-10 (1 vCPU, 2 GB, 10 GB) |
+| Rede | `vpc_default` | `br-se1-a` | Os dois na mesma VPC `0d038ade…` |
 
 Backup do banco retido por 7 dias. Extensão `vector` **0.8.5** instalada — mais
 nova que a 0.8.2 que o plano registrava.
@@ -29,7 +32,7 @@ Por isso existe o bastião. Tudo que fala com o banco de fora da VPC —
 ## Abrir o túnel
 
 ```bash
-ssh -N -L 55432:172.30.0.55:5432 ubuntu@201.23.2.157
+ssh -N -L 55432:172.40.0.12:5432 ubuntu@201.23.64.197
 ```
 
 Deixe rodando numa aba. A partir daí, `localhost:55432` é o banco gerenciado.
@@ -59,17 +62,21 @@ comando.
 só some. Reabra.
 
 **O `ssh` entra mas o túnel não sobe.** Suba com `-o ExitOnForwardFailure=yes`,
-que transforma "a porta local já está em uso" em erro em vez de silêncio.
+que transforma "a porta local já está em uso" em erro em vez de silêncio. Foi
+exatamente o que aconteceu ao refazer a região: um túnel antigo ainda segurava
+a 55432, e sem a flag o SSH teria ficado de pé sem encaminhar nada — conexão
+recusada do outro lado, sem pista do motivo. A mensagem é
+`Could not request local forwarding`.
 
 **Do bastião não alcança o banco.** Conferir a rota é uma linha, e não precisa
 de `psql` instalado lá:
 
 ```bash
-ssh ubuntu@201.23.2.157 "timeout 8 bash -c '</dev/tcp/172.30.0.55/5432' && echo aberta"
+ssh ubuntu@201.23.64.197 "timeout 8 bash -c '</dev/tcp/172.40.0.12/5432' && echo aberta"
 ```
 
 Se fechar, o caminho é o security group da interface do bastião
-(`10518adc-4b7b-46e4-871d-b6f61a70e3ab`) contra o do banco. Hoje o padrão da
+(`f5fc0ae5-c45f-45a8-bb2a-3d7263c6160c`) contra o do banco. Hoje o padrão da
 `vpc_default` já libera tráfego interno e nenhuma regra precisou ser criada.
 
 **A instância sumiu do `mgc dbaas instances list`.** Ela pode estar parada:
@@ -79,12 +86,26 @@ emergência — instância parada não cobra computação, mas continua cobrando
 ## Ids, para não caçar de novo
 
 ```
-banco    5189cd9b-2a21-4a22-aaae-c406100ee360
-vm       4c39d686-dde8-4f86-8a00-1ab28c0a09a0
-vpc      d76f1474-30de-4e7d-954d-824a8b59b54f
+banco    f900ea96-5feb-4f32-b12a-208bdfce2492
+vm       739840dd-82c6-4ccb-9b14-e3d251bf7057
+vpc      0d038ade-f8d0-4704-8edf-3c263c3c510b
 engine   89bd25d5-e29e-4615-a64b-0a006bbc4997   (postgresql 16)
-máquina  9f99f51e-4405-4c29-867f-46a642ce5f42   (BV1-4-10)
+tipo db  9f99f51e-4405-4c29-867f-46a642ce5f42   (BV1-4-10)
+imagem   e56e9ec4-b149-40d4-8774-3d58ba075c21   (ubuntu 24.04, **só em se1**)
+máquina  fc8641f6-f3a4-407c-8612-5576dd9ffdc6   (BV1-2-10, **só em se1**)
 ```
+
+## Trocar de região
+
+A CLI obedece a `mgc config set region <br-se1|br-ne1>`, e recurso nenhum
+atravessa: para apagar algo criado na outra região é preciso voltar a
+configuração para ela primeiro, senão o `list` devolve vazio e parece que já
+não existe.
+
+E os ids **não são os mesmos nas duas**. Os do DBaaS até coincidem — engine e
+tipo de instância têm o mesmo uuid em `ne1` e `se1` —, mas os da VM não:
+imagem e tipo de máquina mudam, e usar o uuid da outra região falha na criação.
+Consulte sempre, nunca copie do runbook antigo.
 
 ## O que ainda não existe
 
