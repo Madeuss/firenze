@@ -588,6 +588,11 @@ Imagem em 0.8.6, DBaaS da Magalu em 0.8.2. Recurso novo de índice precisa ser
 conferido contra produção antes de ser usado
 ([ADR-0002](adr/0002-postgres-pgvector-instead-of-a-vector-database.md)).
 
+**2026-09-17:** a instância criada de verdade veio com **0.8.5**, e não 0.8.2 —
+o número acima era de catálogo, medido antes de existir banco. A distância
+diminuiu, a lição não muda: a versão que vale é a que responde
+`select extversion from pg_extension`, na instância que vai rodar.
+
 ### 2026-08-31 — Nenhum tipo de máquina com GPU na conta
 
 50 tipos disponíveis, `gpu: 0` em todos, todos em `br-ne1`. O experimento com
