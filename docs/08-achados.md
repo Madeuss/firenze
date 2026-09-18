@@ -104,6 +104,47 @@ metade do catálogo.
 **Latência:** a primeira chamada levou 70s (partida fria) e as seguintes ficaram
 abaixo de um segundo. Quem medir uma vez e desistir vai concluir a coisa errada.
 
+### 2026-09-18 — O `-1` que custava 37% dos turnos
+
+Com o eval finalmente medindo, **37% dos turnos que chegavam a um suspeito eram
+descartados** — 30 de 81, e todos na mesma checagem: `claim`.
+
+A checagem reprova três coisas diferentes com um nome só. Separei os nomes antes
+de escolher o conserto, e o número virou outro: **19 de 21 eram `claim_hour`** —
+hora fora da noite —, não `claim_half` como eu tinha apostado. A aposta teria
+comprado o conserto errado.
+
+Então fui ver o que o modelo escreve no campo. Em 40 chamadas:
+
+    valido        30
+    negativo(-1)   6
+    None           4
+
+Nenhum `2130`, nenhum `22`. **Todo descarte por hora era `-1`** — e `-1` não é
+engano de índice, é *"não estou afirmando nada"* escrito como número.
+
+**Por que o modelo faz isso:** o schema vai em modo estrito, e modo estrito
+exige toda propriedade presente. Não existe forma de a ausência chegar, então o
+modelo alcança a sentinela mais velha que existe. O campo é `int | None` e
+`null` seria aceito — 4 dos 40 escreveram `null` —, mas nada no prompt diz isso,
+e a metade que não adivinhou pagava com o turno do jogador.
+
+O conserto é uma linha no `vocabulary.py`, que já fazia exatamente isso para
+texto: `""` e `"nenhum"` viram `None` desde que ele existe. Faltava o
+equivalente numérico. Ler `-1` como ausência é o contrário de inventar — inventar
+seria escolher uma hora que ninguém disse.
+
+**Medido depois, mesmas cinco rodadas:** respostas entregues foram de **51/81
+(63%) para 75/82 (91%)**. O que sobra de `claim` é 3 `claim_half` e 1
+`claim_hour` em 82 — perto de 4%, e o `claim_hour` que restou é justamente o
+caso que o conserto se recusa a adivinhar.
+
+**A lição:** eu tinha uma hipótese plausível e um número agregado que a
+sustentava. Os dois estavam errados, e nenhum dos dois se corrigiu sozinho —
+precisou separar o nome da checagem e depois olhar o valor cru. Métrica agregada
+diz que dói; ela não diz onde.
+
+
 ### 2026-09-17 — Cinco rodadas do eval eram uma rodada e quatro repetições
 
 O `CLAUDE.md` manda rodar a suíte cinco vezes, porque com temperatura acima de
