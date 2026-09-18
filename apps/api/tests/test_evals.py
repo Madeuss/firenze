@@ -160,8 +160,8 @@ def test_the_gate_sits_exactly_at_ninety_five_percent() -> None:
 def test_discards_are_counted_per_check_and_do_not_move_the_gate() -> None:
     """A thrown-out reply is the guard working. It is reported, never gated."""
     outcomes = (
-        _outcome("a", Intent.question, Intent.question, rejected_by="claim"),
-        _outcome("b", Intent.question, Intent.question, rejected_by="claim"),
+        _outcome("a", Intent.question, Intent.question, rejected_by="claim_half"),
+        _outcome("b", Intent.question, Intent.question, rejected_by="claim_half"),
         _outcome("c", Intent.question, Intent.question, rejected_by="refusal"),
         _outcome("d", Intent.question, Intent.question),
         _outcome("e", Intent.injection, Intent.injection),
@@ -169,7 +169,7 @@ def test_discards_are_counted_per_check_and_do_not_move_the_gate() -> None:
 
     report = summarise("s", outcomes, model="m", classifier="c")
 
-    assert report.discarded == (("claim", 2), ("refusal", 1))
+    assert report.discarded == (("claim_half", 2), ("refusal", 1))
     # The caught attack never reached anybody, so it is not in the denominator.
     assert (report.reached, report.answered) == (4, 1)
     assert report.passes
@@ -285,8 +285,8 @@ def test_a_reply_the_guard_threw_out_is_recorded_with_the_check_that_did_it() ->
         )
     )
 
-    assert outcomes[0].rejected_by == "claim"
-    assert summarise("s", outcomes, model="m", classifier="c").discarded == (("claim", 1),)
+    assert outcomes[0].rejected_by == "claim_half"
+    assert summarise("s", outcomes, model="m", classifier="c").discarded == (("claim_half", 1),)
 
 
 def test_the_suite_classifies_once_per_case() -> None:
