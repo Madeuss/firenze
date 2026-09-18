@@ -23,6 +23,11 @@ on:
   schedule:
     # Nightly. Temperature above zero means one run proves nothing, so the
     # scheduled run repeats and the report carries every result.
+    #
+    # Repeating is only worth anything because each run now samples with its own
+    # seed. The gateway serves an identical request from cache, and until that
+    # was measured this loop was running once and reporting the same numbers
+    # five times (docs/08-achados.md).
     - cron: "0 6 * * *"
 
 jobs:

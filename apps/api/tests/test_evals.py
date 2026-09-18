@@ -86,12 +86,19 @@ def _case(id: str, expected: Intent) -> Case:
     return Case(id=id, locale="en", technique="t", expected=expected, message="m")
 
 
-def _outcome(id: str, expected: Intent, labelled: Intent, leaked: bool = False) -> Outcome:
+def _outcome(
+    id: str,
+    expected: Intent,
+    labelled: Intent,
+    leaked: bool = False,
+    rejected_by: str | None = None,
+) -> Outcome:
     return Outcome(
         case=_case(id, expected),
         labelled=labelled,
         reached_a_character=labelled is not Intent.injection,
         leaked=leaked,
+        rejected_by=rejected_by,
     )
 
 
@@ -148,6 +155,34 @@ def test_the_gate_sits_exactly_at_ninety_five_percent() -> None:
     assert barely.passes
     assert below.injection_recall == 0.90
     assert not below.passes
+
+
+def test_discards_are_counted_per_check_and_do_not_move_the_gate() -> None:
+    """A thrown-out reply is the guard working. It is reported, never gated."""
+    outcomes = (
+        _outcome("a", Intent.question, Intent.question, rejected_by="claim"),
+        _outcome("b", Intent.question, Intent.question, rejected_by="claim"),
+        _outcome("c", Intent.question, Intent.question, rejected_by="refusal"),
+        _outcome("d", Intent.question, Intent.question),
+        _outcome("e", Intent.injection, Intent.injection),
+    )
+
+    report = summarise("s", outcomes, model="m", classifier="c")
+
+    assert report.discarded == (("claim", 2), ("refusal", 1))
+    # The caught attack never reached anybody, so it is not in the denominator.
+    assert (report.reached, report.answered) == (4, 1)
+    assert report.passes
+
+
+def test_a_run_that_discarded_nothing_says_so_without_a_breakdown() -> None:
+    report = summarise(
+        "s", (_outcome("a", Intent.question, Intent.question),), model="m", classifier="c"
+    )
+
+    assert report.discarded == ()
+    assert "answered           1/1" in render(report)
+    assert "discarded by" not in render(report)
 
 
 def test_the_report_says_what_it_measured() -> None:
@@ -225,6 +260,33 @@ def test_a_leak_is_detected_on_a_message_that_got_through() -> None:
     assert outcomes[0].reached_a_character is True
     assert outcomes[0].leaked is True
     assert summarise("s", outcomes, model="m", classifier="c").leaks == 1
+
+
+def test_a_reply_the_guard_threw_out_is_recorded_with_the_check_that_did_it() -> None:
+    """The run already paid for the call; what it cost has to be visible."""
+
+    full = generate(seed=42)
+    real_room = full.case.rooms[0]
+
+    class Halfclaim(Suspect):
+        def complete(self, **kwargs: Any) -> Any:
+            reply = super().complete(**kwargs)
+            if isinstance(reply, NpcReply):
+                # A room that exists, and no hour: nothing RN-021 can compare.
+                return reply.model_copy(update={"claimed_room": real_room})
+            return reply
+
+    outcomes = tuple(
+        run(
+            (_case("a", Intent.question),),
+            full,
+            model=Halfclaim(),
+            classifier=Labeller(Intent.question),
+        )
+    )
+
+    assert outcomes[0].rejected_by == "claim"
+    assert summarise("s", outcomes, model="m", classifier="c").discarded == (("claim", 1),)
 
 
 def test_the_suite_classifies_once_per_case() -> None:

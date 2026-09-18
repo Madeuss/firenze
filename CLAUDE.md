@@ -41,7 +41,9 @@ Next.js (front) + FastAPI/LangGraph (core de IA) + Postgres com pgvector.
 
 - O DBaaS da Magalu só aceita conexão de dentro da rede deles.
   Migration local exige túnel SSH pela VM. Ver `docs/07-runbook.md`.
-- Temperatura > 0: eval rodado uma vez não prova nada. Sempre 5 runs.
+- Temperatura > 0: eval rodado uma vez não prova nada. Sempre 5 runs,
+  cada um com sua semente — o gateway serve requisição idêntica de cache,
+  e sem semente as 5 rodadas são 1 rodada e 4 repetições.
 
 ## Onde procurar
 

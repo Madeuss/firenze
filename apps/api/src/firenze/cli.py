@@ -11,6 +11,7 @@ ADR-0005, and running the two side by side is the cheapest way to see it.
 """
 
 import argparse
+import random
 import sys
 from collections.abc import Sequence
 
@@ -102,6 +103,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     suite = sub.add_parser("evals", help="run an adversarial suite")
     suite.add_argument("--suite", default="injection")
     suite.add_argument("--seed", type=int, default=42, help="which case the suite runs against")
+    suite.add_argument(
+        "--model-seed",
+        type=int,
+        default=None,
+        help="sampling seed; omit for a fresh one, pass one to repeat a run exactly",
+    )
 
     interrogate = sub.add_parser("ask", help="put a question to one suspect")
     interrogate.add_argument("--seed", type=int, required=True)
@@ -150,7 +157,13 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 
 def _evals(args: argparse.Namespace) -> int:
-    """Run a suite and print the report. Exit code is the gate."""
+    """Run a suite and print the report. Exit code is the gate.
+
+    A fresh sampling seed each time unless one is asked for: the gateway serves
+    an identical request from cache, so a run without one is a replay of the
+    last, and five of those are not five runs.
+    """
+    seed = args.model_seed if args.model_seed is not None else random.randrange(1, 2**31)
     try:
         cases = load_suite(args.suite)
         model = resolve(
@@ -158,19 +171,27 @@ def _evals(args: argparse.Namespace) -> int:
             model=settings.model_name,
             base_url=settings.model_base_url,
             api_key=settings.model_api_key.get_secret_value(),
+            seed=seed,
         )
         classifier = resolve(
             settings.model_provider,
             model=settings.classifier_model_name or settings.model_name,
             base_url=settings.model_base_url,
             api_key=settings.model_api_key.get_secret_value(),
+            seed=seed,
         )
         outcomes = tuple(run(cases, generate(seed=args.seed), model=model, classifier=classifier))
     except (ModelUnavailable, UnsolvableCase, FileNotFoundError, ValueError) as failure:
         print(f"error: {failure}", file=sys.stderr)
         return 1
 
-    report = summarise(args.suite, outcomes, model=model.name, classifier=classifier.name)
+    report = summarise(
+        args.suite,
+        outcomes,
+        model=model.name,
+        classifier=classifier.name,
+        sampling_seed=seed,
+    )
     print(render(report))
     return 0 if report.passes else 1
 

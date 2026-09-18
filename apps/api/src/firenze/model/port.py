@@ -28,6 +28,21 @@ class ModelUnavailable(RuntimeError):
     """
 
 
+class ModelGarbled(ModelUnavailable):
+    """The provider answered, and nothing it said fit the schema.
+
+    Told apart from plain unavailability because the difference decides who
+    pays. Nothing was produced when the transport failed, and charging a player
+    for a turn nobody took would be unfair; a reply that came back truncated or
+    malformed *was* produced, and RN-030 charges for it — the player had their
+    go, and the system chose not to show what came back.
+
+    A subclass, so every caller that only wants to degrade keeps working
+    unchanged: for prose, a garbled answer and no answer are the same
+    disappointment. The one caller that has to charge for it catches this first.
+    """
+
+
 class ModelRefused(RuntimeError):
     """The provider declined to answer.
 

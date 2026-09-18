@@ -23,6 +23,20 @@ Whichever works first is remembered for the life of the adapter, so the cost of
 not knowing is paid once. All three failing is a failure, never a repair: a
 response that does not validate is discarded, because a half-parsed answer that
 reaches the game is worse than no answer.
+
+## The gateway answers the same request from a cache
+
+Measured: an identical payload comes back in 60 ms instead of 3.6 s, with the
+same words. Changing one character in the message costs full latency again, so
+the key is the request itself.
+
+For the game that is a discount. For an eval it is a lie: the suite's whole
+defence against a model at temperature above zero is running it five times, and
+five identical payloads buy one sample and four replays of it — reported as five
+runs that agree. `seed` is the way out. The gateway honours it, different seeds
+give different words, and a repeated seed goes back to the cache, so one seed is
+one sample that can be asked for again. It is sent only when a caller asks for
+it: the game wants the discount.
 """
 
 import json
@@ -31,7 +45,7 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from firenze.model.port import ModelRefused, ModelUnavailable, Schema
+from firenze.model.port import ModelGarbled, ModelRefused, ModelUnavailable, Schema
 
 MODES = ("json_schema", "json_object", "prompt")
 JSON_OBJECT = re.compile(r"\{.*\}", re.DOTALL)
@@ -46,11 +60,13 @@ class OpenAICompatibleModel:
         model: str,
         base_url: str,
         api_key: str,
+        seed: int | None = None,
         client: Any | None = None,
     ) -> None:
         self._model = model
         self._base_url = base_url
         self._api_key = api_key
+        self._seed = seed
         self._client = client
         self._mode: str | None = None
 
@@ -83,6 +99,7 @@ class OpenAICompatibleModel:
         client = self._connect()
         attempts = (self._mode,) if self._mode else MODES
         failures: list[str] = []
+        garbled: list[str] = []
 
         for mode in attempts:
             try:
@@ -96,12 +113,16 @@ class OpenAICompatibleModel:
             try:
                 parsed = schema.model_validate_json(_only_json(text))
             except (ValidationError, ValueError) as invalid:
-                failures.append(f"{mode}: response did not fit the schema ({invalid})")
+                garbled.append(f"{mode}: response did not fit the schema ({invalid})")
                 continue
 
             self._mode = mode
             return parsed
 
+        # Words came back and none of them fit. That is a different failure from
+        # never reaching the provider, and only the caller can say what it costs.
+        if garbled:
+            raise ModelGarbled("; ".join(garbled + failures))
         raise ModelUnavailable("; ".join(failures) or "no usable response")
 
     def _ask(
@@ -115,6 +136,8 @@ class OpenAICompatibleModel:
     ) -> str:
         instructions = system
         request: dict[str, Any] = {}
+        if self._seed is not None:
+            request["seed"] = self._seed
 
         if mode == "json_schema":
             request["response_format"] = {
