@@ -10,6 +10,7 @@
  * no address for the API and no way to reach it (ADR-0003).
  */
 
+import { guardarToken, tokenDe } from "@/lib/dono";
 import type { components } from "@/lib/contracts";
 
 type Schemas = components["schemas"];
@@ -37,14 +38,29 @@ export class ApiError extends Error {
   }
 }
 
+/** O id da partida, quando o caminho fala de uma. */
+function partidaDe(path: string): string | null {
+  const achado = /^matches\/([^/]+)/.exec(path)
+  return achado?.[1] ?? null
+}
+
 async function call<T>(path: string, init?: RequestInit): Promise<T> {
+  // O token vai em todo pedido sobre uma partida — a API recusa sem ele
+  // quando o ambiente é protegido, e ignora quando não é (T-11).
+  const partida = partidaDe(path)
+  const token = partida ? tokenDe(partida) : null
+
   const response = await fetch(`/api/${path}`, {
     ...init,
     // O estado da partida muda a cada turno; resposta guardada e resposta
     // errada. O `no-store` tambem esta no route handler, porque nenhum dos
     // dois lados deveria depender do outro lembrar disso.
     cache: "no-store",
-    headers: { "content-type": "application/json", ...init?.headers },
+    headers: {
+      "content-type": "application/json",
+      ...(token ? { "x-firenze-token": token } : {}),
+      ...init?.headers,
+    },
   });
 
   if (!response.ok) {
@@ -62,11 +78,17 @@ function detailOf(body: unknown): string | null {
   return null;
 }
 
-export function startMatch(seed: number, locale = "pt-BR"): Promise<MatchState> {
-  return call<MatchState>("matches", {
+export async function startMatch(seed: number, locale = "pt-BR"): Promise<MatchState> {
+  const match = await call<MatchState>("matches", {
     method: "POST",
     body: JSON.stringify({ seed, locale }),
   });
+
+  // A única vez que este token existe. Guardar aqui, e não na tela que chamou,
+  // porque toda tela que criar partida teria de lembrar — e a que esquecesse
+  // criaria uma partida que ninguém mais consegue abrir.
+  if (match.owner_token) guardarToken(match.id, match.owner_token);
+  return match;
 }
 
 export function readMatch(id: string): Promise<MatchState> {

@@ -1,0 +1,24 @@
+# TLS sem comprar domínio: `sslip.io` resolve qualquer nome que contenha um IP
+# para aquele IP, então `201.23.64.197.sslip.io` aponta para esta máquina e o
+# Let's Encrypt emite um certificado de verdade para ele. Nada de autoassinado,
+# nada de aviso no navegador.
+#
+# O dia em que existir um domínio próprio, é trocar FIRENZE_DOMAIN e recarregar.
+
+{$FIRENZE_DOMAIN} {
+	encode zstd gzip
+
+	# O jogo é a API inteira; não há nada mais nesta máquina para servir.
+	reverse_proxy api:8000 {
+		# O limitador conta por chamador, e sem isto todo pedido chegaria com o
+		# endereço do próprio Caddy — um balde só para o mundo inteiro (T-12).
+		header_up X-Forwarded-For {remote_host}
+	}
+
+	log {
+		output file /data/access.log {
+			roll_size 10MiB
+			roll_keep 5
+		}
+	}
+}

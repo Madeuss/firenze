@@ -149,6 +149,15 @@ class MatchState(BaseModel):
         default=(),
         description="Motives the player found out about, and may therefore name.",
     )
+    owner_token: str | None = Field(
+        default=None,
+        description=(
+            "Set only in the reply that created the match, and never again. "
+            "Send it back in X-Firenze-Token on every request about this match; "
+            "without it the match is unreachable, because there is no account "
+            "it could be recovered from."
+        ),
+    )
 
 
 class Question(BaseModel):

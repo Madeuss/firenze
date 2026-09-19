@@ -432,6 +432,11 @@ export interface components {
             locale: string;
             /** Notebook */
             notebook: components["schemas"]["Said"][];
+            /**
+             * Owner Token
+             * @description Set only in the reply that created the match, and never again. Send it back in X-Firenze-Token on every request about this match; without it the match is unreachable, because there is no account it could be recovered from.
+             */
+            owner_token?: string | null;
             /** @description The house and the night, empty. Constant for the match. */
             plan: components["schemas"]["FloorPlan"];
             /** Seed */
@@ -771,7 +776,9 @@ export interface operations {
     create_matches_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Firenze-Key"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -804,7 +811,9 @@ export interface operations {
     read_matches__match_id__get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Firenze-Token"?: string | null;
+            };
             path: {
                 match_id: string;
             };
@@ -835,7 +844,9 @@ export interface operations {
     accuse_matches__match_id__accusation_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Firenze-Token"?: string | null;
+            };
             path: {
                 match_id: string;
             };
@@ -870,7 +881,9 @@ export interface operations {
     draft_accusation_matches__match_id__accusation_draft_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Firenze-Token"?: string | null;
+            };
             path: {
                 match_id: string;
             };
@@ -905,7 +918,9 @@ export interface operations {
     take_confrontation_matches__match_id__confrontations_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Firenze-Token"?: string | null;
+            };
             path: {
                 match_id: string;
             };
@@ -940,7 +955,9 @@ export interface operations {
     review_matches__match_id__review_get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Firenze-Token"?: string | null;
+            };
             path: {
                 match_id: string;
             };
@@ -971,7 +988,9 @@ export interface operations {
     take_turn_matches__match_id__turns_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Firenze-Token"?: string | null;
+            };
             path: {
                 match_id: string;
             };

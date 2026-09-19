@@ -1,0 +1,62 @@
+# A pilha que roda na VM. Fase 1 do §8 do plano: uma máquina, compose, Caddy
+# para TLS. "Não pule esta fase por vaidade arquitetural" — e não pulei.
+#
+# O que **não** está aqui é tão deliberado quanto o que está:
+#
+# - **Postgres** é gerenciado (DBaaS), e só tem IP privado. Esta VM está na
+#   mesma VPC, então alcança o banco direto — o túnel SSH do runbook existe
+#   para a sua máquina, não para esta.
+# - **Redis** não entrou. Ele está declarado na configuração desde o começo e
+#   até hoje nenhum código o usa; subir 40 MB de nada numa VM de 2 GB seria
+#   cargo cult. Volta no dia em que o limitador precisar contar entre
+#   processos (ver apps/api/src/firenze/api/access.py).
+# - **Migration ao subir** fica desligada. No compose de desenvolvimento ela dá
+#   uma pilha jogável num clone novo; aqui, um container que decide migrar
+#   sozinho ao reiniciar é um schema mudando sem ninguém olhando.
+
+name: firenze
+
+services:
+  api:
+    build:
+      context: ../..
+      dockerfile: apps/api/Dockerfile
+      target: prod
+    restart: unless-stopped
+    environment:
+      FIRENZE_ENVIRONMENT: prod
+      FIRENZE_DATABASE_URL: ${FIRENZE_DATABASE_URL:?o banco gerenciado, por IP privado}
+      FIRENZE_ACCESS_KEY: ${FIRENZE_ACCESS_KEY:?sem isto o processo se recusa a subir}
+      FIRENZE_MODEL_PROVIDER: ${FIRENZE_MODEL_PROVIDER:-aihub}
+      FIRENZE_MODEL_NAME: ${FIRENZE_MODEL_NAME:?}
+      FIRENZE_CLASSIFIER_MODEL_NAME: ${FIRENZE_CLASSIFIER_MODEL_NAME:-}
+      FIRENZE_MODEL_BASE_URL: ${FIRENZE_MODEL_BASE_URL:?}
+      FIRENZE_MODEL_API_KEY: ${FIRENZE_MODEL_API_KEY:?}
+      FIRENZE_RATE_LIMIT_PER_MINUTE: ${FIRENZE_RATE_LIMIT_PER_MINUTE:-30}
+      FIRENZE_MIGRATE_ON_BOOT: "0"
+    # Sem `ports`: nada chega nesta porta que não venha do Caddy, e o grupo de
+    # segurança publica 80 e 443 e mais nada. É o que torna seguro confiar no
+    # X-Forwarded-For que o limitador lê.
+    expose:
+      - "8000"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      FIRENZE_DOMAIN: ${FIRENZE_DOMAIN:?o nome que o certificado vai carregar}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # O certificado emitido vive aqui. Sem o volume, cada `up` pediria um
+      # novo ao Let's Encrypt e bateria no limite de emissão em um dia ruim.
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+
+volumes:
+  caddy_data:
+  caddy_config:

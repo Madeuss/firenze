@@ -92,8 +92,16 @@ def load_full_case(connection: Connection, case_id: uuid.UUID) -> CaseWithSoluti
     )
 
 
-def start_match(connection: Connection, full: CaseWithSolution, locale: str) -> uuid.UUID:
-    """Save the case if needed and open a match on it."""
+def start_match(
+    connection: Connection,
+    full: CaseWithSolution,
+    locale: str,
+    owner_token_hash: str | None = None,
+) -> uuid.UUID:
+    """Save the case if needed and open a match on it.
+
+    The hash, never the token: the caller keeps the only copy of that (T-11).
+    """
     case_id = save_case(connection, full)
     match_id = uuid.uuid4()
     connection.execute(
@@ -103,9 +111,20 @@ def start_match(connection: Connection, full: CaseWithSolution, locale: str) -> 
             locale=locale,
             turns_left=Match.model_fields["turns_left"].default,
             stances={},
+            owner_token_hash=owner_token_hash,
         )
     )
     return match_id
+
+
+def owner_of(connection: Connection, match_id: uuid.UUID) -> str | None:
+    """The stored fingerprint of a match's owner token, if it has one."""
+    row = connection.execute(
+        select(matches.c.owner_token_hash).where(matches.c.id == match_id)
+    ).first()
+    if row is None:
+        raise NotFound(f"match {match_id} not found")
+    return str(row.owner_token_hash) if row.owner_token_hash else None
 
 
 def load_match(connection: Connection, match_id: uuid.UUID) -> Match:

@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from firenze import __version__
 from firenze.api import router
+from firenze.api.access import check_configuration
 from firenze.config import Environment, settings
 
 
@@ -17,6 +18,10 @@ class Health(BaseModel):
 
 
 def create_app() -> FastAPI:
+    # Before anything is served: a prod process with no access key is a mistake
+    # that costs money, and it costs it quietly. (T-11, T-12)
+    check_configuration()
+
     app = FastAPI(
         title="Firenze API",
         version=__version__,

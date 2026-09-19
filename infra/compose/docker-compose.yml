@@ -36,6 +36,7 @@ services:
       # apps/api e não pode ser copiado de fora do contexto de build.
       context: ../..
       dockerfile: apps/api/Dockerfile
+      target: dev
     environment:
       FIRENZE_ENVIRONMENT: dev
       FIRENZE_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-firenze}:${POSTGRES_PASSWORD:-firenze}@db:5432/${POSTGRES_DB:-firenze}

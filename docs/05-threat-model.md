@@ -38,8 +38,8 @@ entre `testada` e `medida`, e é o trabalho da fase 6.
 | T-08 | Vazamento da `Solução` | Entidade e tabela separadas (RN-011) | estrutural |
 | T-09 | Farm de turno por provocar rejeição | Todo turno produzido debita (RN-030) | testada |
 | T-10 | Injeção indireta pelo texto do verniz | Verniz validado contra o domínio | testada |
-| T-11 | Acesso a partida de outro jogador | — | **aberta** |
-| T-12 | Abuso por volume (sem rate limit) | — | **aberta** |
+| T-11 | Acesso a partida de outro jogador | Token de dono por partida (capability) | testada |
+| T-12 | Abuso por volume (sem rate limit) | Chave de convite + janela por chamador | testada |
 
 ---
 
@@ -168,7 +168,7 @@ e roda em todo turno (`classifier_model_name`).
 `test_a_long_ramble_is_truncated_before_parsing`,
 `test_an_empty_question_is_refused`, `test_turns_run_out`.
 
-**O que falta.** Rate limit — ver T-12.
+**O que falta.** Nada aqui; a frequência é T-12.
 
 ---
 
@@ -269,6 +269,68 @@ gravados e compara com o orçamento consumido.
 
 ---
 
+## T-11 — Acesso a partida de outro jogador
+
+**Vetor.** Não havia autenticação. Quem tivesse o UUID de uma partida lia o
+caderno dela, gastava os turnos dela e acusava por ela. A revisão (RN-035) era a
+pior das rotas: ela mostra a contabilidade inteira.
+
+**Impacto.** Partida alheia estragada, e o gasto correndo na chave de modelo de
+quem publicou.
+
+**Mitigação.** Duas perguntas diferentes, dois segredos diferentes.
+
+*Quem pode começar uma partida* responde uma chave compartilhada, entregue a
+quem é para jogar. É toda a "conta" que existe, de propósito: sem login, o jogo
+não coleta dado pessoal, e trocar a chave revoga todos os convites de uma vez.
+
+*Quem pode mexer nesta partida* responde um token cunhado na criação, devolvido
+uma única vez e guardado como SHA-256 — um dump da tabela não entrega o jogo de
+ninguém. Quem tem o token é o dono; não há conta em que pendurá-lo, nem
+necessidade.
+
+A verificação é uma dependência do FastAPI, não uma linha no topo de cada
+handler: o jeito de isso falhar é alguém acrescentar uma rota e esquecer.
+
+E um processo com `FIRENZE_ENVIRONMENT=prod` sem chave **se recusa a subir**.
+Aberto é escolha, nunca esquecimento.
+
+**Prova.** `test_every_route_that_takes_a_match_id_checks_the_owner` — varredura
+sobre as seis rotas com `match_id` —, `test_starting_a_match_needs_the_key`,
+`test_the_turns_of_a_match_cannot_be_spent_by_a_stranger`,
+`test_the_token_comes_back_once_and_only_at_the_start`,
+`test_a_prod_process_refuses_to_start_without_a_key`.
+
+**O que falta.** Perder o token é perder a partida, e não há recuperação — o
+preço de não ter conta. Se um dia houver login, isto vira ADR e traz LGPD junto.
+
+---
+
+## T-12 — Abuso por volume
+
+**Vetor.** Nada limitava a frequência. Os tetos de T-05 limitam o custo *por
+chamada*; um laço fazia quantas chamadas quisesse. Partida nova também gera um
+caso e roda o solver — custo de CPU sem modelo nenhum envolvido.
+
+**Impacto.** A chave de modelo de quem publicou, gasta por um estranho.
+
+**Mitigação.** Em camadas, e a ordem importa. O que separa um estranho do gasto
+é a chave de convite de T-11: sem ela não se cria partida, e sem partida não há
+turno. A janela por chamador — 30 por minuto, configurável — limita o que um
+convidado gasta depois de entrar. O orçamento de 30 turnos por partida (RN-030)
+limita o total de cada uma.
+
+O contador é em memória, o que é honesto para uma VM com um processo (§8 do
+plano, fase 1) e está escrito como tal: `--workers 1` no Dockerfile de produção,
+porque dois processos contariam metade cada um. Quando houver réplica, ele vai
+para o Redis, que já está no compose e ainda não tem uso.
+
+**Prova.** `test_the_window_closes_after_enough_requests`, e o `header_up
+X-Forwarded-For` no Caddyfile — sem ele todo pedido chegaria com o endereço do
+próprio proxy, e o balde seria um só para o mundo inteiro.
+
+---
+
 ## T-10 — Injeção indireta pelo texto do verniz
 
 **Vetor.** O verniz é a única parte do conteúdo escrita por modelo. Se o texto
@@ -296,23 +358,7 @@ conteúdo não confiável e precisa da mesma disciplina de escopo do dossiê.
 
 Reconhecidas e não mitigadas. Estão aqui para não serem descobertas em produção.
 
-### T-11 — Acesso a partida de outro jogador
-
-Não há autenticação. Quem tiver o UUID de uma partida pode ler o caderno dela,
-gastar os turnos dela e acusar por ela. Hoje isso não está exposto — a API não
-está publicada — mas **é bloqueador da fase 7**.
-
-Mínimo aceitável para publicar: dono da partida e verificação em toda rota que
-recebe `match_id`. A revisão (RN-035) é a mais sensível: ela mostra a
-contabilidade inteira.
-
-### T-12 — Abuso por volume
-
-Não há rate limit. Os tetos de T-05 limitam o custo *por chamada*; nada limita a
-frequência. Partida nova também gera um caso, que roda o solver — custo de CPU
-sem modelo nenhum envolvido.
-
-Mesma janela de T-11: antes de existir URL pública.
+*Nenhuma até aqui.*
 
 ### Fora de escopo, por enquanto
 
