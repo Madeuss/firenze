@@ -14,6 +14,7 @@ from pydantic import BaseModel
 from firenze.domain import Role
 from firenze.model import (
     FakeModel,
+    ModelGarbled,
     ModelRefused,
     ModelUnavailable,
     OpenAICompatibleModel,
@@ -114,6 +115,7 @@ class Gateway:
         self._supports = supports
         self._reply = reply
         self.modes_tried: list[str] = []
+        self.calls: list[dict[str, Any]] = []
 
     @property
     def chat(self) -> "Gateway":
@@ -127,6 +129,7 @@ class Gateway:
         fmt = kwargs.get("response_format") or {}
         mode = fmt.get("type", "prompt")
         self.modes_tried.append(mode)
+        self.calls.append(kwargs)
         if mode not in self._supports:
             raise ValueError(f"unsupported response_format: {mode}")
         return Reply(self._reply)
@@ -244,3 +247,49 @@ def test_no_module_outside_the_port_imports_a_provider_sdk() -> None:
     ]
 
     assert not offenders, f"provider SDK imported outside firenze.model: {offenders}"
+
+
+def test_no_seed_is_sent_unless_one_is_asked_for() -> None:
+    """The game wants the gateway's cache: it is the same answer, for free."""
+    gateway = Gateway(supports={"json_schema"})
+
+    _model(gateway).complete(system="s", user="u", schema=Answer, max_tokens=10)
+
+    assert "seed" not in gateway.calls[0]
+
+
+def test_a_seed_reaches_the_gateway() -> None:
+    """Which is how the eval suite buys five samples instead of one and four
+    replays of it: the gateway serves an identical request from cache."""
+    gateway = Gateway(supports={"json_schema"})
+    model = OpenAICompatibleModel(
+        model="qwen-whatever", base_url="https://x", api_key="k", seed=7, client=gateway
+    )
+
+    model.complete(system="s", user="u", schema=Answer, max_tokens=10)
+
+    assert gateway.calls[0]["seed"] == 7
+
+
+def test_resolve_passes_the_seed_through() -> None:
+    model = resolve("aihub", model="m", base_url="https://x", api_key="k", seed=3)
+
+    assert isinstance(model, OpenAICompatibleModel)
+    assert model._seed == 3
+
+
+def test_an_answer_that_fits_nothing_is_garbled_not_unavailable() -> None:
+    """The provider answered. Who pays for the turn depends on that difference."""
+    gateway = Gateway(supports={"json_schema", "json_object", "prompt"}, reply='{"line": "cut')
+
+    with pytest.raises(ModelGarbled):
+        _model(gateway).complete(system="s", user="u", schema=Answer, max_tokens=10)
+
+
+def test_a_gateway_that_never_answered_is_unavailable() -> None:
+    gateway = Gateway(supports=set())
+
+    with pytest.raises(ModelUnavailable) as failure:
+        _model(gateway).complete(system="s", user="u", schema=Answer, max_tokens=10)
+
+    assert not isinstance(failure.value, ModelGarbled)

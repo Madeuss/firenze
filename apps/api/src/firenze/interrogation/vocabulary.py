@@ -6,6 +6,13 @@ the two ways it misses are worth separating:
 
 - **a blank where nothing belongs.** `claimed_room: ""` is not a claim about an
   empty-named room, it is the absence of a claim written the wrong way;
+- **a sentinel where nothing belongs.** `claimed_interval: -1` is the same
+  thing in a numeric field. The schema is sent in strict mode, which requires
+  every property to be present, so "I am not saying where I was" has no shape
+  to arrive in — and the model reaches for the oldest one there is. Measured on
+  the real model: of 40 replies, 30 named a real hour, 4 wrote null, and 6 wrote
+  `-1`. Not one wrote a clock time or an hour outside the night. Every single
+  rejection of this kind was a reply making no claim at all;
 - **the name instead of the id.** The character says "salão" out loud in the
   same breath, and writes it down where the id goes.
 
@@ -53,6 +60,12 @@ def normalise(reply: NpcReply, case: Case, catalog: Catalog) -> NpcReply:
     for campo in ("fact_referenced", "clue_revealed", "claimed_room"):
         if _nada(getattr(reply, campo)):
             mudancas[campo] = None
+
+    # Negativo não é hora nenhuma desta noite, e não é engano de índice: é a
+    # ausência de alegação escrita como número. Ler assim é o contrário de
+    # inventar — inventar seria escolher uma hora que ninguém disse.
+    if reply.claimed_interval is not None and reply.claimed_interval < 0:
+        mudancas["claimed_interval"] = None
 
     quarto = mudancas.get("claimed_room", reply.claimed_room)
     if isinstance(quarto, str) and quarto not in case.rooms:

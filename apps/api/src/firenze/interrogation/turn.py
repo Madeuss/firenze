@@ -14,7 +14,8 @@ same:
 
 - **produced, then discarded** — charged. The system chose not to show it; the
   player still had their go, and a budget that only charged for answers the
-  system liked would be a budget to farm.
+  system liked would be a budget to farm. A reply that came back truncated or
+  malformed belongs here too: the provider answered, badly.
 - **classified as an attack** — charged. It reached a checkpoint and got an
   answer, just not from a model (RN-041).
 - **never produced** — not charged. No provider, no credentials, no route to the
@@ -34,7 +35,7 @@ from firenze.interrogation.dossier import Dossier, build
 from firenze.interrogation.guard import ReplyRejected, check
 from firenze.interrogation.models import NpcReply
 from firenze.interrogation.vocabulary import normalise
-from firenze.model import ModelRefused, StructuredModel
+from firenze.model import ModelGarbled, ModelRefused, StructuredModel
 from firenze.prompts import prompts_dir
 from firenze.safety import classify, is_hostile
 
@@ -236,6 +237,19 @@ def ask(
         return TurnResult(
             match=_record(spent, turn), turn=turn, rejection=str(refusal), intent=intent
         )
+    except ModelGarbled as nonsense:
+        # Also produced, and also charged: words came back, none of them usable.
+        # Letting this reach the caller as unavailability would report the host
+        # as down on the night a model rambled past its token limit — which is
+        # how a whole eval run died once (docs/08-achados.md).
+        turn = _rejected(match, character, question, dossier, "garbled", 1, intent)
+        return TurnResult(
+            match=_record(spent, turn),
+            turn=turn,
+            rejection=str(nonsense),
+            rejected_by="garbled",
+            intent=intent,
+        )
 
     # Antes de qualquer checagem: o que o modelo escreveu, escrito do jeito que
     # a casa escreve. Nada aqui inventa alegação — ver o módulo.
@@ -355,6 +369,17 @@ def confront(
             match=_record(spent, turn),
             turn=turn,
             rejection=str(refusal),
+            intent=Intent.confrontation,
+        )
+    except ModelGarbled as nonsense:
+        turn = _rejected(
+            match, character, f"[{evidence_id}]", dossier, "garbled", COST, Intent.confrontation
+        )
+        return TurnResult(
+            match=_record(spent, turn),
+            turn=turn,
+            rejection=str(nonsense),
+            rejected_by="garbled",
             intent=Intent.confrontation,
         )
 

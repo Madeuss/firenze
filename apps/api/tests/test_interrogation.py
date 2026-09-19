@@ -16,7 +16,7 @@ from firenze.interrogation import Dossier, NpcReply, ReplyRejected, ask, build
 from firenze.interrogation import stance as stance_machine
 from firenze.interrogation.guard import check
 from firenze.interrogation.turn import NoTurnsLeft, render
-from firenze.model import FakeModel, ModelRefused
+from firenze.model import FakeModel, ModelGarbled, ModelRefused
 from firenze.safety import Classification
 
 
@@ -322,3 +322,25 @@ def test_the_turn_numbers_run_without_gaps(match: Match) -> None:
         current = ask(current, "sus-1", "e depois?", catalog=load("pt-BR"), model=model).match
 
     assert [t.turn for t in current.turns] == [1, 2, 3]
+
+
+def test_a_garbled_reply_costs_the_turn_instead_of_failing_it() -> None:
+    """The provider answered, badly. RN-030 charges for what was produced."""
+
+    class Rambles:
+        @property
+        def name(self) -> str:
+            return "rambles"
+
+        def complete(self, **kwargs: Any) -> Any:
+            if kwargs["schema"] is Classification:
+                return Classification(intent=Intent.question, reason="test")
+            raise ModelGarbled("truncated mid-object")
+
+    match = Match(full_case=generate(seed=42), locale="pt-BR")
+
+    result = ask(match, "sus-1", "onde você estava?", catalog=load("pt-BR"), model=Rambles())
+
+    assert result.rejected_by == "garbled"
+    assert not result.turn.answered
+    assert result.match.turns_left == match.turns_left - 1

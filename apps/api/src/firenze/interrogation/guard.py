@@ -17,6 +17,13 @@ has and an interval it covers. An invented room is not a lie the game can reason
 about — RN-021 compares claims, and a claim about a room that does not exist
 cannot be compared with anything.
 
+The three ways that fails are named apart — `claim_room`, `claim_hour`,
+`claim_half` — because they are three different repairs. A room the case does
+not have is a vocabulary problem and belongs to the prompt; a room with no hour
+is a model that wrote half the bookkeeping and could be asked again. Counting
+them as one number was enough to know the check was expensive and not enough to
+know what to do about it.
+
 **Shape.** An empty line is not an answer, and a runaway one is a model that
 stopped playing a character and started narrating.
 
@@ -55,11 +62,13 @@ def check(reply: NpcReply, dossier: Dossier, case: Case | None = None) -> None:
 def claim_is_about_this_case(reply: NpcReply, case: Case) -> None:
     """A claimed whereabouts has to be somewhere and somewhen in this case."""
     if reply.claimed_room is not None and reply.claimed_room not in case.rooms:
-        raise ReplyRejected("claim", f"{reply.claimed_room!r} is not a room in this case")
+        raise ReplyRejected("claim_room", f"{reply.claimed_room!r} is not a room in this case")
     if reply.claimed_interval is not None and not 0 <= reply.claimed_interval < case.interval_count:
-        raise ReplyRejected("claim", f"interval {reply.claimed_interval} is outside this night")
+        raise ReplyRejected(
+            "claim_hour", f"interval {reply.claimed_interval} is outside this night"
+        )
     if (reply.claimed_room is None) != (reply.claimed_interval is None):
-        raise ReplyRejected("claim", "a room without an interval says nothing comparable")
+        raise ReplyRejected("claim_half", "a room without an interval says nothing comparable")
 
 
 def no_canary(reply: NpcReply) -> None:
