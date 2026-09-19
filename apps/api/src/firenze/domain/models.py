@@ -47,6 +47,20 @@ class FactKind(StrEnum):
     """A suspect's private secret. A reason to lie without being the culprit."""
     motive = "motive"
     """Why the culprit did it. Held by whoever overheard, never by the house."""
+    cover = "cover"
+    """The culprit's version of where they were. The one fact that is false.
+
+    It exists because of what its absence did. Every innocent holds a witnessed
+    presence fact for the hour of the crime; the culprit, alone, held nothing —
+    so the one question that decides the game was the one question only they
+    could not answer. The tell was not their manner, it was their empty sheet,
+    and a player learns to accuse whoever hesitates instead of whoever cannot
+    be vouched for (RN-005).
+
+    Never an alibi: it names no witness, and the solver reads presence, not
+    this. Never evidence: a lie a suspect told is not something the player
+    holds. Never true: RN-004 is about where people were, and this is about
+    where somebody says they were."""
 
 
 class Intent(StrEnum):
@@ -307,4 +321,9 @@ class Match(BaseModel):
         """
         given = {s.clue_revealed for s in self.statements if s.clue_revealed}
         public = {f.id for f in self.case.facts if f.scope.public}
-        return frozenset(public | given)
+        # The culprit's cover story sits in their own dossier, so they can offer
+        # it as a clue and the scope check would allow it. A lie is not evidence
+        # (RN-005): letting one in would put a false fact in the dossier the
+        # player studies, and score points for holding it.
+        lies = {f.id for f in self.case.facts if f.kind is FactKind.cover}
+        return frozenset((public | given) - lies)

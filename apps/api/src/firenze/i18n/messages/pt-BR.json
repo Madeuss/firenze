@@ -57,7 +57,8 @@
     "presence": "{character} estava {room} às {time}, na presença de {witness}.",
     "secret": "{character} {secret} — estava {room} às {time}.",
     "clue": "{witness} viu, {room}, um objeto pessoal de {character} que não deveria estar ali às {time}.",
-    "motive": "{witness} ouviu {character} discutir com {victim} sobre {motive}, dias antes."
+    "motive": "{witness} ouviu {character} discutir com {victim} sobre {motive}, dias antes.",
+    "cover": "Sua versão é que esteve {room} às {time} — é o que você responde quando perguntam, e não é verdade."
   },
   "secrets": {
     "cellar_wine": "desviava vinho da adega para revender",

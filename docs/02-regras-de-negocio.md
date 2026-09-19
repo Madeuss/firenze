@@ -36,6 +36,16 @@ o crime, que o faz mentir. Sem isso o jogo vira "quem está nervoso".
 *Verificação:* validador determinístico de linha do tempo, com teste de
 propriedade sobre casos gerados.
 
+**RN-005** — O culpado tem uma versão: um cômodo e um intervalo que ele afirma
+sobre a hora do crime, sem testemunha que confirme. Ela nunca conta como álibi
+para o solver, nunca entra nas provas do jogador e nunca sai do dossiê dele.
+Sem ela o culpado é o único da casa sem nada a dizer sobre a única hora que se
+pergunta, e a dedução vaza pelo tom de voz: RN-003 dá a todo inocente um motivo
+para hesitar, mas nunca na hora do crime, então hesitar ali só o culpado podia.
+*Verificação:* invariante do gerador; validador checa dono, ausência de
+testemunha, cômodo e escopo; teste de que o solver continua achando exatamente
+um candidato.
+
 **RN-006** — A memória de um NPC só aceita fatos vindos do dossiê. Texto do
 jogador nunca vira fato, nem quando o jogador afirma algo verdadeiro.
 *Verificação:* a escrita na memória só aceita `id` de fato existente no dossiê;

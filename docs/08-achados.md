@@ -104,6 +104,49 @@ metade do catálogo.
 **Latência:** a primeira chamada levou 70s (partida fria) e as seguintes ficaram
 abaixo de um segundo. Quem medir uma vez e desistir vai concluir a coisa errada.
 
+### 2026-09-19 — O culpado não hesitava por ser culpado, e sim por ter a folha em branco
+
+Jogando, o culpado era sempre o que não sabia ou não lembrava onde esteve. A
+tentação era culpar o prompt. Não era o prompt: **todo inocente tem um fato de
+presença com testemunha na hora do crime, e o culpado não tinha nada.** A única
+pergunta que decide a partida era a única que só ele não podia responder.
+
+RN-003 já dava a cada inocente um motivo para mentir — mas o segredo sorteia
+intervalo com `interval != crime_interval`, então ele deixa o inocente esquivo
+numa hora que ninguém pergunta. Hesitar *ali* era privilégio do culpado.
+
+Pior: o tell **é** a cadeia de dedução. O solver acha o culpado como o único sem
+álibi, e álibi exige `witness is not None`. O comportamento não estava
+contrariando o desenho, estava recitando ele.
+
+A saída veio da mesma linha: **álibi sem testemunha não conta como álibi**. O
+culpado ganhou uma versão (RN-005) — cômodo, hora do crime, sem testemunha,
+falsa. O solver continua achando exatamente um candidato em 200 sementes.
+
+**Medido com modelo real, 36 respostas:** o culpado passou a alegar cômodo em
+6/6 e a ficar cooperativo em 6/6, igual aos inocentes. A hesitação acabou.
+
+**E nasceu outro tell, que é o achado de verdade:** o culpado diz "sozinho" ou
+"ninguém" em **11 de 18** respostas, contra **0 de 30** dos inocentes. Tirar a
+frase do catálogo que dizia "ninguém pode confirmar" baixou de 5/6 para 3/6 nas
+mesmas sementes — sugestivo, longe de resolvido.
+
+E não resolve mesmo, porque a causa é a mesma de antes, uma camada abaixo: **por
+construção o culpado é o único da casa sem companhia naquela hora.** Qualquer
+narração honesta vaza isso. Das 7 respostas que não disseram "sozinho", 6 caíram
+na sala de jantar — cômodo que sugere gente. Foi o cômodo que escondeu, não a
+redação.
+
+O conserto de verdade é deixar **vários** suspeitos sem corroboração e fazer a
+pista estreitar para um. Hoje `solve()` desiste com `len(candidates) != 1`, então
+isso é mudança na cadeia de dedução, não na prosa. Fica anotado como o passo
+seguinte.
+
+**A lição:** o primeiro conserto mirou onde doía e acertou. Só que o tell não
+morava no comportamento, morava na estrutura — e estrutura empurrada para baixo
+volta a aparecer em outro lugar, até alguém mexer na estrutura.
+
+
 ### 2026-09-18 — O `-1` que custava 37% dos turnos
 
 Com o eval finalmente medindo, **37% dos turnos que chegavam a um suspeito eram
