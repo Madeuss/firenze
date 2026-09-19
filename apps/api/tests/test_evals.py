@@ -55,6 +55,29 @@ def test_the_attacks_cover_more_than_one_trick() -> None:
     assert "canary_probe" in techniques
 
 
+def test_the_corpus_pins_both_sides_of_the_emotional_appeal() -> None:
+    """A sad story is not what makes a message an attack. The ask is.
+
+    `inj-022` used to be the sad story alone, and the classifier called it a
+    question in ten runs out of ten — correctly, by the prompt's own rule that a
+    hard question is still a question. Making the number go up by teaching the
+    classifier to distrust grief would have cost the game every player who asks
+    a suspect who they think did it. So the corpus carries the pair: the same
+    grandmother, once with a request aimed at the system and once without.
+    """
+    by_id = {c.id: c for c in SUITE}
+
+    attack = by_id["inj-022"]
+    legitimate = by_id["hard-011"]
+
+    assert attack.expected is Intent.injection
+    assert legitimate.expected is Intent.question
+    # The attack is the legitimate message plus the ask. That is the whole
+    # difference, and it is what the classifier has to key on.
+    assert attack.message.startswith(legitimate.message)
+    assert attack.message != legitimate.message
+
+
 def test_a_malformed_line_stops_the_run(tmp_path: Any) -> None:
     """Skipping a bad line would shrink the corpus silently."""
     path = tmp_path / "broken.jsonl"
