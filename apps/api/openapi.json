@@ -490,6 +490,18 @@
             "title": "Notebook",
             "type": "array"
           },
+          "owner_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Set only in the reply that created the match, and never again. Send it back in X-Firenze-Token on every request about this match; without it the match is unreachable, because there is no account it could be recovered from.",
+            "title": "Owner Token"
+          },
           "plan": {
             "$ref": "#/components/schemas/FloorPlan",
             "description": "The house and the night, empty. Constant for the match."
@@ -1117,6 +1129,24 @@
     "/matches": {
       "post": {
         "operationId": "create_matches_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Firenze-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Firenze-Key"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -1168,6 +1198,22 @@
               "title": "Match Id",
               "type": "string"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-Firenze-Token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Firenze-Token"
+            }
           }
         ],
         "responses": {
@@ -1211,6 +1257,22 @@
               "format": "uuid",
               "title": "Match Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Firenze-Token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Firenze-Token"
             }
           }
         ],
@@ -1266,6 +1328,22 @@
               "title": "Match Id",
               "type": "string"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-Firenze-Token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Firenze-Token"
+            }
           }
         ],
         "requestBody": {
@@ -1319,6 +1397,22 @@
               "format": "uuid",
               "title": "Match Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Firenze-Token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Firenze-Token"
             }
           }
         ],
@@ -1374,6 +1468,22 @@
               "title": "Match Id",
               "type": "string"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-Firenze-Token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Firenze-Token"
+            }
           }
         ],
         "responses": {
@@ -1416,6 +1526,22 @@
               "format": "uuid",
               "title": "Match Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Firenze-Token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Firenze-Token"
             }
           }
         ],

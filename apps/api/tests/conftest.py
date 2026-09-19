@@ -91,3 +91,17 @@ def database_url() -> Iterator[str]:
         with admin.connect() as connection:
             connection.execute(text(f'DROP DATABASE IF EXISTS "{TEST_DATABASE}" WITH (FORCE)'))
         admin.dispose()
+
+
+@pytest.fixture(autouse=True)
+def _fresh_rate_limit() -> None:
+    """Every test starts with an empty window. (T-12)
+
+    The limiter counts per caller and the test client is always the same
+    caller, so without this the suite spends its own budget: the tests that
+    happened to run last would fail with 429 and the ones that caused it would
+    pass. A test that means to exercise the limiter fills the window itself.
+    """
+    from firenze.api.access import bucket
+
+    bucket().forget()

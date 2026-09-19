@@ -19,10 +19,17 @@ import uuid
 from collections.abc import Iterator
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from sqlalchemy.engine import Connection
 
 from firenze.accusation import known_motives, parse, summarise
+from firenze.api.access import (
+    TOKEN_HEADER,
+    mint,
+    rate_limit,
+    require_key,
+    require_owner,
+)
 from firenze.api.schemas import (
     AccusationText,
     Answer,
@@ -58,6 +65,7 @@ from firenze.storage import (
     NotFound,
     engine,
     load_match,
+    owner_of,
     record_turn,
     save_match,
     start_match,
@@ -129,6 +137,31 @@ Model = Annotated[StructuredModel, Depends(model_port)]
 Classifier = Annotated[StructuredModel, Depends(classifier_port)]
 
 
+def owned(
+    match_id: uuid.UUID,
+    db: Db,
+    token: str | None = Header(None, alias=TOKEN_HEADER),
+) -> uuid.UUID:
+    """Every route that takes a `match_id` arrives through here. (T-11)
+
+    A dependency rather than a line at the top of each handler: the failure
+    mode of the second form is a route added later that forgets it, and that
+    route is somebody's notebook handed to a stranger.
+    """
+    try:
+        require_owner(owner_of(db, match_id), token)
+    except NotFound as missing:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(missing)) from missing
+    return match_id
+
+
+Owned = Annotated[uuid.UUID, Depends(owned)]
+Limited = Depends(rate_limit)
+"""Guards what a turn costs. Only on the routes that cost something. (T-12)"""
+Invited = Depends(require_key)
+"""Guards the one route that makes spend out of nothing. (T-11)"""
+
+
 def _plan(case: Case, catalog: Catalog) -> FloorPlan:
     """The house and the night. Never who was in which room."""
     return FloorPlan(
@@ -189,7 +222,12 @@ def _state(match_id: uuid.UUID, match: Match) -> MatchState:
     )
 
 
-@router.post("", status_code=status.HTTP_201_CREATED, summary="Start a match")
+@router.post(
+    "",
+    status_code=status.HTTP_201_CREATED,
+    summary="Start a match",
+    dependencies=[Invited, Limited],
+)
 def create(body: NewMatch, db: Db) -> MatchState:
     try:
         full = generate(seed=body.seed, suspects=body.suspects)
@@ -199,13 +237,19 @@ def create(body: NewMatch, db: Db) -> MatchState:
     except (UnsolvableCase, ValueError) as failure:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(failure)) from failure
 
-    match_id = start_match(db, full, body.locale)
+    token, stored = mint()
+    match_id = start_match(db, full, body.locale, owner_token_hash=stored)
     db.commit()
-    return _state(match_id, load_match(db, match_id))
+
+    # The only time this token exists outside the caller's hands. It is not on
+    # the match, not in the notebook, and not recoverable — losing it loses the
+    # match, which is the price of having no accounts to hang it on (T-11).
+    state = _state(match_id, load_match(db, match_id))
+    return state.model_copy(update={"owner_token": token})
 
 
 @router.get("/{match_id}", summary="The notebook")
-def read(match_id: uuid.UUID, db: Db) -> MatchState:
+def read(match_id: Owned, db: Db) -> MatchState:
     try:
         return _state(match_id, load_match(db, match_id))
     except NotFound as missing:
@@ -327,7 +371,7 @@ def _review(match_id: uuid.UUID, match: Match) -> Review:
 
 
 @router.get("/{match_id}/review", summary="The whole record of a finished match")
-def review(match_id: uuid.UUID, db: Db) -> Review:
+def review(match_id: Owned, db: Db) -> Review:
     """Every turn in order, the stances, the evidence, and the verdict.
 
     Only once the match is over, and that is the whole reason it may show the
@@ -347,9 +391,13 @@ def review(match_id: uuid.UUID, db: Db) -> Review:
     return _review(match_id, match)
 
 
-@router.post("/{match_id}/accusation/draft", summary="Read an accusation out of prose")
+@router.post(
+    "/{match_id}/accusation/draft",
+    summary="Read an accusation out of prose",
+    dependencies=[Limited],
+)
 def draft_accusation(
-    match_id: uuid.UUID, body: AccusationText, db: Db, model: Model
+    match_id: Owned, body: AccusationText, db: Db, model: Model
 ) -> DraftAccusation:
     """Fills the form; commits nothing.
 
@@ -387,8 +435,12 @@ def draft_accusation(
     )
 
 
-@router.post("/{match_id}/accusation", summary="Name a culprit and end the match")
-def accuse(match_id: uuid.UUID, body: NewAccusation, db: Db) -> Outcome:
+@router.post(
+    "/{match_id}/accusation",
+    summary="Name a culprit and end the match",
+    dependencies=[Limited],
+)
+def accuse(match_id: Owned, body: NewAccusation, db: Db) -> Outcome:
     """No model is involved. The outcome is arithmetic (RN-032)."""
     try:
         match = load_match(db, match_id)
@@ -437,8 +489,12 @@ def accuse(match_id: uuid.UUID, body: NewAccusation, db: Db) -> Outcome:
     return _outcome(verdict, body.culprit, catalog, match.turns_left, match.case, epilogue=epilogue)
 
 
-@router.post("/{match_id}/confrontations", summary="Show a suspect a piece of evidence")
-def take_confrontation(match_id: uuid.UUID, body: Confrontation, db: Db, model: Model) -> Answer:
+@router.post(
+    "/{match_id}/confrontations",
+    summary="Show a suspect a piece of evidence",
+    dependencies=[Limited],
+)
+def take_confrontation(match_id: Owned, body: Confrontation, db: Db, model: Model) -> Answer:
     """Costs two turns, and only the evidence the player already holds."""
     try:
         match = load_match(db, match_id)
@@ -487,9 +543,9 @@ def take_confrontation(match_id: uuid.UUID, body: Confrontation, db: Db, model: 
     )
 
 
-@router.post("/{match_id}/turns", summary="Question a suspect")
+@router.post("/{match_id}/turns", summary="Question a suspect", dependencies=[Limited])
 def take_turn(
-    match_id: uuid.UUID, body: Question, db: Db, model: Model, classifier: Classifier
+    match_id: Owned, body: Question, db: Db, model: Model, classifier: Classifier
 ) -> Answer:
     try:
         match = load_match(db, match_id)

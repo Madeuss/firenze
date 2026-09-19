@@ -58,5 +58,19 @@ class Settings(BaseSettings):
     model_api_key: SecretStr = SecretStr("")
     """Secret so it does not land in a log by accident."""
 
+    access_key: SecretStr = SecretStr("")
+    """The shared key that buys the right to start a match. (T-11)
+
+    Empty means this deployment checks nothing, which is what local development
+    and the test suite want. A process with `environment` set to `prod` refuses
+    to start while it is empty, so open is something you choose rather than
+    something you forget."""
+
+    rate_limit_per_minute: int = 30
+    """Requests per minute per caller, on the routes that cost money. (T-12)
+
+    Zero disables it. Thirty is above anything a person does by hand and far
+    below what a loop does in a second."""
+
 
 settings = Settings()

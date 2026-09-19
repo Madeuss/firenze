@@ -107,11 +107,56 @@ tipo de instância têm o mesmo uuid em `ne1` e `se1` —, mas os da VM não:
 imagem e tipo de máquina mudam, e usar o uuid da outra região falha na criação.
 Consulte sempre, nunca copie do runbook antigo.
 
+## Subir a API
+
+A pilha de produção é `infra/compose/docker-compose.prod.yml`: a API atrás de um
+Caddy que emite o certificado sozinho. Sem Postgres (é gerenciado) e sem Redis
+(não tem uso ainda).
+
+O nome é `201.23.64.197.sslip.io` — `sslip.io` resolve qualquer nome que
+contenha um IP para aquele IP, então o Let's Encrypt emite certificado de
+verdade sem domínio comprado. Trocar por um domínio próprio é mudar
+`FIRENZE_DOMAIN` e recarregar.
+
+```bash
+git archive --format=tar HEAD -o /tmp/firenze.tar
+scp /tmp/firenze.tar ubuntu@201.23.64.197:/tmp/
+ssh ubuntu@201.23.64.197 'cd /opt/firenze && tar xf /tmp/firenze.tar'
+ssh ubuntu@201.23.64.197 'cd /opt/firenze/infra/compose &&   sudo docker compose -f docker-compose.prod.yml build &&   sudo docker compose -f docker-compose.prod.yml up -d'
+```
+
+Tarball do commit, e não `git clone`: a VM não precisa de credencial de git, e o
+que sobe é exatamente o que está commitado.
+
+**Migration é passo do deploy, nunca do boot.** A VM está dentro da VPC, então
+fala com o banco gerenciado sem túnel:
+
+```bash
+sudo docker compose -f docker-compose.prod.yml run --rm --entrypoint alembic api upgrade head
+```
+
+**Os segredos** vivem em `/opt/firenze/infra/compose/.env`, modo 600, escritos
+por `stdin` do SSH — nunca por linha de comando, que ficaria no histórico. A
+chave de convite (`FIRENZE_ACCESS_KEY`) é a mesma no `.env` da raiz do repo, que
+é de onde o front a lê.
+
+E a trava: **um processo com `FIRENZE_ENVIRONMENT=prod` sem chave se recusa a
+subir** (T-11). Testado contra a imagem, não só em teste unitário.
+
+## O bloqueio que impede o jogo de funcionar lá
+
+A VM **não alcança o AI Hub**. SYN descartado na 443 para
+`api.inferencia.llm.mglu.io`, por IPv4 e IPv6, enquanto a saída para o resto da
+internet funciona. Da minha máquina o mesmo endereço responde em 0,09s.
+
+Então `/health` responde, partida é criada, o caderno é protegido — e nenhum
+suspeito fala. Precisa de chamado para a Magalu. O diagnóstico completo está em
+[08-achados.md](08-achados.md).
+
 ## O que ainda não existe
 
-A API **não roda** na nuvem. O que está lá é banco e bastião; o jogo continua
-subindo local pelo `make dev` e apontando para o Postgres de contêiner. Colocar
-a API na VM é o passo seguinte, e ele traz decisões que este runbook ainda não
-tem: como a chave do modelo chega na VM, o que serve o front, e quem tem
-permissão de começar uma partida — que é a [T-11](05-threat-model.md), aberta
-desde que o threat model foi escrito.
+O front **não roda** na nuvem. Ele continua subindo local pelo `yarn dev` e
+apontando para a API por `FIRENZE_API_URL`. Das três decisões que este runbook
+não tinha, duas foram tomadas — a chave do modelo chega por `.env` escrito via
+`stdin`, e quem pode começar partida responde a [T-11](05-threat-model.md), hoje
+fechada. Falta o que serve o front: Vercel ou esta mesma VM.

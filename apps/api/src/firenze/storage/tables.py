@@ -75,6 +75,9 @@ matches = Table(
     Column("locale", String(16), nullable=False),
     Column("turns_left", Integer, nullable=False),
     Column("stances", JSON_DOC, nullable=False, default=dict),
+    # Never the token itself: a dump of this table would otherwise hand over
+    # every match in it. NULL means a match older than ownership (T-11).
+    Column("owner_token_hash", String(64), nullable=True),
     Column("accused_culprit", String(32), nullable=True),
     Column("accused_motive", String(32), nullable=True),
     Column("accused_evidence", JSON_DOC, nullable=True),
