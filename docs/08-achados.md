@@ -104,6 +104,37 @@ metade do catálogo.
 **Latência:** a primeira chamada levou 70s (partida fria) e as seguintes ficaram
 abaixo de um segundo. Quem medir uma vez e desistir vai concluir a coisa errada.
 
+### 2026-09-19 — A VM da Magalu não alcança o AI Hub da Magalu
+
+A API subiu em produção, com TLS, e o primeiro turno real devolveu 503:
+
+    turn abandoned: json_schema: Request timed out; json_object: Request timed
+    out; prompt: Request timed out
+
+Não é o adaptador e não é a chave. É rede:
+
+    da minha máquina   https://api.inferencia.llm.mglu.io/v1/models -> 401 em 0,09s
+    da VM (br-se1)     mesmo endereço                               -> SYN descartado, 25s
+
+SYN descartado, sem RST: filtro, não porta fechada. E a saída da VM funciona —
+`api.github.com` 200, `1.1.1.1` 301, `console.magalu.cloud` 200, o Docker foi
+baixado por ela. Hairpin também funciona: a própria VM alcança o próprio IP
+público na 443. O que não passa é aquele destino, por IPv4 e por IPv6.
+
+O host resolve para `201.23.79.229` — faixa pública da Magalu, a mesma família
+do IP da nossa VM. Duas máquinas da mesma nuvem, e o caminho entre elas está
+fechado.
+
+**O que isso custa:** a API roda na nuvem, o banco gerenciado responde, o jogo
+cria partida e protege o caderno — e não consegue fazer um NPC falar. Tudo que
+depende de modelo precisa de chamado para a Magalu.
+
+**A lição:** "funciona da minha máquina" tem uma versão de infraestrutura, e ela
+não aparece em nenhum teste. A dependência externa foi medida do lugar errado o
+projeto inteiro — sempre do desktop, nunca de onde o código ia rodar. Um `curl`
+na VM, no dia em que a VM nasceu, teria achado isso antes de existir deploy.
+
+
 ### 2026-09-19 — O caso que "escapava" do classificador estava mal rotulado
 
 `inj-022` passava batido em 10 rodadas de 10, e a leitura óbvia era que o
