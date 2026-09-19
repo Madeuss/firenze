@@ -35,11 +35,16 @@ from firenze.generation.validation import validate
 # It moved to 5 when the cast gained grammatical gender — the same reason, one
 # language further: a front end cannot write "era ela mesma" from a name.
 #
+# It moved to 6 when the culprit gained a cover story (RN-005). That one is a
+# real change to the mystery: the same seed now produces a culprit who answers
+# the question everyone is asked, instead of the only suspect in the house with
+# nothing to say about the hour of the crime.
+#
 # It moved to 4 when the cast gained occupations. The mystery a seed produces is
 # byte for byte the one it produced before — the shuffle draws the same
 # permutation whether it is shuffling names or pairs — but a case stored under 3
 # has no occupation to show, and the bump is what stops it being handed back.
-GENERATOR_VERSION = "5"
+GENERATOR_VERSION = "6"
 
 # The only world the generator knows how to build. Rooms, cast, means and
 # secrets below are this setting's; grouping them into a `Setting` object is
@@ -168,6 +173,7 @@ def _assemble(seed: int, effective_seed: int, suspects: int) -> CaseWithSolution
 
     placement = _place(rng, ids, culprit, innocents, crime_room, crime_interval)
     secrets = _secrets(rng, innocents, crime_interval, placement)
+    cover = _cover(rng, placement, ids, crime_room, crime_interval)
 
     facts = _facts(
         seed=seed,
@@ -177,6 +183,7 @@ def _assemble(seed: int, effective_seed: int, suspects: int) -> CaseWithSolution
         innocents=innocents,
         placement=placement,
         secrets=secrets,
+        cover=cover,
         crime_room=crime_room,
         crime_interval=crime_interval,
     )
@@ -291,6 +298,30 @@ def _secrets(
     return secrets
 
 
+def _cover(
+    rng: random.Random,
+    placement: dict[tuple[str, int], str],
+    ids: list[str],
+    crime_room: str,
+    crime_interval: int,
+) -> str:
+    """The room the culprit will claim they were in. (RN-005)
+
+    Empty at that hour, and not the crime room. Empty matters: a room where two
+    innocents were witnessed would collapse the lie on the first cross-check,
+    and the case would be decided by an accident of the draw rather than by the
+    clue the solver reasons over.
+
+    So the version is unfalsifiable by testimony, and falsifiable by the object
+    left behind — which is the deduction this case was built around.
+    """
+    taken = {placement[(cid, crime_interval)] for cid in ids}
+    empty = [room for room in ROOMS if room != crime_room and room not in taken]
+    if not empty:
+        raise ValueError("no empty room for the culprit to claim")
+    return rng.choice(empty)
+
+
 def _facts(
     *,
     seed: int,
@@ -300,6 +331,7 @@ def _facts(
     innocents: list[str],
     placement: dict[tuple[str, int], str],
     secrets: dict[str, tuple[str, int, str]],
+    cover: str,
     crime_room: str,
     crime_interval: int,
 ) -> tuple[Fact, ...]:
@@ -396,6 +428,22 @@ def _facts(
             interval=crime_interval,
             witness=finder,
             incriminates=culprit,
+            canary=_canary(seed, fact_id),
+        )
+    )
+
+    # The culprit's version. Theirs alone — nobody else in the house has heard
+    # it yet, and it is the answer they give when asked the only question that
+    # matters (RN-005).
+    fact_id = new_id()
+    facts.append(
+        Fact(
+            id=fact_id,
+            kind=FactKind.cover,
+            scope=_scope(culprit),
+            character=culprit,
+            room=cover,
+            interval=crime_interval,
             canary=_canary(seed, fact_id),
         )
     )

@@ -22,6 +22,7 @@ def validate(full: CaseWithSolution) -> None:
     rn_001_single_culprit(full)
     rn_003_secret_per_innocent(full)
     rn_004_no_overlap(full)
+    rn_005_cover_is_not_an_alibi(full)
     rn_012_canary_on_restricted_facts(full)
 
 
@@ -42,9 +43,17 @@ def rn_003_secret_per_innocent(full: CaseWithSolution) -> None:
 
 
 def rn_004_no_overlap(full: CaseWithSolution) -> None:
-    """Nobody in two rooms in the same interval."""
+    """Nobody in two rooms in the same interval.
+
+    The culprit's cover story is exempt, and that is the rule working rather
+    than bending: RN-004 is about where people were, and a cover is about where
+    somebody says they were. Reading a lie as a position would make every case
+    with a culprit who talks invalid.
+    """
     where: dict[tuple[str, int], str] = {}
     for fact in full.case.facts:
+        if fact.kind is FactKind.cover:
+            continue
         if fact.character is None or fact.room is None or fact.interval is None:
             continue
         slot = (fact.character, fact.interval)
@@ -55,6 +64,31 @@ def rn_004_no_overlap(full: CaseWithSolution) -> None:
                 f"{fact.character} appears in {previous} and in {fact.room} "
                 f"during interval {fact.interval}",
             )
+
+
+def rn_005_cover_is_not_an_alibi(full: CaseWithSolution) -> None:
+    """The culprit has a version, and it can never clear them.
+
+    Three ways it could, all closed here: naming a witness would make the
+    solver read it as an alibi and leave the case with no candidate; naming the
+    crime room would confess; belonging to anyone but the culprit would put a
+    lie in an innocent's mouth.
+    """
+    covers = [f for f in full.case.facts if f.kind is FactKind.cover]
+    if len(covers) != 1:
+        raise InvalidCase("RN-005", f"expected exactly one cover story, found {len(covers)}")
+
+    cover = covers[0]
+    if cover.character != full.solution.culprit:
+        raise InvalidCase("RN-005", f"the cover story belongs to {cover.character!r}")
+    if cover.witness is not None:
+        raise InvalidCase("RN-005", "a cover story with a witness would read as an alibi")
+    if cover.room == full.case.crime_room:
+        raise InvalidCase("RN-005", "the cover story names the crime room")
+    if cover.interval != full.case.crime_interval:
+        raise InvalidCase("RN-005", "the cover story is not about the hour of the crime")
+    if cover.scope.public or cover.scope.characters != {full.solution.culprit}:
+        raise InvalidCase("RN-005", "the cover story is visible to somebody else")
 
 
 def rn_012_canary_on_restricted_facts(full: CaseWithSolution) -> None:

@@ -172,3 +172,94 @@ def test_a_case_records_the_setting_it_came_from(cases: list[CaseWithSolution]) 
     for full in cases:
         assert full.case.setting == "manor"
         assert full.case.generator_version
+
+
+def test_rn_005_the_culprit_has_a_version_of_the_hour(cases: list[CaseWithSolution]) -> None:
+    """Without one they were the only suspect with nothing to say about it."""
+    for full in cases:
+        covers = [f for f in full.case.facts if f.kind is FactKind.cover]
+
+        assert len(covers) == 1
+        assert covers[0].character == full.solution.culprit
+        assert covers[0].interval == full.case.crime_interval
+
+
+def test_rn_005_the_version_can_never_clear_the_culprit(cases: list[CaseWithSolution]) -> None:
+    """No witness, and not the crime room — the solver still finds one candidate."""
+    for full in cases:
+        cover = next(f for f in full.case.facts if f.kind is FactKind.cover)
+
+        assert cover.witness is None
+        assert cover.room != full.case.crime_room
+        assert solve(full.case).deduced_culprit == full.solution.culprit
+
+
+def test_rn_005_the_version_names_a_room_nobody_can_speak_for(
+    cases: list[CaseWithSolution],
+) -> None:
+    """A room with two witnessed innocents in it would collapse the lie by accident."""
+    for full in cases:
+        cover = next(f for f in full.case.facts if f.kind is FactKind.cover)
+        occupied = {
+            f.room
+            for f in full.case.facts
+            if f.kind is FactKind.presence and f.interval == full.case.crime_interval
+        }
+
+        assert cover.room not in occupied
+
+
+def test_rn_005_catches_a_version_that_would_read_as_an_alibi() -> None:
+    """Give it a witness and the solver would find no candidate at all."""
+    full = generate(seed=3)
+    cover = next(f for f in full.case.facts if f.kind is FactKind.cover)
+    others = tuple(f for f in full.case.facts if f is not cover)
+    tampered = full.model_copy(
+        update={
+            "case": full.case.model_copy(
+                update={"facts": (*others, cover.model_copy(update={"witness": "sus-2"}))}
+            )
+        }
+    )
+
+    with pytest.raises(InvalidCase) as raised:
+        validate(tampered)
+
+    assert raised.value.rule == "RN-005"
+
+
+def test_the_version_is_the_culprits_alone(cases: list[CaseWithSolution]) -> None:
+    """RN-010: nobody else in the house has heard it yet."""
+    for full in cases:
+        cover = next(f for f in full.case.facts if f.kind is FactKind.cover)
+
+        for suspect in full.case.suspects:
+            holds = cover.id in {f.id for f in full.case.dossier(suspect.id)}
+            assert holds == (suspect.id == full.solution.culprit)
+
+
+def test_a_lie_never_becomes_evidence_the_player_holds() -> None:
+    """The cover sits in the culprit's dossier, so the scope check would allow
+    them to offer it. Evidence is what is true (RN-005)."""
+    from firenze.domain import Match, Turn
+
+    full = generate(seed=3)
+    cover = next(f for f in full.case.facts if f.kind is FactKind.cover)
+    match = Match(full_case=full, locale="pt-BR")
+
+    offered = match.model_copy(
+        update={
+            "turns": (
+                Turn(
+                    turn=1,
+                    character=full.solution.culprit,
+                    question="onde você estava?",
+                    line="Estive lendo, sozinho.",
+                    stance=match.stance_of(full.solution.culprit),
+                    clue_revealed=cover.id,
+                ),
+            )
+        }
+    )
+
+    assert cover.id not in offered.evidence
