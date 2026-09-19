@@ -1,4 +1,6 @@
-# Firenze
+<p align="center">
+  <img src="docs/img/firenze.png" alt="Firenze" width="420">
+</p>
 
 An investigative mystery game where the suspects are LLM-driven NPCs. You
 question them in free text, confront them with evidence, and name a culprit.
@@ -13,6 +15,16 @@ character has no way of knowing.
 > break an alibi with evidence, accuse once, and read a verdict computed by
 > code. The words are still synthetic — the model provider (Magalu's AI Hub) is in
 > pilot — so the mechanics are playable and the prose is not yet worth reading.
+
+![A match in progress: the conversation on the left, the house and the night on
+the right](docs/img/partida.png)
+
+One screen, because the two halves are the same thought. On the left you are
+talking to Clarice, who says she was in the cellar and names Aurélio as the one
+who can say so. On the right you write that down — the floor plan at 21h30, the
+hour the body was found, marked in wine with a skull on the slider. The
+evidence you have pulled out of people sits between them, ready to be put back
+in somebody's face.
 
 ## See it work
 
